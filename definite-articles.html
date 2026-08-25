@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>German Definite Article Case Trainer</title>
+  <style>
+    :root{
+      --bg:#f4f4f1; --card:#fff; --text:#181818; --muted:#6d6d68;
+      --border:#deded8; --soft:#f7f7f4; --ok:#eaf7ed; --ok-border:#b9d9bf;
+      --bad:#fff0f0; --bad-border:#e5b8b8; --shadow:0 10px 34px rgba(0,0,0,.07);
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;background:var(--bg);color:var(--text);
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,"Noto Sans",sans-serif;
+    }
+    .back-link{display:inline-block;margin-bottom:14px;color:var(--muted);text-decoration:none;font-size:13px;font-weight:650}
+    .back-link:hover{text-decoration:underline}
+    .wrap{width:min(680px,calc(100% - 28px));margin:34px auto 60px}
+    .header{display:flex;justify-content:space-between;align-items:flex-end;gap:20px;margin-bottom:16px}
+    h1{margin:0 0 6px;font-size:28px;letter-spacing:-.4px}
+    .subtitle,.meta,.hint,.footer{color:var(--muted)}
+    .subtitle{font-size:14px}
+    .meta{font-size:13px;white-space:nowrap;text-align:right;line-height:1.55}
+    .bar{height:6px;background:#e1e1dc;border-radius:999px;overflow:hidden;margin-bottom:16px}
+    .bar>div{height:100%;background:#1d1d1d;width:0%;transition:width .2s ease}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:20px;box-shadow:var(--shadow);padding:28px}
+    .prompt-label{font-size:13px;color:var(--muted);font-weight:700;margin-bottom:8px}
+    .prompt{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:22px}
+    .prompt-box{background:var(--soft);border:1px solid var(--border);border-radius:14px;padding:16px}
+    .small{color:var(--muted);font-size:12px;margin-bottom:4px}
+    .big{font-size:24px;font-weight:780;letter-spacing:-.2px}
+    .answer-label{font-size:13px;font-weight:750;margin-bottom:8px}
+    input{
+      width:100%;min-height:50px;padding:12px 14px;font:inherit;font-size:20px;font-weight:700;
+      border:1px solid var(--border);border-radius:12px;background:#fff;outline:none
+    }
+    input:focus{border-color:#8d8d88;box-shadow:0 0 0 3px rgba(0,0,0,.05)}
+    input.correct{background:var(--ok);border-color:var(--ok-border)}
+    input.wrong{background:var(--bad);border-color:var(--bad-border)}
+    .result{min-height:24px;margin-top:8px;font-size:14px;font-weight:650}
+    .result.ok{color:#2c6f3a}.result.bad{color:#a33}
+    .controls{display:flex;gap:10px;flex-wrap:wrap;margin-top:20px}
+    button{
+      appearance:none;border:none;border-radius:12px;padding:12px 16px;font-size:15px;font-weight:750;cursor:pointer
+    }
+    .primary{background:#171717;color:#fff}.secondary{background:#ecece7;color:#222}
+    button:disabled{opacity:.38;cursor:not-allowed}
+    .hint{margin-top:15px;font-size:13px;line-height:1.55}
+    .hidden{display:none!important}
+    .footer{margin-top:17px;text-align:center;font-size:12px}
+    @media(max-width:560px){
+      .wrap{margin-top:18px}.header{align-items:flex-start;flex-direction:column;gap:8px}
+      .meta{text-align:left}.card{padding:20px}.prompt{grid-template-columns:1fr}
+    }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back-link" href="index.html">← Back to Dashboard</a>
+  <div class="header">
+    <div>
+      <h1>Definite Article Trainer</h1>
+      <div class="subtitle">Case + gender → type the article → check → next</div>
+    </div>
+    <div class="meta">
+      <div id="roundText"></div>
+      <div id="progressText"></div>
+    </div>
+  </div>
+
+  <div class="bar"><div id="barFill"></div></div>
+
+  <div class="card">
+    <div class="prompt-label">Prompt / Aufgabe</div>
+
+    <div class="prompt">
+      <div class="prompt-box">
+        <div class="small">Case / Kasus</div>
+        <div class="big" id="caseText"></div>
+      </div>
+      <div class="prompt-box">
+        <div class="small">Gender / Genus</div>
+        <div class="big" id="genderText"></div>
+      </div>
+    </div>
+
+    <div class="answer-label">Definite article / bestimmter Artikel</div>
+    <input id="answerInput" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" aria-label="Definite article answer" />
+
+    <div class="result" id="result"></div>
+
+    <div class="controls">
+      <button class="primary" id="checkBtn" disabled>Check / Prüfen</button>
+      <button class="primary hidden" id="nextBtn">Next / Weiter →</button>
+      <button class="secondary" id="reshuffleBtn">Reshuffle / Neu mischen</button>
+    </div>
+
+    <div class="hint">Type only the article: <b>der, die, das, den, dem, des</b>.</div>
+  </div>
+
+  <div class="footer">4 cases × 4 genders · 16 combinations · random order · endless repeat</div>
+</div>
+
+<script>
+const items = [
+  {caseEn:"Nominative",caseDe:"Nominativ",genderEn:"Masculine",genderDe:"Maskulin",answer:"der"},
+  {caseEn:"Nominative",caseDe:"Nominativ",genderEn:"Feminine",genderDe:"Feminin",answer:"die"},
+  {caseEn:"Nominative",caseDe:"Nominativ",genderEn:"Neuter",genderDe:"Neutrum",answer:"das"},
+  {caseEn:"Nominative",caseDe:"Nominativ",genderEn:"Plural",genderDe:"Plural",answer:"die"},
+  {caseEn:"Accusative",caseDe:"Akkusativ",genderEn:"Masculine",genderDe:"Maskulin",answer:"den"},
+  {caseEn:"Accusative",caseDe:"Akkusativ",genderEn:"Feminine",genderDe:"Feminin",answer:"die"},
+  {caseEn:"Accusative",caseDe:"Akkusativ",genderEn:"Neuter",genderDe:"Neutrum",answer:"das"},
+  {caseEn:"Accusative",caseDe:"Akkusativ",genderEn:"Plural",genderDe:"Plural",answer:"die"},
+  {caseEn:"Dative",caseDe:"Dativ",genderEn:"Masculine",genderDe:"Maskulin",answer:"dem"},
+  {caseEn:"Dative",caseDe:"Dativ",genderEn:"Feminine",genderDe:"Feminin",answer:"der"},
+  {caseEn:"Dative",caseDe:"Dativ",genderEn:"Neuter",genderDe:"Neutrum",answer:"dem"},
+  {caseEn:"Dative",caseDe:"Dativ",genderEn:"Plural",genderDe:"Plural",answer:"den"},
+  {caseEn:"Genitive",caseDe:"Genitiv",genderEn:"Masculine",genderDe:"Maskulin",answer:"des"},
+  {caseEn:"Genitive",caseDe:"Genitiv",genderEn:"Feminine",genderDe:"Feminin",answer:"der"},
+  {caseEn:"Genitive",caseDe:"Genitiv",genderEn:"Neuter",genderDe:"Neutrum",answer:"des"},
+  {caseEn:"Genitive",caseDe:"Genitiv",genderEn:"Plural",genderDe:"Plural",answer:"der"}
+];
+
+let order=[], pos=0, round=1, checked=false;
+const $=id=>document.getElementById(id);
+
+function shuffledIndices(previousLast=null){
+  const arr=items.map((_,i)=>i);
+  for(let i=arr.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [arr[i],arr[j]]=[arr[j],arr[i]];
+  }
+  if(previousLast!==null && arr.length>1 && arr[0]===previousLast){
+    [arr[0],arr[1]]=[arr[1],arr[0]];
+  }
+  return arr;
+}
+function current(){ return items[order[pos]]; }
+function normalize(s){ return s.trim().toLowerCase(); }
+
+function render(){
+  const item=current();
+  $("caseText").textContent=`${item.caseEn} · ${item.caseDe}`;
+  $("genderText").textContent=`${item.genderEn} · ${item.genderDe}`;
+  $("roundText").textContent=`Round / Runde ${round}`;
+  $("progressText").textContent=`${pos+1} / ${order.length}`;
+  $("barFill").style.width=`${((pos+1)/order.length)*100}%`;
+
+  $("answerInput").value="";
+  $("answerInput").disabled=false;
+  $("answerInput").className="";
+  $("result").textContent="";
+  $("result").className="result";
+  $("checkBtn").disabled=true;
+  $("checkBtn").classList.remove("hidden");
+  $("nextBtn").classList.add("hidden");
+  checked=false;
+  $("answerInput").focus();
+}
+
+function checkAnswer(){
+  if(!$("answerInput").value.trim()) return;
+  const item=current();
+  const ok=normalize($("answerInput").value)===item.answer;
+  $("answerInput").disabled=true;
+  if(ok){
+    $("answerInput").classList.add("correct");
+    $("result").className="result ok";
+    $("result").textContent="✓ correct / richtig";
+  }else{
+    $("answerInput").classList.add("wrong");
+    $("result").className="result bad";
+    $("result").textContent=`✗ correct answer / richtige Antwort: ${item.answer}`;
+  }
+  $("checkBtn").classList.add("hidden");
+  $("nextBtn").classList.remove("hidden");
+  checked=true;
+}
+
+function nextItem(){
+  if(pos<order.length-1){
+    pos+=1;
+  }else{
+    const previousLast=order[order.length-1];
+    order=shuffledIndices(previousLast);
+    pos=0;
+    round+=1;
+  }
+  render();
+}
+
+function reshuffle(){
+  const currentIndex=order[pos];
+  order=shuffledIndices();
+  if(order.length>1 && order[0]===currentIndex){
+    [order[0],order[1]]=[order[1],order[0]];
+  }
+  pos=0;
+  round=1;
+  render();
+}
+
+$("answerInput").addEventListener("input",()=>{
+  $("checkBtn").disabled=!$("answerInput").value.trim();
+});
+$("checkBtn").addEventListener("click",checkAnswer);
+$("nextBtn").addEventListener("click",nextItem);
+$("reshuffleBtn").addEventListener("click",reshuffle);
+
+document.addEventListener("keydown",(e)=>{
+  if(e.key!=="Enter") return;
+  if(!checked && !$("checkBtn").disabled){
+    checkAnswer();
+  }else if(checked){
+    nextItem();
+  }
+});
+
+order=shuffledIndices();
+render();
+</script>
+</body>
+</html>

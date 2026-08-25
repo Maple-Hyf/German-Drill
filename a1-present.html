@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>A1 German Present Tense Verb Trainer</title>
+  <style>
+    :root{
+      --bg:#f4f4f1;
+      --card:#ffffff;
+      --text:#181818;
+      --muted:#6d6d68;
+      --border:#deded8;
+      --soft:#f7f7f4;
+      --ok:#eaf7ed;
+      --ok-border:#b9d9bf;
+      --bad:#fff0f0;
+      --bad-border:#e5b8b8;
+      --shadow:0 10px 34px rgba(0,0,0,.07);
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      background:var(--bg);
+      color:var(--text);
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,
+                  "Noto Sans","PingFang SC","Microsoft YaHei",sans-serif;
+    }
+    .back-link{
+      display:inline-block;
+      margin-bottom:14px;
+      color:var(--muted);
+      text-decoration:none;
+      font-size:13px;
+      font-weight:650;
+    }
+    .back-link:hover{text-decoration:underline}
+    .wrap{
+      width:min(780px,calc(100% - 28px));
+      margin:30px auto 60px;
+    }
+    .header{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-end;
+      gap:20px;
+      margin-bottom:16px;
+    }
+    h1{
+      margin:0 0 6px;
+      font-size:28px;
+      letter-spacing:-.4px;
+    }
+    .subtitle,.meta,.hint,.footer{
+      color:var(--muted);
+    }
+    .subtitle{font-size:14px}
+    .meta{
+      font-size:13px;
+      white-space:nowrap;
+      text-align:right;
+      line-height:1.55;
+    }
+    .bar{
+      height:6px;
+      background:#e1e1dc;
+      border-radius:999px;
+      overflow:hidden;
+      margin-bottom:16px;
+    }
+    .bar > div{
+      height:100%;
+      background:#1d1d1d;
+      width:0%;
+      transition:width .2s ease;
+    }
+    .card{
+      background:var(--card);
+      border:1px solid var(--border);
+      border-radius:20px;
+      box-shadow:var(--shadow);
+      padding:26px;
+    }
+    .topline{
+      display:flex;
+      justify-content:space-between;
+      gap:16px;
+      align-items:flex-start;
+    }
+    .verb{
+      font-size:36px;
+      line-height:1.1;
+      font-weight:780;
+      letter-spacing:-.7px;
+    }
+    .meaning{
+      margin-top:7px;
+      font-size:16px;
+      color:var(--muted);
+    }
+    .badge{
+      border:1px solid var(--border);
+      background:#fafaf8;
+      color:#555;
+      border-radius:999px;
+      padding:6px 10px;
+      font-size:12px;
+      white-space:nowrap;
+    }
+    .mode-title{
+      margin-top:22px;
+      margin-bottom:10px;
+      font-size:14px;
+      font-weight:750;
+    }
+    .table{
+      display:grid;
+      gap:10px;
+    }
+    .row{
+      display:grid;
+      grid-template-columns:112px 1fr;
+      gap:12px;
+      align-items:start;
+    }
+    .pronoun{
+      padding-top:12px;
+      font-weight:700;
+    }
+    .answer{
+      min-height:46px;
+      display:flex;
+      align-items:center;
+      padding:12px 14px;
+      border:1px solid var(--border);
+      border-radius:12px;
+      background:var(--soft);
+      font-size:17px;
+    }
+    .input-wrap{min-width:0}
+    input{
+      width:100%;
+      min-height:46px;
+      padding:11px 13px;
+      font:inherit;
+      font-size:17px;
+      border:1px solid var(--border);
+      border-radius:12px;
+      background:#fff;
+      outline:none;
+    }
+    input:focus{
+      border-color:#8d8d88;
+      box-shadow:0 0 0 3px rgba(0,0,0,.05);
+    }
+    input.correct{
+      background:var(--ok);
+      border-color:var(--ok-border);
+    }
+    input.wrong{
+      background:var(--bad);
+      border-color:var(--bad-border);
+    }
+    .result{
+      margin-top:5px;
+      font-size:13px;
+      min-height:18px;
+    }
+    .result.ok{color:#2c6f3a}
+    .result.bad{color:#a33}
+    .controls{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-top:24px;
+    }
+    button{
+      appearance:none;
+      border:none;
+      border-radius:12px;
+      padding:12px 16px;
+      font-size:15px;
+      font-weight:750;
+      cursor:pointer;
+    }
+    .primary{
+      background:#171717;
+      color:#fff;
+    }
+    .secondary{
+      background:#ecece7;
+      color:#222;
+    }
+    button:disabled{
+      opacity:.38;
+      cursor:not-allowed;
+    }
+    .hint{
+      margin-top:16px;
+      font-size:13px;
+      line-height:1.55;
+    }
+
+    .char-helper{
+      margin-top:16px;
+      padding-top:14px;
+      border-top:1px solid var(--border);
+    }
+    .char-helper-label{
+      color:var(--muted);
+      font-size:12px;
+      font-weight:700;
+      margin-bottom:8px;
+    }
+    .char-buttons{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+    }
+    .char-btn{
+      min-width:46px;
+      min-height:42px;
+      padding:8px 13px;
+      background:#f1f1ed;
+      color:#222;
+      border:1px solid var(--border);
+      font-size:18px;
+      line-height:1;
+    }
+    .char-btn:focus{
+      outline:2px solid #999;
+      outline-offset:2px;
+    }
+    .hidden{display:none!important}
+    .footer{
+      margin-top:17px;
+      text-align:center;
+      font-size:12px;
+    }
+    @media(max-width:620px){
+      .wrap{margin-top:18px}
+      .header{align-items:flex-start;flex-direction:column;gap:8px}
+      .meta{text-align:left}
+      .card{padding:20px}
+      .row{grid-template-columns:86px 1fr}
+      .verb{font-size:31px}
+    }
+  </style>
+</head>
+<body>
+<div class="wrap">
+    <a class="back-link" href="index.html">← Back to Dashboard</a>
+  <div class="header">
+    <div>
+      <h1>A1 Präsens Verb Trainer</h1>
+      <div class="subtitle">Study once → Test all 6 forms → Check → Next verb</div>
+    </div>
+    <div class="meta">
+      <div id="roundText"></div>
+      <div id="progressText"></div>
+    </div>
+  </div>
+
+  <div class="bar"><div id="barFill"></div></div>
+
+  <div class="card">
+    <div class="topline">
+      <div>
+        <div class="verb" id="verb"></div>
+        <div class="meaning" id="meaning"></div>
+      </div>
+      <div class="badge" id="type"></div>
+    </div>
+
+    <section id="studySection">
+      <div class="mode-title">Study / Lernen</div>
+      <div class="table" id="studyTable"></div>
+    </section>
+
+    <section id="testSection" class="hidden">
+      <div class="mode-title">Test / Testen</div>
+      <div class="table" id="testTable"></div>
+
+      <div class="char-helper">
+        <div class="char-helper-label">German characters / Deutsche Sonderzeichen</div>
+        <div class="char-buttons" aria-label="German character helper">
+          <button type="button" class="char-btn" data-char="ä">ä</button>
+          <button type="button" class="char-btn" data-char="ö">ö</button>
+          <button type="button" class="char-btn" data-char="ü">ü</button>
+          <button type="button" class="char-btn" data-char="ß">ß</button>
+        </div>
+      </div>
+    </section>
+
+    <div class="controls">
+      <button class="primary" id="startBtn">Start test / Test starten</button>
+      <button class="primary hidden" id="checkBtn" disabled>Check answers / Antworten prüfen</button>
+      <button class="primary hidden" id="nextBtn">Next / Weiter →</button>
+      <button class="secondary" id="reshuffleBtn">Reshuffle / Neu mischen</button>
+    </div>
+
+    <div class="hint" id="hint">
+      First look at the six forms. When you are ready, start the test. Enter only the verb form, e.g. <b>bin</b>, <b>gehst</b>, <b>fährt</b>.
+    </div>
+  </div>
+
+  <div class="footer">A1 core verbs · Präsens only · random order · endless repeat · ä ö ü ß helper</div>
+</div>
+
+<script>
+const verbs = [
+  {v:"sein", en:"to be", type:"irregular / unregelmäßig", f:["bin","bist","ist","sind","seid","sind"]},
+  {v:"haben", en:"to have", type:"irregular / unregelmäßig", f:["habe","hast","hat","haben","habt","haben"]},
+  {v:"werden", en:"to become", type:"irregular / unregelmäßig", f:["werde","wirst","wird","werden","werdet","werden"]},
+  {v:"heißen", en:"to be called", type:"sibilant stem / Zischlaut-Stamm", f:["heiße","heißt","heißt","heißen","heißt","heißen"]},
+  {v:"wohnen", en:"to live / reside", type:"standard endings / Standardendungen", f:["wohne","wohnst","wohnt","wohnen","wohnt","wohnen"]},
+  {v:"leben", en:"to live", type:"standard endings / Standardendungen", f:["lebe","lebst","lebt","leben","lebt","leben"]},
+  {v:"kommen", en:"to come", type:"standard endings / Standardendungen", f:["komme","kommst","kommt","kommen","kommt","kommen"]},
+  {v:"gehen", en:"to go / walk", type:"standard endings / Standardendungen", f:["gehe","gehst","geht","gehen","geht","gehen"]},
+  {v:"machen", en:"to do / make", type:"standard endings / Standardendungen", f:["mache","machst","macht","machen","macht","machen"]},
+  {v:"lernen", en:"to learn", type:"standard endings / Standardendungen", f:["lerne","lernst","lernt","lernen","lernt","lernen"]},
+  {v:"arbeiten", en:"to work", type:"extra -e / zusätzliches -e", f:["arbeite","arbeitest","arbeitet","arbeiten","arbeitet","arbeiten"]},
+  {v:"spielen", en:"to play", type:"standard endings / Standardendungen", f:["spiele","spielst","spielt","spielen","spielt","spielen"]},
+  {v:"kaufen", en:"to buy", type:"standard endings / Standardendungen", f:["kaufe","kaufst","kauft","kaufen","kauft","kaufen"]},
+  {v:"brauchen", en:"to need", type:"standard endings / Standardendungen", f:["brauche","brauchst","braucht","brauchen","braucht","brauchen"]},
+  {v:"fragen", en:"to ask", type:"standard endings / Standardendungen", f:["frage","fragst","fragt","fragen","fragt","fragen"]},
+  {v:"sagen", en:"to say", type:"standard endings / Standardendungen", f:["sage","sagst","sagt","sagen","sagt","sagen"]},
+  {v:"hören", en:"to hear / listen", type:"standard endings / Standardendungen", f:["höre","hörst","hört","hören","hört","hören"]},
+  {v:"suchen", en:"to look for", type:"standard endings / Standardendungen", f:["suche","suchst","sucht","suchen","sucht","suchen"]},
+  {v:"warten", en:"to wait", type:"extra -e / zusätzliches -e", f:["warte","wartest","wartet","warten","wartet","warten"]},
+  {v:"reisen", en:"to travel", type:"sibilant stem / Zischlaut-Stamm", f:["reise","reist","reist","reisen","reist","reisen"]},
+  {v:"kochen", en:"to cook", type:"standard endings / Standardendungen", f:["koche","kochst","kocht","kochen","kocht","kochen"]},
+  {v:"trinken", en:"to drink", type:"standard endings / Standardendungen", f:["trinke","trinkst","trinkt","trinken","trinkt","trinken"]},
+  {v:"schreiben", en:"to write", type:"standard endings / Standardendungen", f:["schreibe","schreibst","schreibt","schreiben","schreibt","schreiben"]},
+  {v:"verstehen", en:"to understand", type:"standard endings / Standardendungen", f:["verstehe","verstehst","versteht","verstehen","versteht","verstehen"]},
+  {v:"stehen", en:"to stand", type:"standard endings / Standardendungen", f:["stehe","stehst","steht","stehen","steht","stehen"]},
+  {v:"sitzen", en:"to sit", type:"sibilant stem / Zischlaut-Stamm", f:["sitze","sitzt","sitzt","sitzen","sitzt","sitzen"]},
+  {v:"liegen", en:"to lie / be located", type:"standard endings / Standardendungen", f:["liege","liegst","liegt","liegen","liegt","liegen"]},
+  {v:"finden", en:"to find", type:"extra -e / zusätzliches -e", f:["finde","findest","findet","finden","findet","finden"]},
+  {v:"kennen", en:"to know / be familiar with", type:"standard endings / Standardendungen", f:["kenne","kennst","kennt","kennen","kennt","kennen"]},
+  {v:"wissen", en:"to know (a fact)", type:"irregular / unregelmäßig", f:["weiß","weißt","weiß","wissen","wisst","wissen"]},
+  {v:"bleiben", en:"to stay / remain", type:"standard endings / Standardendungen", f:["bleibe","bleibst","bleibt","bleiben","bleibt","bleiben"]},
+  {v:"bringen", en:"to bring", type:"standard endings / Standardendungen", f:["bringe","bringst","bringt","bringen","bringt","bringen"]},
+  {v:"bezahlen", en:"to pay", type:"standard endings / Standardendungen", f:["bezahle","bezahlst","bezahlt","bezahlen","bezahlt","bezahlen"]},
+  {v:"bestellen", en:"to order", type:"standard endings / Standardendungen", f:["bestelle","bestellst","bestellt","bestellen","bestellt","bestellen"]},
+  {v:"öffnen", en:"to open", type:"-n stem / Stamm auf -n", f:["öffne","öffnest","öffnet","öffnen","öffnet","öffnen"]},
+  {v:"schließen", en:"to close", type:"sibilant stem / Zischlaut-Stamm", f:["schließe","schließt","schließt","schließen","schließt","schließen"]},
+  {v:"fahren", en:"to drive / go by vehicle", type:"stem change a → ä / Stammwechsel a → ä", f:["fahre","fährst","fährt","fahren","fahrt","fahren"]},
+  {v:"schlafen", en:"to sleep", type:"stem change a → ä / Stammwechsel a → ä", f:["schlafe","schläfst","schläft","schlafen","schlaft","schlafen"]},
+  {v:"laufen", en:"to run / walk", type:"stem change au → äu / Stammwechsel au → äu", f:["laufe","läufst","läuft","laufen","lauft","laufen"]},
+  {v:"lesen", en:"to read", type:"stem change e → ie / Stammwechsel e → ie", f:["lese","liest","liest","lesen","lest","lesen"]},
+  {v:"sehen", en:"to see", type:"stem change e → ie / Stammwechsel e → ie", f:["sehe","siehst","sieht","sehen","seht","sehen"]},
+  {v:"sprechen", en:"to speak", type:"stem change e → i / Stammwechsel e → i", f:["spreche","sprichst","spricht","sprechen","sprecht","sprechen"]},
+  {v:"essen", en:"to eat", type:"stem change e → i / Stammwechsel e → i", f:["esse","isst","isst","essen","esst","essen"]},
+  {v:"nehmen", en:"to take", type:"stem change e → i / Stammwechsel e → i", f:["nehme","nimmst","nimmt","nehmen","nehmt","nehmen"]},
+  {v:"geben", en:"to give", type:"stem change e → i / Stammwechsel e → i", f:["gebe","gibst","gibt","geben","gebt","geben"]},
+  {v:"treffen", en:"to meet", type:"stem change e → i / Stammwechsel e → i", f:["treffe","triffst","trifft","treffen","trefft","treffen"]},
+  {v:"helfen", en:"to help", type:"stem change e → i / Stammwechsel e → i", f:["helfe","hilfst","hilft","helfen","helft","helfen"]},
+  {v:"tragen", en:"to carry / wear", type:"stem change a → ä / Stammwechsel a → ä", f:["trage","trägst","trägt","tragen","tragt","tragen"]},
+  {v:"waschen", en:"to wash", type:"stem change a → ä / Stammwechsel a → ä", f:["wasche","wäschst","wäscht","waschen","wascht","waschen"]},
+  {v:"können", en:"can / to be able to", type:"modal / Modalverb", f:["kann","kannst","kann","können","könnt","können"]},
+  {v:"müssen", en:"must / to have to", type:"modal / Modalverb", f:["muss","musst","muss","müssen","müsst","müssen"]},
+  {v:"wollen", en:"to want", type:"modal / Modalverb", f:["will","willst","will","wollen","wollt","wollen"]},
+  {v:"dürfen", en:"may / to be allowed to", type:"modal / Modalverb", f:["darf","darfst","darf","dürfen","dürft","dürfen"]},
+  {v:"sollen", en:"should / to be supposed to", type:"modal / Modalverb", f:["soll","sollst","soll","sollen","sollt","sollen"]},
+  {v:"mögen", en:"to like", type:"modal / Modalverb", f:["mag","magst","mag","mögen","mögt","mögen"]},
+  {v:"anfangen", en:"to begin / start", type:"separable + a → ä / trennbar + a → ä", f:["fange an","fängst an","fängt an","fangen an","fangt an","fangen an"]},
+  {v:"aufstehen", en:"to get up", type:"separable / trennbar", f:["stehe auf","stehst auf","steht auf","stehen auf","steht auf","stehen auf"]},
+  {v:"einkaufen", en:"to shop", type:"separable / trennbar", f:["kaufe ein","kaufst ein","kauft ein","kaufen ein","kauft ein","kaufen ein"]},
+  {v:"anrufen", en:"to call / phone", type:"separable / trennbar", f:["rufe an","rufst an","ruft an","rufen an","ruft an","rufen an"]},
+  {v:"fernsehen", en:"to watch TV", type:"separable + e → ie / trennbar + e → ie", f:["sehe fern","siehst fern","sieht fern","sehen fern","seht fern","sehen fern"]},
+  {v:"einladen", en:"to invite", type:"separable + a → ä / trennbar + a → ä", f:["lade ein","lädst ein","lädt ein","laden ein","ladet ein","laden ein"]}
+];
+
+const pronouns = ["ich","du","er / sie / es","wir","ihr","sie / Sie"];
+
+let order = [];
+let pos = 0;
+let round = 1;
+let mode = "study";
+let activeInput = null;
+
+const $ = id => document.getElementById(id);
+
+function shuffledIndices(previousLast = null){
+  const arr = verbs.map((_,i)=>i);
+  for(let i=arr.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [arr[i],arr[j]] = [arr[j],arr[i]];
+  }
+  if(previousLast !== null && arr.length > 1 && arr[0] === previousLast){
+    [arr[0],arr[1]] = [arr[1],arr[0]];
+  }
+  return arr;
+}
+
+function current(){
+  return verbs[order[pos]];
+}
+
+function renderStudy(){
+  const item = current();
+  $("verb").textContent = item.v;
+  $("meaning").textContent = item.en;
+  $("type").textContent = item.type;
+  $("roundText").textContent = `Round / Runde ${round}`;
+  $("progressText").textContent = `${pos+1} / ${order.length}`;
+  $("barFill").style.width = `${((pos+1)/order.length)*100}%`;
+
+  $("studyTable").innerHTML = "";
+  item.f.forEach((form,i)=>{
+    const row = document.createElement("div");
+    row.className = "row";
+    row.innerHTML = `
+      <div class="pronoun">${pronouns[i]}</div>
+      <div class="answer">${form}</div>
+    `;
+    $("studyTable").appendChild(row);
+  });
+
+  $("testTable").innerHTML = "";
+  item.f.forEach((form,i)=>{
+    const row = document.createElement("div");
+    row.className = "row";
+    row.innerHTML = `
+      <div class="pronoun">${pronouns[i]}</div>
+      <div class="input-wrap">
+        <input
+          data-index="${i}"
+          autocomplete="off"
+          autocorrect="off"
+          autocapitalize="off"
+          spellcheck="false"
+          inputmode="text"
+          aria-label="${pronouns[i]}"
+        />
+        <div class="result" data-result="${i}"></div>
+      </div>
+    `;
+    $("testTable").appendChild(row);
+  });
+
+  [...$("testTable").querySelectorAll("input")].forEach(input => {
+    input.addEventListener("focus", () => {
+      activeInput = input;
+    });
+  });
+
+  $("studySection").classList.remove("hidden");
+  $("testSection").classList.add("hidden");
+  $("startBtn").classList.remove("hidden");
+  $("checkBtn").classList.add("hidden");
+  $("nextBtn").classList.add("hidden");
+  $("checkBtn").disabled = true;
+  $("hint").innerHTML =
+    `First look at the six forms. When you are ready, start the test. ` +
+    `Enter only the verb form, e.g. <b>bin</b>, <b>gehst</b>, <b>fährt</b>.`;
+
+  mode = "study";
+}
+
+function startTest(){
+  $("studySection").classList.add("hidden");
+  $("testSection").classList.remove("hidden");
+  $("startBtn").classList.add("hidden");
+  $("checkBtn").classList.remove("hidden");
+  $("nextBtn").classList.add("hidden");
+  $("hint").textContent = "Fill in all six forms before checking your answers.";
+  mode = "test";
+
+  const inputs = [...$("testTable").querySelectorAll("input")];
+  inputs.forEach(inp => inp.addEventListener("input", updateCheckState));
+  if(inputs[0]){
+    activeInput = inputs[0];
+    inputs[0].focus();
+  }
+  updateCheckState();
+}
+
+function updateCheckState(){
+  const inputs = [...$("testTable").querySelectorAll("input")];
+  $("checkBtn").disabled = !inputs.every(i => i.value.trim().length > 0);
+}
+
+function normalize(s){
+  return s
+    .trim()
+    .toLocaleLowerCase("de-DE")
+    .replace(/\s+/g," ");
+}
+
+function checkAnswers(){
+  const item = current();
+  const inputs = [...$("testTable").querySelectorAll("input")];
+
+  inputs.forEach((input,i)=>{
+    input.disabled = true;
+    const correct = normalize(input.value) === normalize(item.f[i]);
+    const result = $("testTable").querySelector(`[data-result="${i}"]`);
+
+    if(correct){
+      input.classList.add("correct");
+      result.className = "result ok";
+      result.textContent = "✓ correct / richtig";
+    } else {
+      input.classList.add("wrong");
+      result.className = "result bad";
+      result.textContent = `✗ correct answer / richtige Antwort: ${item.f[i]}`;
+    }
+  });
+
+  $("checkBtn").classList.add("hidden");
+  $("nextBtn").classList.remove("hidden");
+  $("hint").textContent = "Check the answers, then continue. The next verb will start in Study mode again.";
+  mode = "checked";
+}
+
+function nextVerb(){
+  if(pos < order.length - 1){
+    pos += 1;
+  } else {
+    const previousLast = order[order.length - 1];
+    order = shuffledIndices(previousLast);
+    pos = 0;
+    round += 1;
+  }
+  renderStudy();
+}
+
+function reshuffleNow(){
+  const currentIndex = order[pos];
+  order = shuffledIndices();
+  // If possible, keep the current verb from immediately reappearing after manual reshuffle.
+  if(order[0] === currentIndex && order.length > 1){
+    [order[0],order[1]] = [order[1],order[0]];
+  }
+  pos = 0;
+  round = 1;
+  renderStudy();
+}
+
+$("startBtn").addEventListener("click", startTest);
+$("checkBtn").addEventListener("click", checkAnswers);
+$("nextBtn").addEventListener("click", nextVerb);
+$("reshuffleBtn").addEventListener("click", reshuffleNow);
+
+document.querySelectorAll(".char-btn").forEach(button => {
+  button.addEventListener("mousedown", e => e.preventDefault());
+
+  button.addEventListener("click", () => {
+    if(mode !== "test") return;
+
+    const inputs = [...$("testTable").querySelectorAll("input")];
+    const target = activeInput && !activeInput.disabled
+      ? activeInput
+      : inputs.find(input => !input.disabled);
+
+    if(!target) return;
+
+    const char = button.dataset.char;
+    const start = typeof target.selectionStart === "number"
+      ? target.selectionStart
+      : target.value.length;
+    const end = typeof target.selectionEnd === "number"
+      ? target.selectionEnd
+      : target.value.length;
+
+    target.value =
+      target.value.slice(0, start) +
+      char +
+      target.value.slice(end);
+
+    const caret = start + char.length;
+    target.focus();
+    target.setSelectionRange(caret, caret);
+    activeInput = target;
+    target.dispatchEvent(new Event("input", {bubbles:true}));
+  });
+});
+
+document.addEventListener("keydown",(e)=>{
+  if(e.key !== "Enter") return;
+  if(mode === "study"){
+    startTest();
+  } else if(mode === "test" && !$("checkBtn").disabled){
+    checkAnswers();
+  } else if(mode === "checked"){
+    nextVerb();
+  }
+});
+
+order = shuffledIndices();
+renderStudy();
+</script>
+</body>
+</html>

@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>German Drill</title>
+  <style>
+    :root{
+      --bg:#f4f4f1;
+      --card:#ffffff;
+      --text:#181818;
+      --muted:#6d6d68;
+      --border:#deded8;
+      --shadow:0 10px 34px rgba(0,0,0,.06);
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      background:var(--bg);
+      color:var(--text);
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,"Noto Sans",sans-serif;
+    }
+    .wrap{
+      width:min(820px,calc(100% - 28px));
+      margin:38px auto 70px;
+    }
+    .eyebrow{
+      text-transform:uppercase;
+      letter-spacing:.18em;
+      font-size:12px;
+      color:var(--muted);
+      margin-bottom:7px;
+    }
+    h1{
+      margin:0;
+      font-size:30px;
+      letter-spacing:-.5px;
+    }
+    .sub{
+      margin-top:7px;
+      color:var(--muted);
+      font-size:14px;
+    }
+    .grid{
+      margin-top:24px;
+      display:grid;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:14px;
+    }
+    .card{
+      display:block;
+      text-decoration:none;
+      color:inherit;
+      background:var(--card);
+      border:1px solid var(--border);
+      border-radius:18px;
+      padding:20px;
+      min-height:138px;
+      box-shadow:var(--shadow);
+      transition:transform .15s ease,border-color .15s ease;
+    }
+    .card:hover{
+      transform:translateY(-1px);
+      border-color:#9c9c96;
+    }
+    .top{
+      display:flex;
+      justify-content:space-between;
+      gap:14px;
+      align-items:flex-start;
+    }
+    .title{
+      font-size:18px;
+      font-weight:760;
+    }
+    .desc{
+      margin-top:5px;
+      color:var(--muted);
+      font-size:14px;
+      line-height:1.45;
+    }
+    .badge{
+      border:1px solid var(--border);
+      border-radius:999px;
+      padding:6px 9px;
+      font-size:12px;
+      color:var(--muted);
+      white-space:nowrap;
+      background:#fafaf8;
+    }
+    .flow{
+      margin-top:26px;
+      color:var(--muted);
+      font-size:12px;
+    }
+    .coming{
+      opacity:.5;
+      pointer-events:none;
+      border-style:dashed;
+      box-shadow:none;
+    }
+    .footer{
+      margin-top:22px;
+      text-align:center;
+      color:#8b8b85;
+      font-size:12px;
+    }
+    @media(max-width:650px){
+      .wrap{margin-top:20px}
+      .grid{grid-template-columns:1fr}
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <div class="eyebrow">German Drill</div>
+    <h1>Choose a drill</h1>
+    <div class="sub">Quick practice. No tracking. No streaks. Just drill.</div>
+
+    <section class="grid">
+      <a class="card" href="a1-present.html">
+        <div class="top">
+          <div>
+            <div class="title">A1 · Präsens</div>
+            <div class="desc">Present tense verb conjugation</div>
+          </div>
+          <div class="badge">61 verbs</div>
+        </div>
+        <div class="flow">Study → Test 6 forms → Check → Next</div>
+      </a>
+
+      <a class="card" href="definite-articles.html">
+        <div class="top">
+          <div>
+            <div class="title">Definite Articles</div>
+            <div class="desc">4 cases × gender / plural</div>
+          </div>
+          <div class="badge">16 forms</div>
+        </div>
+        <div class="flow">Prompt → Type → Check → Next</div>
+      </a>
+
+      <div class="card coming" aria-disabled="true">
+        <div class="top">
+          <div>
+            <div class="title">A2 · Präsens</div>
+            <div class="desc">Present tense verb conjugation</div>
+          </div>
+          <div class="badge">Later</div>
+        </div>
+        <div class="flow">Ready to add when needed</div>
+      </div>
+
+      <div class="card coming" aria-disabled="true">
+        <div class="top">
+          <div>
+            <div class="title">Perfekt</div>
+            <div class="desc">Past participles + auxiliary verbs</div>
+          </div>
+          <div class="badge">Later</div>
+        </div>
+        <div class="flow">Future expansion</div>
+      </div>
+    </section>
+
+    <div class="footer">Personal German drill tools</div>
+  </main>
+</body>
+</html>
