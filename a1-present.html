@@ -197,6 +197,16 @@
       background:#ecece7;
       color:#222;
     }
+    .skip{
+      background:#fff3cf;
+      color:#6f4300;
+      border:2px solid #d69a24;
+      font-weight:850;
+      box-shadow:0 0 0 2px rgba(214,154,36,.10);
+    }
+    .skip:hover{
+      background:#ffe9a8;
+    }
     button:disabled{
       opacity:.38;
       cursor:not-allowed;
@@ -303,6 +313,7 @@
       <button class="primary hidden" id="checkBtn" disabled>Check answers / Antworten prüfen</button>
       <button class="primary hidden" id="nextBtn">Next / Weiter →</button>
       <button class="secondary" id="reshuffleBtn">Reshuffle / Neu mischen</button>
+      <button class="skip" id="skipBtn">Skip / Überspringen →</button>
     </div>
 
     <div class="hint" id="hint">
@@ -457,6 +468,7 @@ function renderStudy(){
   $("startBtn").classList.remove("hidden");
   $("checkBtn").classList.add("hidden");
   $("nextBtn").classList.add("hidden");
+  $("skipBtn").classList.remove("hidden");
   $("checkBtn").disabled = true;
   $("hint").innerHTML =
     `First look at the six forms. When you are ready, start the test. ` +
@@ -471,6 +483,7 @@ function startTest(){
   $("startBtn").classList.add("hidden");
   $("checkBtn").classList.remove("hidden");
   $("nextBtn").classList.add("hidden");
+  $("skipBtn").classList.add("hidden");
   $("hint").textContent = "Fill in all six forms before checking your answers.";
   mode = "test";
 
@@ -549,6 +562,7 @@ $("startBtn").addEventListener("click", startTest);
 $("checkBtn").addEventListener("click", checkAnswers);
 $("nextBtn").addEventListener("click", nextVerb);
 $("reshuffleBtn").addEventListener("click", reshuffleNow);
+$("skipBtn").addEventListener("click", nextVerb);
 
 document.querySelectorAll(".char-btn").forEach(button => {
   button.addEventListener("mousedown", e => e.preventDefault());
