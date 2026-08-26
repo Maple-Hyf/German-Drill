@@ -80,6 +80,101 @@
       width:0%;
       transition:width .2s ease;
     }
+
+    .filter-shell{
+      margin-bottom:14px;
+    }
+    .filter-summary-row{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+    }
+    .filter-summary{
+      color:var(--muted);
+      font-size:12px;
+      line-height:1.45;
+      min-width:0;
+    }
+    .filter-toggle{
+      flex:0 0 auto;
+      padding:7px 10px;
+      border:1px solid var(--border);
+      border-radius:9px;
+      background:#ecece7;
+      color:#333;
+      font-size:12px;
+      font-weight:800;
+    }
+    .filter-panel{
+      margin-top:10px;
+      padding:14px;
+      border:1px solid var(--border);
+      border-radius:14px;
+      background:#fafaf8;
+    }
+    .filter-group + .filter-group{
+      margin-top:14px;
+    }
+    .filter-label{
+      margin-bottom:7px;
+      color:#555;
+      font-size:11px;
+      font-weight:800;
+      letter-spacing:.02em;
+    }
+    .filter-chips{
+      display:flex;
+      flex-wrap:wrap;
+      gap:7px;
+    }
+    .filter-chip{
+      padding:7px 9px;
+      border:1px solid var(--border);
+      border-radius:999px;
+      background:#fff;
+      color:#555;
+      font-size:11px;
+      font-weight:750;
+    }
+    .filter-chip.active{
+      background:#222;
+      border-color:#222;
+      color:#fff;
+    }
+    .filter-actions{
+      display:flex;
+      align-items:center;
+      gap:9px;
+      flex-wrap:wrap;
+      margin-top:14px;
+    }
+    .apply-filter{
+      padding:9px 12px;
+      border-radius:10px;
+      background:#171717;
+      color:#fff;
+      font-size:12px;
+      font-weight:800;
+    }
+    .reset-filter{
+      padding:9px 12px;
+      border-radius:10px;
+      background:#ecece7;
+      color:#333;
+      font-size:12px;
+      font-weight:800;
+    }
+    .filter-status{
+      color:var(--muted);
+      font-size:11px;
+      line-height:1.4;
+    }
+    .filter-status.error{
+      color:#a33;
+      font-weight:700;
+    }
+
     .card{
       background:var(--card);
       border:1px solid var(--border);
@@ -286,6 +381,9 @@
       .badge.long-type{white-space:normal;border-radius:12px}
       .badge.long-type .tag-part{display:block}
       .badge.long-type .tag-sep{display:none}
+      .filter-summary-row{align-items:flex-start}
+      .filter-panel{padding:12px}
+      .filter-chip{font-size:10.5px}
     }
   </style>
 </head>
@@ -304,6 +402,42 @@
   </div>
 
   <div class="bar"><div id="barFill"></div></div>
+
+  <div class="filter-shell">
+    <div class="filter-summary-row">
+      <div class="filter-summary" id="filterSummary"></div>
+      <button type="button" class="filter-toggle" id="filterToggle">Filter</button>
+    </div>
+
+    <div class="filter-panel hidden" id="filterPanel">
+      <div class="filter-group">
+        <div class="filter-label">Priority</div>
+        <div class="filter-chips" id="priorityFilters">
+          <button type="button" class="filter-chip" data-priority="Core A1">Core A1</button>
+          <button type="button" class="filter-chip" data-priority="Extended A1">Extended A1</button>
+        </div>
+      </div>
+
+      <div class="filter-group">
+        <div class="filter-label">Conjugation type / Konjugationstyp</div>
+        <div class="filter-chips" id="typeFilters">
+          <button type="button" class="filter-chip" data-type="regular">Regular</button>
+          <button type="button" class="filter-chip" data-type="extra-e">Extra -e</button>
+          <button type="button" class="filter-chip" data-type="sibilant">Sibilant stem</button>
+          <button type="button" class="filter-chip" data-type="stem-change">Stem change</button>
+          <button type="button" class="filter-chip" data-type="separable">Separable</button>
+          <button type="button" class="filter-chip" data-type="modal">Modal</button>
+          <button type="button" class="filter-chip" data-type="irregular">Irregular</button>
+        </div>
+      </div>
+
+      <div class="filter-actions">
+        <button type="button" class="apply-filter" id="applyFilterBtn">Apply filter</button>
+        <button type="button" class="reset-filter" id="resetFilterBtn">All 100</button>
+        <span class="filter-status" id="filterStatus"></span>
+      </div>
+    </div>
+  </div>
 
   <div class="card">
     <div class="topline">
@@ -354,7 +488,7 @@
     </div>
   </div>
 
-  <div class="footer">A1 core verbs · Präsens only · random order · endless repeat · ä ö ü ß helper</div>
+  <div class="footer">100 A1 verbs · filterable by priority + conjugation type · random endless repeat · ä ö ü ß helper</div>
 </div>
 
 <script>
@@ -463,6 +597,47 @@ const verbs = [
 
 const pronouns = ["ich","du","er / sie / es","wir","ihr","sie / Sie"];
 
+const FILTER_STORAGE_KEY = "german-drill-a1-filter-v1";
+
+const filterTypes = {
+  "regular": {
+    label:"Regular",
+    match:item => item.type.startsWith("standard endings")
+  },
+  "extra-e": {
+    label:"Extra -e",
+    match:item => item.type.startsWith("extra -e")
+  },
+  "sibilant": {
+    label:"Sibilant stem",
+    match:item => item.type.startsWith("sibilant stem")
+  },
+  "stem-change": {
+    label:"Stem change",
+    match:item => item.type.startsWith("stem change")
+  },
+  "separable": {
+    label:"Separable",
+    match:item => item.type.startsWith("separable")
+  },
+  "modal": {
+    label:"Modal",
+    match:item => item.type.startsWith("modal")
+  },
+  "irregular": {
+    label:"Irregular",
+    match:item => item.type.startsWith("irregular")
+  }
+};
+
+const ALL_PRIORITIES = ["Core A1","Extended A1"];
+const ALL_TYPES = Object.keys(filterTypes);
+
+let selectedPriorities = new Set(ALL_PRIORITIES);
+let selectedTypes = new Set(ALL_TYPES);
+let draftPriorities = new Set(ALL_PRIORITIES);
+let draftTypes = new Set(ALL_TYPES);
+
 let order = [];
 let pos = 0;
 let round = 1;
@@ -471,8 +646,101 @@ let activeInput = null;
 
 const $ = id => document.getElementById(id);
 
+function typeKeyFor(item){
+  return ALL_TYPES.find(key => filterTypes[key].match(item)) || null;
+}
+
+function eligibleIndices(priorities = selectedPriorities, types = selectedTypes){
+  return verbs
+    .map((item,i)=>({item,i}))
+    .filter(({item}) =>
+      priorities.has(item.level) &&
+      types.has(typeKeyFor(item))
+    )
+    .map(({i})=>i);
+}
+
+function loadFilterSettings(){
+  try{
+    const saved = JSON.parse(localStorage.getItem(FILTER_STORAGE_KEY) || "null");
+    if(saved){
+      const priorities = Array.isArray(saved.priorities)
+        ? saved.priorities.filter(x => ALL_PRIORITIES.includes(x))
+        : [];
+      const types = Array.isArray(saved.types)
+        ? saved.types.filter(x => ALL_TYPES.includes(x))
+        : [];
+
+      if(priorities.length) selectedPriorities = new Set(priorities);
+      if(types.length) selectedTypes = new Set(types);
+    }
+  }catch{}
+
+  draftPriorities = new Set(selectedPriorities);
+  draftTypes = new Set(selectedTypes);
+}
+
+function saveFilterSettings(){
+  localStorage.setItem(FILTER_STORAGE_KEY, JSON.stringify({
+    priorities:[...selectedPriorities],
+    types:[...selectedTypes]
+  }));
+}
+
+function filterSummaryText(){
+  const count = eligibleIndices().length;
+
+  let priorityText;
+  if(selectedPriorities.size === 2) priorityText = "Core + Extended";
+  else priorityText = [...selectedPriorities][0] || "No priority";
+
+  let typeText;
+  if(selectedTypes.size === ALL_TYPES.length){
+    typeText = "All types";
+  } else if(selectedTypes.size <= 2){
+    typeText = [...selectedTypes].map(k=>filterTypes[k].label).join(" + ");
+  } else {
+    typeText = `${selectedTypes.size} types`;
+  }
+
+  return `${priorityText} · ${typeText} · ${count} verb${count===1?"":"s"}`;
+}
+
+function renderFilterUI(){
+  document.querySelectorAll("[data-priority]").forEach(btn=>{
+    btn.classList.toggle("active", draftPriorities.has(btn.dataset.priority));
+  });
+
+  document.querySelectorAll("[data-type]").forEach(btn=>{
+    btn.classList.toggle("active", draftTypes.has(btn.dataset.type));
+  });
+
+  const draftCount = eligibleIndices(draftPriorities,draftTypes).length;
+  const status = $("filterStatus");
+
+  if(!draftPriorities.size){
+    status.textContent = "Select at least one priority.";
+    status.className = "filter-status error";
+    $("applyFilterBtn").disabled = true;
+  } else if(!draftTypes.size){
+    status.textContent = "Select at least one conjugation type.";
+    status.className = "filter-status error";
+    $("applyFilterBtn").disabled = true;
+  } else if(!draftCount){
+    status.textContent = "0 verbs match this combination.";
+    status.className = "filter-status error";
+    $("applyFilterBtn").disabled = true;
+  } else {
+    status.textContent = `${draftCount} verb${draftCount===1?"":"s"} in this filter`;
+    status.className = "filter-status";
+    $("applyFilterBtn").disabled = false;
+  }
+
+  $("filterSummary").textContent = filterSummaryText();
+}
+
 function shuffledIndices(previousLast = null){
-  const arr = verbs.map((_,i)=>i);
+  const arr = eligibleIndices();
   for(let i=arr.length-1;i>0;i--){
     const j = Math.floor(Math.random()*(i+1));
     [arr[i],arr[j]] = [arr[j],arr[i]];
@@ -640,6 +908,63 @@ function reshuffleNow(){
   renderStudy();
 }
 
+$("filterToggle").addEventListener("click", ()=>{
+  const panel = $("filterPanel");
+  const opening = panel.classList.contains("hidden");
+
+  if(opening){
+    draftPriorities = new Set(selectedPriorities);
+    draftTypes = new Set(selectedTypes);
+    renderFilterUI();
+    panel.classList.remove("hidden");
+    $("filterToggle").textContent = "Close";
+  } else {
+    panel.classList.add("hidden");
+    $("filterToggle").textContent = "Filter";
+  }
+});
+
+document.querySelectorAll("[data-priority]").forEach(btn=>{
+  btn.addEventListener("click", ()=>{
+    const key = btn.dataset.priority;
+    if(draftPriorities.has(key)) draftPriorities.delete(key);
+    else draftPriorities.add(key);
+    renderFilterUI();
+  });
+});
+
+document.querySelectorAll("[data-type]").forEach(btn=>{
+  btn.addEventListener("click", ()=>{
+    const key = btn.dataset.type;
+    if(draftTypes.has(key)) draftTypes.delete(key);
+    else draftTypes.add(key);
+    renderFilterUI();
+  });
+});
+
+$("applyFilterBtn").addEventListener("click", ()=>{
+  const next = eligibleIndices(draftPriorities,draftTypes);
+  if(!next.length) return;
+
+  selectedPriorities = new Set(draftPriorities);
+  selectedTypes = new Set(draftTypes);
+  saveFilterSettings();
+
+  order = shuffledIndices();
+  pos = 0;
+  round = 1;
+  $("filterPanel").classList.add("hidden");
+  $("filterToggle").textContent = "Filter";
+  renderFilterUI();
+  renderStudy();
+});
+
+$("resetFilterBtn").addEventListener("click", ()=>{
+  draftPriorities = new Set(ALL_PRIORITIES);
+  draftTypes = new Set(ALL_TYPES);
+  renderFilterUI();
+});
+
 $("startBtn").addEventListener("click", startTest);
 $("checkBtn").addEventListener("click", checkAnswers);
 $("nextBtn").addEventListener("click", nextVerb);
@@ -691,6 +1016,8 @@ document.addEventListener("keydown",(e)=>{
   }
 });
 
+loadFilterSettings();
+renderFilterUI();
 order = shuffledIndices();
 renderStudy();
 </script>
