@@ -1,4 +1,4 @@
-const CACHE_NAME = "german-drill-pwa-v1";
+const CACHE_NAME = "german-drill-pwa-v2";
 const PRECACHE = [
   "./",
   "./index.html",

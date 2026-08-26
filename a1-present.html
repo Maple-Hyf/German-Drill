@@ -104,13 +104,35 @@
       font-size:16px;
       color:var(--muted);
     }
+    .tag-stack{
+      display:flex;
+      flex-direction:column;
+      align-items:flex-end;
+      gap:6px;
+      max-width:58%;
+      flex:0 1 auto;
+    }
     .badge{
       border:1px solid var(--border);
       background:#fafaf8;
       color:#555;
-      border-radius:999px;
+      border-radius:14px;
       padding:6px 10px;
       font-size:12px;
+      line-height:1.35;
+      text-align:right;
+      white-space:nowrap;
+      max-width:100%;
+    }
+    .level-badge{
+      border:1px solid #e7e7e1;
+      background:#f7f7f4;
+      color:#85857f;
+      border-radius:999px;
+      padding:3px 7px;
+      font-size:10px;
+      font-weight:650;
+      letter-spacing:.02em;
       white-space:nowrap;
     }
     .mode-title{
@@ -260,6 +282,10 @@
       .card{padding:20px}
       .row{grid-template-columns:86px 1fr}
       .verb{font-size:31px}
+      .tag-stack{max-width:52%}
+      .badge.long-type{white-space:normal;border-radius:12px}
+      .badge.long-type .tag-part{display:block}
+      .badge.long-type .tag-sep{display:none}
     }
   </style>
 </head>
@@ -269,7 +295,7 @@
   <div class="header">
     <div>
       <h1>A1 Präsens Verb Trainer</h1>
-      <div class="subtitle">Study once → Test all 6 forms → Check → Next verb</div>
+      <div class="subtitle">100 A1 verbs · Study → Test all 6 forms → Check → Next</div>
     </div>
     <div class="meta">
       <div id="roundText"></div>
@@ -285,7 +311,14 @@
         <div class="verb" id="verb"></div>
         <div class="meaning" id="meaning"></div>
       </div>
-      <div class="badge" id="type"></div>
+      <div class="tag-stack">
+        <div class="badge" id="type">
+          <span class="tag-part" id="typeEn"></span>
+          <span class="tag-sep"> / </span>
+          <span class="tag-part" id="typeDe"></span>
+        </div>
+        <div class="level-badge" id="level"></div>
+      </div>
     </div>
 
     <section id="studySection">
@@ -326,67 +359,106 @@
 
 <script>
 const verbs = [
-  {v:"sein", en:"to be", type:"irregular / unregelmäßig", f:["bin","bist","ist","sind","seid","sind"]},
-  {v:"haben", en:"to have", type:"irregular / unregelmäßig", f:["habe","hast","hat","haben","habt","haben"]},
-  {v:"werden", en:"to become", type:"irregular / unregelmäßig", f:["werde","wirst","wird","werden","werdet","werden"]},
-  {v:"heißen", en:"to be called", type:"sibilant stem / Zischlaut-Stamm", f:["heiße","heißt","heißt","heißen","heißt","heißen"]},
-  {v:"wohnen", en:"to live / reside", type:"standard endings / Standardendungen", f:["wohne","wohnst","wohnt","wohnen","wohnt","wohnen"]},
-  {v:"leben", en:"to live", type:"standard endings / Standardendungen", f:["lebe","lebst","lebt","leben","lebt","leben"]},
-  {v:"kommen", en:"to come", type:"standard endings / Standardendungen", f:["komme","kommst","kommt","kommen","kommt","kommen"]},
-  {v:"gehen", en:"to go / walk", type:"standard endings / Standardendungen", f:["gehe","gehst","geht","gehen","geht","gehen"]},
-  {v:"machen", en:"to do / make", type:"standard endings / Standardendungen", f:["mache","machst","macht","machen","macht","machen"]},
-  {v:"lernen", en:"to learn", type:"standard endings / Standardendungen", f:["lerne","lernst","lernt","lernen","lernt","lernen"]},
-  {v:"arbeiten", en:"to work", type:"extra -e / zusätzliches -e", f:["arbeite","arbeitest","arbeitet","arbeiten","arbeitet","arbeiten"]},
-  {v:"spielen", en:"to play", type:"standard endings / Standardendungen", f:["spiele","spielst","spielt","spielen","spielt","spielen"]},
-  {v:"kaufen", en:"to buy", type:"standard endings / Standardendungen", f:["kaufe","kaufst","kauft","kaufen","kauft","kaufen"]},
-  {v:"brauchen", en:"to need", type:"standard endings / Standardendungen", f:["brauche","brauchst","braucht","brauchen","braucht","brauchen"]},
-  {v:"fragen", en:"to ask", type:"standard endings / Standardendungen", f:["frage","fragst","fragt","fragen","fragt","fragen"]},
-  {v:"sagen", en:"to say", type:"standard endings / Standardendungen", f:["sage","sagst","sagt","sagen","sagt","sagen"]},
-  {v:"hören", en:"to hear / listen", type:"standard endings / Standardendungen", f:["höre","hörst","hört","hören","hört","hören"]},
-  {v:"suchen", en:"to look for", type:"standard endings / Standardendungen", f:["suche","suchst","sucht","suchen","sucht","suchen"]},
-  {v:"warten", en:"to wait", type:"extra -e / zusätzliches -e", f:["warte","wartest","wartet","warten","wartet","warten"]},
-  {v:"reisen", en:"to travel", type:"sibilant stem / Zischlaut-Stamm", f:["reise","reist","reist","reisen","reist","reisen"]},
-  {v:"kochen", en:"to cook", type:"standard endings / Standardendungen", f:["koche","kochst","kocht","kochen","kocht","kochen"]},
-  {v:"trinken", en:"to drink", type:"standard endings / Standardendungen", f:["trinke","trinkst","trinkt","trinken","trinkt","trinken"]},
-  {v:"schreiben", en:"to write", type:"standard endings / Standardendungen", f:["schreibe","schreibst","schreibt","schreiben","schreibt","schreiben"]},
-  {v:"verstehen", en:"to understand", type:"standard endings / Standardendungen", f:["verstehe","verstehst","versteht","verstehen","versteht","verstehen"]},
-  {v:"stehen", en:"to stand", type:"standard endings / Standardendungen", f:["stehe","stehst","steht","stehen","steht","stehen"]},
-  {v:"sitzen", en:"to sit", type:"sibilant stem / Zischlaut-Stamm", f:["sitze","sitzt","sitzt","sitzen","sitzt","sitzen"]},
-  {v:"liegen", en:"to lie / be located", type:"standard endings / Standardendungen", f:["liege","liegst","liegt","liegen","liegt","liegen"]},
-  {v:"finden", en:"to find", type:"extra -e / zusätzliches -e", f:["finde","findest","findet","finden","findet","finden"]},
-  {v:"kennen", en:"to know / be familiar with", type:"standard endings / Standardendungen", f:["kenne","kennst","kennt","kennen","kennt","kennen"]},
-  {v:"wissen", en:"to know (a fact)", type:"irregular / unregelmäßig", f:["weiß","weißt","weiß","wissen","wisst","wissen"]},
-  {v:"bleiben", en:"to stay / remain", type:"standard endings / Standardendungen", f:["bleibe","bleibst","bleibt","bleiben","bleibt","bleiben"]},
-  {v:"bringen", en:"to bring", type:"standard endings / Standardendungen", f:["bringe","bringst","bringt","bringen","bringt","bringen"]},
-  {v:"bezahlen", en:"to pay", type:"standard endings / Standardendungen", f:["bezahle","bezahlst","bezahlt","bezahlen","bezahlt","bezahlen"]},
-  {v:"bestellen", en:"to order", type:"standard endings / Standardendungen", f:["bestelle","bestellst","bestellt","bestellen","bestellt","bestellen"]},
-  {v:"öffnen", en:"to open", type:"-n stem / Stamm auf -n", f:["öffne","öffnest","öffnet","öffnen","öffnet","öffnen"]},
-  {v:"schließen", en:"to close", type:"sibilant stem / Zischlaut-Stamm", f:["schließe","schließt","schließt","schließen","schließt","schließen"]},
-  {v:"fahren", en:"to drive / go by vehicle", type:"stem change a → ä / Stammwechsel a → ä", f:["fahre","fährst","fährt","fahren","fahrt","fahren"]},
-  {v:"schlafen", en:"to sleep", type:"stem change a → ä / Stammwechsel a → ä", f:["schlafe","schläfst","schläft","schlafen","schlaft","schlafen"]},
-  {v:"laufen", en:"to run / walk", type:"stem change au → äu / Stammwechsel au → äu", f:["laufe","läufst","läuft","laufen","lauft","laufen"]},
-  {v:"lesen", en:"to read", type:"stem change e → ie / Stammwechsel e → ie", f:["lese","liest","liest","lesen","lest","lesen"]},
-  {v:"sehen", en:"to see", type:"stem change e → ie / Stammwechsel e → ie", f:["sehe","siehst","sieht","sehen","seht","sehen"]},
-  {v:"sprechen", en:"to speak", type:"stem change e → i / Stammwechsel e → i", f:["spreche","sprichst","spricht","sprechen","sprecht","sprechen"]},
-  {v:"essen", en:"to eat", type:"stem change e → i / Stammwechsel e → i", f:["esse","isst","isst","essen","esst","essen"]},
-  {v:"nehmen", en:"to take", type:"stem change e → i / Stammwechsel e → i", f:["nehme","nimmst","nimmt","nehmen","nehmt","nehmen"]},
-  {v:"geben", en:"to give", type:"stem change e → i / Stammwechsel e → i", f:["gebe","gibst","gibt","geben","gebt","geben"]},
-  {v:"treffen", en:"to meet", type:"stem change e → i / Stammwechsel e → i", f:["treffe","triffst","trifft","treffen","trefft","treffen"]},
-  {v:"helfen", en:"to help", type:"stem change e → i / Stammwechsel e → i", f:["helfe","hilfst","hilft","helfen","helft","helfen"]},
-  {v:"tragen", en:"to carry / wear", type:"stem change a → ä / Stammwechsel a → ä", f:["trage","trägst","trägt","tragen","tragt","tragen"]},
-  {v:"waschen", en:"to wash", type:"stem change a → ä / Stammwechsel a → ä", f:["wasche","wäschst","wäscht","waschen","wascht","waschen"]},
-  {v:"können", en:"can / to be able to", type:"modal / Modalverb", f:["kann","kannst","kann","können","könnt","können"]},
-  {v:"müssen", en:"must / to have to", type:"modal / Modalverb", f:["muss","musst","muss","müssen","müsst","müssen"]},
-  {v:"wollen", en:"to want", type:"modal / Modalverb", f:["will","willst","will","wollen","wollt","wollen"]},
-  {v:"dürfen", en:"may / to be allowed to", type:"modal / Modalverb", f:["darf","darfst","darf","dürfen","dürft","dürfen"]},
-  {v:"sollen", en:"should / to be supposed to", type:"modal / Modalverb", f:["soll","sollst","soll","sollen","sollt","sollen"]},
-  {v:"mögen", en:"to like", type:"modal / Modalverb", f:["mag","magst","mag","mögen","mögt","mögen"]},
-  {v:"anfangen", en:"to begin / start", type:"separable + a → ä / trennbar + a → ä", f:["fange an","fängst an","fängt an","fangen an","fangt an","fangen an"]},
-  {v:"aufstehen", en:"to get up", type:"separable / trennbar", f:["stehe auf","stehst auf","steht auf","stehen auf","steht auf","stehen auf"]},
-  {v:"einkaufen", en:"to shop", type:"separable / trennbar", f:["kaufe ein","kaufst ein","kauft ein","kaufen ein","kauft ein","kaufen ein"]},
-  {v:"anrufen", en:"to call / phone", type:"separable / trennbar", f:["rufe an","rufst an","ruft an","rufen an","ruft an","rufen an"]},
-  {v:"fernsehen", en:"to watch TV", type:"separable + e → ie / trennbar + e → ie", f:["sehe fern","siehst fern","sieht fern","sehen fern","seht fern","sehen fern"]},
-  {v:"einladen", en:"to invite", type:"separable + a → ä / trennbar + a → ä", f:["lade ein","lädst ein","lädt ein","laden ein","ladet ein","laden ein"]}
+  {v:"sein", en:"to be", type:"irregular / unregelmäßig", level:"Core A1", f:["bin","bist","ist","sind","seid","sind"]},
+  {v:"haben", en:"to have", type:"irregular / unregelmäßig", level:"Core A1", f:["habe","hast","hat","haben","habt","haben"]},
+  {v:"werden", en:"to become", type:"irregular / unregelmäßig", level:"Core A1", f:["werde","wirst","wird","werden","werdet","werden"]},
+  {v:"heißen", en:"to be called", type:"sibilant stem / Zischlaut-Stamm", level:"Core A1", f:["heiße","heißt","heißt","heißen","heißt","heißen"]},
+  {v:"wohnen", en:"to live / reside", type:"standard endings / Standardendungen", level:"Core A1", f:["wohne","wohnst","wohnt","wohnen","wohnt","wohnen"]},
+  {v:"leben", en:"to live", type:"standard endings / Standardendungen", level:"Extended A1", f:["lebe","lebst","lebt","leben","lebt","leben"]},
+  {v:"kommen", en:"to come", type:"standard endings / Standardendungen", level:"Core A1", f:["komme","kommst","kommt","kommen","kommt","kommen"]},
+  {v:"gehen", en:"to go / walk", type:"standard endings / Standardendungen", level:"Core A1", f:["gehe","gehst","geht","gehen","geht","gehen"]},
+  {v:"machen", en:"to do / make", type:"standard endings / Standardendungen", level:"Core A1", f:["mache","machst","macht","machen","macht","machen"]},
+  {v:"lernen", en:"to learn", type:"standard endings / Standardendungen", level:"Core A1", f:["lerne","lernst","lernt","lernen","lernt","lernen"]},
+  {v:"arbeiten", en:"to work", type:"extra -e / zusätzliches -e", level:"Core A1", f:["arbeite","arbeitest","arbeitet","arbeiten","arbeitet","arbeiten"]},
+  {v:"spielen", en:"to play", type:"standard endings / Standardendungen", level:"Core A1", f:["spiele","spielst","spielt","spielen","spielt","spielen"]},
+  {v:"kaufen", en:"to buy", type:"standard endings / Standardendungen", level:"Core A1", f:["kaufe","kaufst","kauft","kaufen","kauft","kaufen"]},
+  {v:"brauchen", en:"to need", type:"standard endings / Standardendungen", level:"Core A1", f:["brauche","brauchst","braucht","brauchen","braucht","brauchen"]},
+  {v:"fragen", en:"to ask", type:"standard endings / Standardendungen", level:"Core A1", f:["frage","fragst","fragt","fragen","fragt","fragen"]},
+  {v:"sagen", en:"to say", type:"standard endings / Standardendungen", level:"Core A1", f:["sage","sagst","sagt","sagen","sagt","sagen"]},
+  {v:"hören", en:"to hear / listen", type:"standard endings / Standardendungen", level:"Core A1", f:["höre","hörst","hört","hören","hört","hören"]},
+  {v:"suchen", en:"to look for", type:"standard endings / Standardendungen", level:"Core A1", f:["suche","suchst","sucht","suchen","sucht","suchen"]},
+  {v:"warten", en:"to wait", type:"extra -e / zusätzliches -e", level:"Core A1", f:["warte","wartest","wartet","warten","wartet","warten"]},
+  {v:"reisen", en:"to travel", type:"sibilant stem / Zischlaut-Stamm", level:"Extended A1", f:["reise","reist","reist","reisen","reist","reisen"]},
+  {v:"kochen", en:"to cook", type:"standard endings / Standardendungen", level:"Core A1", f:["koche","kochst","kocht","kochen","kocht","kochen"]},
+  {v:"trinken", en:"to drink", type:"standard endings / Standardendungen", level:"Core A1", f:["trinke","trinkst","trinkt","trinken","trinkt","trinken"]},
+  {v:"schreiben", en:"to write", type:"standard endings / Standardendungen", level:"Core A1", f:["schreibe","schreibst","schreibt","schreiben","schreibt","schreiben"]},
+  {v:"verstehen", en:"to understand", type:"standard endings / Standardendungen", level:"Core A1", f:["verstehe","verstehst","versteht","verstehen","versteht","verstehen"]},
+  {v:"stehen", en:"to stand", type:"standard endings / Standardendungen", level:"Extended A1", f:["stehe","stehst","steht","stehen","steht","stehen"]},
+  {v:"sitzen", en:"to sit", type:"sibilant stem / Zischlaut-Stamm", level:"Extended A1", f:["sitze","sitzt","sitzt","sitzen","sitzt","sitzen"]},
+  {v:"liegen", en:"to lie / be located", type:"standard endings / Standardendungen", level:"Extended A1", f:["liege","liegst","liegt","liegen","liegt","liegen"]},
+  {v:"finden", en:"to find", type:"extra -e / zusätzliches -e", level:"Core A1", f:["finde","findest","findet","finden","findet","finden"]},
+  {v:"kennen", en:"to know / be familiar with", type:"standard endings / Standardendungen", level:"Core A1", f:["kenne","kennst","kennt","kennen","kennt","kennen"]},
+  {v:"wissen", en:"to know (a fact)", type:"irregular / unregelmäßig", level:"Extended A1", f:["weiß","weißt","weiß","wissen","wisst","wissen"]},
+  {v:"bleiben", en:"to stay / remain", type:"standard endings / Standardendungen", level:"Core A1", f:["bleibe","bleibst","bleibt","bleiben","bleibt","bleiben"]},
+  {v:"bringen", en:"to bring", type:"standard endings / Standardendungen", level:"Core A1", f:["bringe","bringst","bringt","bringen","bringt","bringen"]},
+  {v:"bezahlen", en:"to pay", type:"standard endings / Standardendungen", level:"Core A1", f:["bezahle","bezahlst","bezahlt","bezahlen","bezahlt","bezahlen"]},
+  {v:"bestellen", en:"to order", type:"standard endings / Standardendungen", level:"Core A1", f:["bestelle","bestellst","bestellt","bestellen","bestellt","bestellen"]},
+  {v:"öffnen", en:"to open", type:"extra -e / zusätzliches -e", level:"Core A1", f:["öffne","öffnest","öffnet","öffnen","öffnet","öffnen"]},
+  {v:"schließen", en:"to close", type:"sibilant stem / Zischlaut-Stamm", level:"Core A1", f:["schließe","schließt","schließt","schließen","schließt","schließen"]},
+  {v:"fahren", en:"to drive / go by vehicle", type:"stem change a → ä / Stammwechsel a → ä", level:"Core A1", f:["fahre","fährst","fährt","fahren","fahrt","fahren"]},
+  {v:"schlafen", en:"to sleep", type:"stem change a → ä / Stammwechsel a → ä", level:"Core A1", f:["schlafe","schläfst","schläft","schlafen","schlaft","schlafen"]},
+  {v:"laufen", en:"to run / walk", type:"stem change au → äu / Stammwechsel au → äu", level:"Extended A1", f:["laufe","läufst","läuft","laufen","lauft","laufen"]},
+  {v:"lesen", en:"to read", type:"stem change e → ie / Stammwechsel e → ie", level:"Core A1", f:["lese","liest","liest","lesen","lest","lesen"]},
+  {v:"sehen", en:"to see", type:"stem change e → ie / Stammwechsel e → ie", level:"Core A1", f:["sehe","siehst","sieht","sehen","seht","sehen"]},
+  {v:"sprechen", en:"to speak", type:"stem change e → i / Stammwechsel e → i", level:"Core A1", f:["spreche","sprichst","spricht","sprechen","sprecht","sprechen"]},
+  {v:"essen", en:"to eat", type:"stem change e → i / Stammwechsel e → i", level:"Core A1", f:["esse","isst","isst","essen","esst","essen"]},
+  {v:"nehmen", en:"to take", type:"stem change e → i / Stammwechsel e → i", level:"Core A1", f:["nehme","nimmst","nimmt","nehmen","nehmt","nehmen"]},
+  {v:"geben", en:"to give", type:"stem change e → i / Stammwechsel e → i", level:"Core A1", f:["gebe","gibst","gibt","geben","gebt","geben"]},
+  {v:"treffen", en:"to meet", type:"stem change e → i / Stammwechsel e → i", level:"Core A1", f:["treffe","triffst","trifft","treffen","trefft","treffen"]},
+  {v:"helfen", en:"to help", type:"stem change e → i / Stammwechsel e → i", level:"Core A1", f:["helfe","hilfst","hilft","helfen","helft","helfen"]},
+  {v:"tragen", en:"to carry / wear", type:"stem change a → ä / Stammwechsel a → ä", level:"Extended A1", f:["trage","trägst","trägt","tragen","tragt","tragen"]},
+  {v:"waschen", en:"to wash", type:"stem change a → ä / Stammwechsel a → ä", level:"Extended A1", f:["wasche","wäschst","wäscht","waschen","wascht","waschen"]},
+  {v:"können", en:"can / to be able to", type:"modal / Modalverb", level:"Core A1", f:["kann","kannst","kann","können","könnt","können"]},
+  {v:"müssen", en:"must / to have to", type:"modal / Modalverb", level:"Core A1", f:["muss","musst","muss","müssen","müsst","müssen"]},
+  {v:"wollen", en:"to want", type:"modal / Modalverb", level:"Core A1", f:["will","willst","will","wollen","wollt","wollen"]},
+  {v:"dürfen", en:"may / to be allowed to", type:"modal / Modalverb", level:"Core A1", f:["darf","darfst","darf","dürfen","dürft","dürfen"]},
+  {v:"sollen", en:"should / to be supposed to", type:"modal / Modalverb", level:"Core A1", f:["soll","sollst","soll","sollen","sollt","sollen"]},
+  {v:"mögen", en:"to like", type:"modal / Modalverb", level:"Core A1", f:["mag","magst","mag","mögen","mögt","mögen"]},
+  {v:"anfangen", en:"to begin / start", type:"separable + a → ä / trennbar + a → ä", level:"Core A1", f:["fange an","fängst an","fängt an","fangen an","fangt an","fangen an"]},
+  {v:"aufstehen", en:"to get up", type:"separable / trennbar", level:"Core A1", f:["stehe auf","stehst auf","steht auf","stehen auf","steht auf","stehen auf"]},
+  {v:"einkaufen", en:"to shop", type:"separable / trennbar", level:"Core A1", f:["kaufe ein","kaufst ein","kauft ein","kaufen ein","kauft ein","kaufen ein"]},
+  {v:"anrufen", en:"to call / phone", type:"separable / trennbar", level:"Core A1", f:["rufe an","rufst an","ruft an","rufen an","ruft an","rufen an"]},
+  {v:"fernsehen", en:"to watch TV", type:"separable + e → ie / trennbar + e → ie", level:"Core A1", f:["sehe fern","siehst fern","sieht fern","sehen fern","seht fern","sehen fern"]},
+  {v:"einladen", en:"to invite", type:"separable + a → ä / trennbar + a → ä", level:"Core A1", f:["lade ein","lädst ein","lädt ein","laden ein","ladet ein","laden ein"]},
+  {v:"antworten", en:"to answer", type:"extra -e / zusätzliches -e", level:"Core A1", f:["antworte","antwortest","antwortet","antworten","antwortet","antworten"]},
+  {v:"besuchen", en:"to visit", type:"standard endings / Standardendungen", level:"Core A1", f:["besuche","besuchst","besucht","besuchen","besucht","besuchen"]},
+  {v:"bekommen", en:"to get / receive", type:"standard endings / Standardendungen", level:"Core A1", f:["bekomme","bekommst","bekommt","bekommen","bekommt","bekommen"]},
+  {v:"buchstabieren", en:"to spell", type:"standard endings / Standardendungen", level:"Core A1", f:["buchstabiere","buchstabierst","buchstabiert","buchstabieren","buchstabiert","buchstabieren"]},
+  {v:"danken", en:"to thank", type:"standard endings / Standardendungen", level:"Extended A1", f:["danke","dankst","dankt","danken","dankt","danken"]},
+  {v:"dauern", en:"to last / take (time)", type:"standard endings / Standardendungen", level:"Extended A1", f:["dauere","dauerst","dauert","dauern","dauert","dauern"]},
+  {v:"feiern", en:"to celebrate", type:"standard endings / Standardendungen", level:"Extended A1", f:["feiere","feierst","feiert","feiern","feiert","feiern"]},
+  {v:"fliegen", en:"to fly", type:"standard endings / Standardendungen", level:"Core A1", f:["fliege","fliegst","fliegt","fliegen","fliegt","fliegen"]},
+  {v:"fotografieren", en:"to photograph", type:"standard endings / Standardendungen", level:"Extended A1", f:["fotografiere","fotografierst","fotografiert","fotografieren","fotografiert","fotografieren"]},
+  {v:"glauben", en:"to believe / think", type:"standard endings / Standardendungen", level:"Extended A1", f:["glaube","glaubst","glaubt","glauben","glaubt","glauben"]},
+  {v:"holen", en:"to get / fetch", type:"standard endings / Standardendungen", level:"Extended A1", f:["hole","holst","holt","holen","holt","holen"]},
+  {v:"kosten", en:"to cost", type:"extra -e / zusätzliches -e", level:"Core A1", f:["koste","kostest","kostet","kosten","kostet","kosten"]},
+  {v:"lachen", en:"to laugh", type:"standard endings / Standardendungen", level:"Extended A1", f:["lache","lachst","lacht","lachen","lacht","lachen"]},
+  {v:"mieten", en:"to rent", type:"extra -e / zusätzliches -e", level:"Core A1", f:["miete","mietest","mietet","mieten","mietet","mieten"]},
+  {v:"parken", en:"to park", type:"standard endings / Standardendungen", level:"Extended A1", f:["parke","parkst","parkt","parken","parkt","parken"]},
+  {v:"probieren", en:"to try", type:"standard endings / Standardendungen", level:"Extended A1", f:["probiere","probierst","probiert","probieren","probiert","probieren"]},
+  {v:"rauchen", en:"to smoke", type:"standard endings / Standardendungen", level:"Extended A1", f:["rauche","rauchst","raucht","rauchen","raucht","rauchen"]},
+  {v:"reservieren", en:"to reserve / book", type:"standard endings / Standardendungen", level:"Core A1", f:["reserviere","reservierst","reserviert","reservieren","reserviert","reservieren"]},
+  {v:"schicken", en:"to send", type:"standard endings / Standardendungen", level:"Core A1", f:["schicke","schickst","schickt","schicken","schickt","schicken"]},
+  {v:"schwimmen", en:"to swim", type:"standard endings / Standardendungen", level:"Extended A1", f:["schwimme","schwimmst","schwimmt","schwimmen","schwimmt","schwimmen"]},
+  {v:"tanzen", en:"to dance", type:"sibilant stem / Zischlaut-Stamm", level:"Extended A1", f:["tanze","tanzt","tanzt","tanzen","tanzt","tanzen"]},
+  {v:"telefonieren", en:"to phone", type:"standard endings / Standardendungen", level:"Core A1", f:["telefoniere","telefonierst","telefoniert","telefonieren","telefoniert","telefonieren"]},
+  {v:"üben", en:"to practise / practice", type:"standard endings / Standardendungen", level:"Extended A1", f:["übe","übst","übt","üben","übt","üben"]},
+  {v:"verdienen", en:"to earn", type:"standard endings / Standardendungen", level:"Extended A1", f:["verdiene","verdienst","verdient","verdienen","verdient","verdienen"]},
+  {v:"verkaufen", en:"to sell", type:"standard endings / Standardendungen", level:"Extended A1", f:["verkaufe","verkaufst","verkauft","verkaufen","verkauft","verkaufen"]},
+  {v:"vergessen", en:"to forget", type:"stem change e → i / Stammwechsel e → i", level:"Core A1", f:["vergesse","vergisst","vergisst","vergessen","vergesst","vergessen"]},
+  {v:"verlieren", en:"to lose", type:"standard endings / Standardendungen", level:"Extended A1", f:["verliere","verlierst","verliert","verlieren","verliert","verlieren"]},
+  {v:"zeigen", en:"to show", type:"standard endings / Standardendungen", level:"Core A1", f:["zeige","zeigst","zeigt","zeigen","zeigt","zeigen"]},
+  {v:"aufhören", en:"to stop / finish", type:"separable / trennbar", level:"Extended A1", f:["höre auf","hörst auf","hört auf","hören auf","hört auf","hören auf"]},
+  {v:"ausfüllen", en:"to fill out", type:"separable / trennbar", level:"Core A1", f:["fülle aus","füllst aus","füllt aus","füllen aus","füllt aus","füllen aus"]},
+  {v:"ausmachen", en:"to switch off", type:"separable / trennbar", level:"Extended A1", f:["mache aus","machst aus","macht aus","machen aus","macht aus","machen aus"]},
+  {v:"aussehen", en:"to look / appear", type:"separable + e → ie / trennbar + e → ie", level:"Extended A1", f:["sehe aus","siehst aus","sieht aus","sehen aus","seht aus","sehen aus"]},
+  {v:"aussteigen", en:"to get off / out", type:"separable / trennbar", level:"Core A1", f:["steige aus","steigst aus","steigt aus","steigen aus","steigt aus","steigen aus"]},
+  {v:"einsteigen", en:"to get in / board", type:"separable / trennbar", level:"Core A1", f:["steige ein","steigst ein","steigt ein","steigen ein","steigt ein","steigen ein"]},
+  {v:"mitbringen", en:"to bring along", type:"separable / trennbar", level:"Extended A1", f:["bringe mit","bringst mit","bringt mit","bringen mit","bringt mit","bringen mit"]},
+  {v:"mitkommen", en:"to come along", type:"separable / trennbar", level:"Extended A1", f:["komme mit","kommst mit","kommt mit","kommen mit","kommt mit","kommen mit"]},
+  {v:"mitnehmen", en:"to take along", type:"separable + e → i / trennbar + e → i", level:"Core A1", f:["nehme mit","nimmst mit","nimmt mit","nehmen mit","nehmt mit","nehmen mit"]},
+  {v:"abholen", en:"to pick up", type:"separable / trennbar", level:"Core A1", f:["hole ab","holst ab","holt ab","holen ab","holt ab","holen ab"]},
+  {v:"ankommen", en:"to arrive", type:"separable / trennbar", level:"Core A1", f:["komme an","kommst an","kommt an","kommen an","kommt an","kommen an"]}
 ];
 
 const pronouns = ["ich","du","er / sie / es","wir","ihr","sie / Sie"];
@@ -419,7 +491,17 @@ function renderStudy(){
   const item = current();
   $("verb").textContent = item.v;
   $("meaning").textContent = item.en;
-  $("type").textContent = item.type;
+
+  const typeParts = item.type.split(" / ");
+  $("typeEn").textContent = typeParts[0] || item.type;
+  $("typeDe").textContent = typeParts[1] || "";
+  $("type").classList.toggle("long-type", item.type.length >= 36);
+  $("type").querySelector(".tag-sep").style.display = typeParts[1] ? "" : "none";
+  $("typeDe").style.display = typeParts[1] ? "" : "none";
+
+  $("level").textContent = item.level;
+  $("level").title = "Study priority used by this trainer; not an official Goethe category.";
+
   $("roundText").textContent = `Round / Runde ${round}`;
   $("progressText").textContent = `${pos+1} / ${order.length}`;
   $("barFill").style.width = `${((pos+1)/order.length)*100}%`;
