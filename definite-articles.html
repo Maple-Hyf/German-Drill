@@ -402,9 +402,9 @@
       <div class="subtitle" id="pageSubtitle">Case + gender → choose the article → check → next</div>
     </div>
     <div class="header-side">
-      <div class="fill-history-tools hidden" id="fillHistoryTools">
+      <div class="fill-history-tools" id="modeHistoryTools">
         <button type="button" class="history-tool" id="reloadLastBtn" disabled>↶ Reload Last</button>
-        <button type="button" class="history-tool reset" id="resetFillBtn">Reset</button>
+        <button type="button" class="history-tool reset" id="resetModeBtn">Reset</button>
       </div>
       <div class="meta" id="headerMeta"></div>
     </div>
@@ -548,6 +548,8 @@ const byId = Object.fromEntries(sentenceBank.map(x => [x.id, x]));
 const TOTAL = sentenceBank.length;
 const STATE_KEY = "german-definite-articles-fill-beta-v1";
 const RESET_BACKUP_KEY = "german-definite-articles-fill-beta-reset-backup-v1";
+const TABLE_STATE_KEY = "german-definite-articles-table-state-v1";
+const TABLE_RESET_BACKUP_KEY = "german-definite-articles-table-reset-backup-v1";
 const MODE_KEY = "german-definite-articles-mode-v1";
 const $ = id => document.getElementById(id);
 
@@ -589,14 +591,71 @@ function setMode(next){
   $("pageSubtitle").textContent = mode==="table"
     ? "Case + gender → choose the article → check → next"
     : "Sentence context → choose der / die / das / den / dem / des";
-  $("fillHistoryTools").classList.toggle("hidden", mode!=="fill");
   updateReloadButton();
   if(mode==="table"){ renderTable(); }
   else { ensureFillRound(); renderFill(); }
 }
 
 /* ---------- Table Drill ---------- */
-let tableOrder=[], tablePos=0, tableRound=1, tableChecked=false, tableSelected=null;
+function defaultTableState(){
+  return {
+    version:1,
+    order:[],
+    pos:0,
+    round:1,
+    checked:false,
+    selected:null
+  };
+}
+function normalizeTableState(raw){
+  if(!raw || raw.version!==1) return null;
+  const validOrder=Array.isArray(raw.order)
+    && raw.order.length===16
+    && new Set(raw.order).size===16
+    && raw.order.every(i=>Number.isInteger(i) && i>=0 && i<tableItems.length);
+  if(!validOrder) return null;
+  const pos=Number.isInteger(raw.pos) && raw.pos>=0 && raw.pos<16 ? raw.pos : 0;
+  const round=Number.isInteger(raw.round) && raw.round>=1 ? raw.round : 1;
+  const selected=articles.includes(raw.selected) ? raw.selected : null;
+  return {
+    version:1,
+    order:[...raw.order],
+    pos,
+    round,
+    checked:!!raw.checked && !!selected,
+    selected
+  };
+}
+function loadTableState(){
+  try{
+    return normalizeTableState(JSON.parse(localStorage.getItem(TABLE_STATE_KEY)||"null"));
+  }catch(e){ return null; }
+}
+function loadTableResetBackup(){
+  try{
+    return normalizeTableState(JSON.parse(localStorage.getItem(TABLE_RESET_BACKUP_KEY)||"null"));
+  }catch(e){ return null; }
+}
+function tableSnapshot(){
+  return {
+    version:1,
+    order:[...tableOrder],
+    pos:tablePos,
+    round:tableRound,
+    checked:tableChecked,
+    selected:tableSelected
+  };
+}
+function saveTable(){
+  try{ localStorage.setItem(TABLE_STATE_KEY,JSON.stringify(tableSnapshot())); }catch(e){}
+}
+
+let initialTableState=loadTableState();
+let tableOrder=initialTableState?.order || [];
+let tablePos=initialTableState?.pos || 0;
+let tableRound=initialTableState?.round || 1;
+let tableChecked=initialTableState?.checked || false;
+let tableSelected=initialTableState?.selected || null;
 
 function shuffledTableIndices(previousLast=null){
   const arr=shuffle(tableItems.map((_,i)=>i));
@@ -629,6 +688,7 @@ function renderTableArticleButtons(){
 function selectTableArticle(article){
   if(tableChecked) return;
   tableSelected=article;
+  saveTable();
   $("tableCheckBtn").disabled=false;
   renderTableArticleButtons();
 }
@@ -648,6 +708,7 @@ function renderTable(){
   $("tableNextBtn").classList.toggle("hidden",!tableChecked);
   $("tableSkipBtn").classList.toggle("hidden",tableChecked);
   $("tableCheckBtn").disabled=!tableSelected;
+  $("reshuffleBtn").disabled=tableChecked;
 
   if(tableChecked){
     const ok=tableSelected===item.answer;
@@ -659,11 +720,13 @@ function renderTable(){
 function resetTableQuestion(){
   tableSelected=null;
   tableChecked=false;
+  saveTable();
   renderTable();
 }
 function checkTable(){
   if(!tableSelected || tableChecked) return;
   tableChecked=true;
+  saveTable();
   renderTable();
 }
 function nextTable(){
@@ -676,6 +739,7 @@ function nextTable(){
   resetTableQuestion();
 }
 function reshuffleTable(){
+  if(tableChecked) return;
   const currentIndex=tableOrder[tablePos];
   tableOrder=shuffledTableIndices();
   if(tableOrder.length>1 && tableOrder[0]===currentIndex) [tableOrder[0],tableOrder[1]]=[tableOrder[1],tableOrder[0]];
@@ -724,7 +788,7 @@ function loadResetBackup(){
 function updateReloadButton(){
   const btn=$("reloadLastBtn");
   if(!btn) return;
-  btn.disabled=!loadResetBackup();
+  btn.disabled = mode==="table" ? !loadTableResetBackup() : !loadResetBackup();
 }
 let fillState=loadFillState();
 let genderOpen=false, englishOpen=false;
@@ -965,6 +1029,35 @@ function reshuffleFill(){
   renderFill();
 }
 
+function resetTableProgress(){
+  // One-level persistent undo for Table Drill.
+  try{
+    localStorage.setItem(TABLE_RESET_BACKUP_KEY, JSON.stringify(tableSnapshot()));
+  }catch(e){}
+
+  tableOrder=shuffledTableIndices();
+  tablePos=0;
+  tableRound=1;
+  tableChecked=false;
+  tableSelected=null;
+  saveTable();
+  updateReloadButton();
+  renderTable();
+}
+
+function reloadLastTableState(){
+  const backup=loadTableResetBackup();
+  if(!backup) return;
+  tableOrder=[...backup.order];
+  tablePos=backup.pos;
+  tableRound=backup.round;
+  tableChecked=backup.checked;
+  tableSelected=backup.selected;
+  saveTable();
+  updateReloadButton();
+  renderTable();
+}
+
 function resetFillProgress(){
   // One-level persistent undo: save the exact state immediately before Reset.
   try{
@@ -989,6 +1082,16 @@ function reloadLastFillState(){
   saveFill();
   updateReloadButton();
   renderFill();
+}
+
+function resetCurrentMode(){
+  if(mode==="table") resetTableProgress();
+  else resetFillProgress();
+}
+
+function reloadLastCurrentMode(){
+  if(mode==="table") reloadLastTableState();
+  else reloadLastFillState();
 }
 
 function startNewRound(){
@@ -1023,8 +1126,8 @@ $("fillCheckBtn").addEventListener("click",checkFill);
 $("fillSkipBtn").addEventListener("click",skipFill);
 $("fillNextBtn").addEventListener("click",advanceFill);
 $("fillReshuffleBtn").addEventListener("click",reshuffleFill);
-$("reloadLastBtn").addEventListener("click",reloadLastFillState);
-$("resetFillBtn").addEventListener("click",resetFillProgress);
+$("reloadLastBtn").addEventListener("click",reloadLastCurrentMode);
+$("resetModeBtn").addEventListener("click",resetCurrentMode);
 $("newRoundBtn").addEventListener("click",startNewRound);
 
 document.addEventListener("keydown",(e)=>{
@@ -1041,8 +1144,14 @@ document.addEventListener("keydown",(e)=>{
 });
 
 /* ---------- Init ---------- */
-tableOrder=shuffledTableIndices();
-resetTableQuestion();
+if(!tableOrder.length){
+  tableOrder=shuffledTableIndices();
+  tablePos=0;
+  tableRound=1;
+  tableChecked=false;
+  tableSelected=null;
+  saveTable();
+}
 const savedMode=localStorage.getItem(MODE_KEY);
 setMode(savedMode==="fill"?"fill":"table");
 </script>
