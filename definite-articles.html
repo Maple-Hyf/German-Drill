@@ -9,26 +9,38 @@
   <meta name="apple-mobile-web-app-title" content="German Drill" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
-  <title>German Definite Article Case Trainer</title>
+  <title>German Definite Article Trainer</title>
   <style>
     :root{
       --bg:#f4f4f1; --card:#fff; --text:#181818; --muted:#6d6d68;
-      --border:#deded8; --soft:#f7f7f4; --ok:#eaf7ed; --ok-border:#b9d9bf;
-      --bad:#fff0f0; --bad-border:#e5b8b8; --shadow:0 10px 34px rgba(0,0,0,.07);
+      --border:#deded8; --soft:#f7f7f4; --ok:#eaf7ed; --ok-border:#85bf91;
+      --bad:#fff0f0; --bad-border:#d78383; --shadow:0 10px 34px rgba(0,0,0,.07);
+      --warm:#fff3cf; --warm-border:#d6a463;
     }
     *{box-sizing:border-box}
     body{
       margin:0;background:var(--bg);color:var(--text);
       font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,"Noto Sans",sans-serif;
     }
+    .wrap{width:min(720px,calc(100% - 28px));margin:34px auto 60px}
     .back-link{display:inline-block;margin-bottom:14px;color:var(--muted);text-decoration:none;font-size:13px;font-weight:650}
     .back-link:hover{text-decoration:underline}
-    .wrap{width:min(680px,calc(100% - 28px));margin:34px auto 60px}
-    .header{display:flex;justify-content:space-between;align-items:flex-end;gap:20px;margin-bottom:16px}
+    .header{display:flex;justify-content:space-between;align-items:flex-end;gap:20px;margin-bottom:14px}
     h1{margin:0 0 6px;font-size:28px;letter-spacing:-.4px}
     .subtitle,.meta,.hint,.footer{color:var(--muted)}
     .subtitle{font-size:14px}
-    .meta{font-size:13px;white-space:nowrap;text-align:right;line-height:1.55}
+    .meta{font-size:13px;white-space:nowrap;text-align:right;line-height:1.5}
+    .cycle-mini{font-size:11px;color:#8a8a84;font-weight:650}
+    .mode-switch{
+      display:grid;grid-template-columns:1fr 1fr;gap:8px;
+      padding:5px;background:#e8e8e3;border-radius:14px;margin-bottom:14px;
+    }
+    .mode-btn{
+      min-height:44px;border:0;border-radius:10px;background:transparent;color:#555;
+      font:inherit;font-size:14px;font-weight:800;cursor:pointer;padding:10px 12px;
+    }
+    .mode-btn.active{background:#fff;color:#171717;box-shadow:0 2px 9px rgba(0,0,0,.07)}
+    .beta{font-size:10px;vertical-align:2px;margin-left:4px;color:#7d6418}
     .bar{height:6px;background:#e1e1dc;border-radius:999px;overflow:hidden;margin-bottom:16px}
     .bar>div{height:100%;background:#1d1d1d;width:0%;transition:width .2s ease}
     .card{background:var(--card);border:1px solid var(--border);border-radius:20px;box-shadow:var(--shadow);padding:28px}
@@ -45,7 +57,7 @@
     input:focus{border-color:#8d8d88;box-shadow:0 0 0 3px rgba(0,0,0,.05)}
     input.correct{background:var(--ok);border-color:var(--ok-border)}
     input.wrong{background:var(--bad);border-color:var(--bad-border)}
-    .result{min-height:24px;margin-top:8px;font-size:14px;font-weight:650}
+    .result{min-height:24px;margin-top:8px;font-size:14px;font-weight:750}
     .result.ok{color:#2c6f3a}.result.bad{color:#a33}
     .controls{display:flex;gap:10px;flex-wrap:wrap;margin-top:20px}
     button{
@@ -53,10 +65,7 @@
     }
     .primary{background:#171717;color:#fff}.secondary{background:#ecece7;color:#222}
     .skip{
-      background:#fff3cf;
-      color:#6f4300;
-      border:2px solid #d69a24;
-      font-weight:850;
+      background:#fff3cf;color:#6f4300;border:2px solid #d69a24;font-weight:850;
       box-shadow:0 0 0 2px rgba(214,154,36,.10);
     }
     .skip:hover{background:#ffe9a8}
@@ -64,9 +73,73 @@
     .hint{margin-top:15px;font-size:13px;line-height:1.55}
     .hidden{display:none!important}
     .footer{margin-top:17px;text-align:center;font-size:12px}
-    @media(max-width:560px){
+
+    /* Sentence Fill-in */
+    .fill-question{
+      font-size:24px;line-height:1.45;font-weight:760;letter-spacing:-.25px;
+      padding:18px;background:var(--soft);border:1px solid var(--border);border-radius:15px;
+      margin-bottom:13px;
+    }
+    .blank-slot{
+      display:inline-block;min-width:54px;text-align:center;border-bottom:2px solid #8e8e89;
+      color:#777;
+    }
+    .filled-article{
+      display:inline-block;min-width:44px;text-align:center;border-radius:7px;
+      background:#ecece7;padding:0 5px;
+    }
+    .reveal-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:17px}
+    .reveal-card{
+      width:100%;text-align:left;background:#fff;border:1px solid var(--border);color:var(--text);
+      padding:12px 13px;border-radius:12px;font-size:13px;line-height:1.4;min-height:66px;
+    }
+    .reveal-title{font-weight:800;display:block}
+    .reveal-state{font-size:11px;color:var(--muted);font-weight:650;display:block;margin-top:2px}
+    .reveal-content{font-size:14px;font-weight:650;margin-top:7px;display:block}
+    .article-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}
+    .article-btn{
+      min-height:54px;padding:8px;background:#f3f3ef;border:1px solid var(--border);
+      color:#202020;border-radius:12px;font-size:18px;font-weight:850;
+    }
+    .article-btn.selected{background:#e8e8e2;border-color:#9b9b94;box-shadow:0 0 0 2px rgba(0,0,0,.04)}
+    .article-btn.correct-choice{background:var(--ok);border-color:var(--ok-border);color:#245d30}
+    .article-btn.wrong-choice{background:var(--bad);border-color:var(--bad-border);color:#8c2d2d}
+    .article-btn.correct-outline{
+      background:#fff;border:2px solid #5eaa6c;color:#245d30;box-shadow:0 0 0 2px rgba(94,170,108,.10)
+    }
+    .fill-status{
+      margin-top:18px;border-radius:13px;padding:11px 13px;font-size:14px;font-weight:850;
+    }
+    .fill-status.ok{background:var(--ok);color:#286437;border:1px solid var(--ok-border)}
+    .fill-status.bad{background:var(--bad);color:#932f2f;border:1px solid var(--bad-border)}
+    .answer-block{
+      margin-top:10px;border:1px solid var(--border);background:#fff;border-radius:15px;padding:16px;
+    }
+    .correct-article{
+      display:inline-block;padding:6px 11px;border:1px solid var(--warm-border);border-radius:9px;
+      background:var(--warm);color:#3d2700;font-size:24px;font-weight:900;line-height:1.1;
+    }
+    .grammar-line{margin-top:9px;font-size:13px;font-weight:800;color:#555}
+    .full-sentence{margin-top:8px;font-size:17px;font-weight:720;line-height:1.45}
+    .round-complete{text-align:center;padding:8px 2px 2px}
+    .round-complete h2{margin:0 0 8px;font-size:24px}
+    .round-stats{display:flex;justify-content:center;gap:18px;flex-wrap:wrap;margin:18px 0 9px}
+    .stat{min-width:92px;background:var(--soft);border:1px solid var(--border);border-radius:13px;padding:12px}
+    .stat strong{display:block;font-size:22px}
+    .stat span{display:block;margin-top:2px;font-size:11px;color:var(--muted);font-weight:700}
+    .round-cycle{font-size:12px;color:#85857f;font-weight:700;margin:12px 0 18px}
+    .note{
+      font-size:12px;color:var(--muted);line-height:1.5;margin-top:14px;
+      border-top:1px solid #ecece7;padding-top:12px;
+    }
+
+    @media(max-width:620px){
       .wrap{margin-top:18px}.header{align-items:flex-start;flex-direction:column;gap:8px}
-      .meta{text-align:left}.card{padding:20px}.prompt{grid-template-columns:1fr}
+      .meta{text-align:left}.card{padding:20px}
+      .prompt{grid-template-columns:1fr}
+      .article-grid{grid-template-columns:repeat(3,1fr)}
+      .reveal-grid{grid-template-columns:1fr}
+      .fill-question{font-size:21px;padding:16px}
     }
   </style>
 </head>
@@ -76,50 +149,107 @@
   <div class="header">
     <div>
       <h1>Definite Article Trainer</h1>
-      <div class="subtitle">Case + gender → type the article → check → next</div>
+      <div class="subtitle" id="pageSubtitle">Case + gender → type the article → check → next</div>
     </div>
-    <div class="meta">
-      <div id="roundText"></div>
-      <div id="progressText"></div>
-    </div>
+    <div class="meta" id="headerMeta"></div>
+  </div>
+
+  <div class="mode-switch" aria-label="Practice mode">
+    <button class="mode-btn active" id="tableModeBtn">Table Drill</button>
+    <button class="mode-btn" id="fillModeBtn">Sentence Fill-in <span class="beta">β</span></button>
   </div>
 
   <div class="bar"><div id="barFill"></div></div>
 
-  <div class="card">
-    <div class="prompt-label">Prompt / Aufgabe</div>
-
-    <div class="prompt">
-      <div class="prompt-box">
-        <div class="small">Case / Kasus</div>
-        <div class="big" id="caseText"></div>
+  <section id="tableMode">
+    <div class="card">
+      <div class="prompt-label">Prompt / Aufgabe</div>
+      <div class="prompt">
+        <div class="prompt-box">
+          <div class="small">Case / Kasus</div>
+          <div class="big" id="caseText"></div>
+        </div>
+        <div class="prompt-box">
+          <div class="small">Gender / Genus</div>
+          <div class="big" id="genderText"></div>
+        </div>
       </div>
-      <div class="prompt-box">
-        <div class="small">Gender / Genus</div>
-        <div class="big" id="genderText"></div>
+
+      <div class="answer-label">Definite article / bestimmter Artikel</div>
+      <input id="answerInput" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" aria-label="Definite article answer" />
+      <div class="result" id="tableResult"></div>
+
+      <div class="controls">
+        <button class="primary" id="tableCheckBtn" disabled>Check / Prüfen</button>
+        <button class="primary hidden" id="tableNextBtn">Next / Weiter →</button>
+        <button class="secondary" id="reshuffleBtn">Reshuffle / Neu mischen</button>
+        <button class="skip" id="tableSkipBtn">Skip / Überspringen →</button>
+      </div>
+      <div class="hint">Type only the article: <b>der, die, das, den, dem, des</b>.</div>
+    </div>
+    <div class="footer">4 cases × 4 genders · 16 combinations · random order · endless repeat</div>
+  </section>
+
+  <section id="fillMode" class="hidden">
+    <div class="card" id="fillExercise">
+      <div class="prompt-label">Choose the definite article / Wähle den bestimmten Artikel</div>
+      <div class="fill-question" id="fillSentence"></div>
+
+      <div class="reveal-grid">
+        <button class="reveal-card" id="genderHintBtn">
+          <span class="reveal-title">Gender/Number hint</span>
+          <span class="reveal-state" id="genderHintState">Tap to reveal</span>
+          <span class="reveal-content hidden" id="genderHintContent"></span>
+        </button>
+        <button class="reveal-card" id="englishBtn">
+          <span class="reveal-title">English translation</span>
+          <span class="reveal-state" id="englishState">Tap to reveal</span>
+          <span class="reveal-content hidden" id="englishContent"></span>
+        </button>
+      </div>
+
+      <div class="article-grid" id="articleGrid"></div>
+
+      <div id="fillFeedback" class="hidden">
+        <div id="fillStatus" class="fill-status"></div>
+        <div class="answer-block">
+          <div class="correct-article" id="correctArticle"></div>
+          <div class="grammar-line" id="grammarLine"></div>
+          <div class="full-sentence" id="fullSentence"></div>
+        </div>
+      </div>
+
+      <div class="controls">
+        <button class="primary" id="fillCheckBtn" disabled>Check / Prüfen</button>
+        <button class="skip" id="fillSkipBtn">Skip / Überspringen →</button>
+        <button class="primary hidden" id="fillNextBtn">Next / Weiter →</button>
+      </div>
+
+      <div class="note">
+        Each round covers all 16 Kasus × Genus/Numerus combinations once. New sentences are used before skipped ones return.
       </div>
     </div>
 
-    <div class="answer-label">Definite article / bestimmter Artikel</div>
-    <input id="answerInput" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" aria-label="Definite article answer" />
-
-    <div class="result" id="result"></div>
-
-    <div class="controls">
-      <button class="primary" id="checkBtn" disabled>Check / Prüfen</button>
-      <button class="primary hidden" id="nextBtn">Next / Weiter →</button>
-      <button class="secondary" id="reshuffleBtn">Reshuffle / Neu mischen</button>
-      <button class="skip" id="skipBtn">Skip / Überspringen →</button>
+    <div class="card hidden" id="roundCompleteCard">
+      <div class="round-complete">
+        <h2>Round complete</h2>
+        <div class="subtitle">16 combinations completed for this round.</div>
+        <div class="round-stats">
+          <div class="stat"><strong id="statCorrect">0</strong><span>Correct</span></div>
+          <div class="stat"><strong id="statIncorrect">0</strong><span>Incorrect</span></div>
+          <div class="stat"><strong id="statSkipped">0</strong><span>Skipped</span></div>
+        </div>
+        <div class="round-cycle" id="roundCycleProgress"></div>
+        <button class="primary" id="newRoundBtn">New round / Neue Runde →</button>
+      </div>
     </div>
 
-    <div class="hint">Type only the article: <b>der, die, das, den, dem, des</b>.</div>
-  </div>
-
-  <div class="footer">4 cases × 4 genders · 16 combinations · random order · endless repeat</div>
+    <div class="footer">256 curated sentence prompts · 16 per combination · local cycle progress</div>
+  </section>
 </div>
 
 <script>
-const items = [
+const tableItems = [
   {caseEn:"Nominative",caseDe:"Nominativ",genderEn:"Masculine",genderDe:"Maskulin",answer:"der"},
   {caseEn:"Nominative",caseDe:"Nominativ",genderEn:"Feminine",genderDe:"Feminin",answer:"die"},
   {caseEn:"Nominative",caseDe:"Nominativ",genderEn:"Neuter",genderDe:"Neutrum",answer:"das"},
@@ -138,106 +268,420 @@ const items = [
   {caseEn:"Genitive",caseDe:"Genitiv",genderEn:"Plural",genderDe:"Plural",answer:"der"}
 ];
 
-let order=[], pos=0, round=1, checked=false;
-const $=id=>document.getElementById(id);
+const sentenceBank = [{"id":"NOM_M_01","combo":"NOM_M","caseDe":"Nominativ","genderDe":"Maskulin","abbr":"m.","answer":"der","blank":"___ Mann wartet vor dem Bahnhof.","en":"The man is waiting in front of the station.","noun":"Mann"},{"id":"NOM_M_02","combo":"NOM_M","caseDe":"Nominativ","genderDe":"Maskulin","abbr":"m.","answer":"der","blank":"___ Lehrer erklärt die Aufgabe.","en":"The teacher is explaining the exercise.","noun":"Lehrer"},{"id":"NOM_M_03","combo":"NOM_M","caseDe":"Nominativ","genderDe":"Maskulin","abbr":"m.","answer":"der","blank":"___ Arzt arbeitet heute im Krankenhaus.","en":"The doctor is working at the hospital today.","noun":"Arzt"},{"id":"NOM_M_04","combo":"NOM_M","caseDe":"Nominativ","genderDe":"Maskulin","abbr":"m.","answer":"der","blank":"___ Bruder wohnt jetzt in Berlin.","en":"The brother now lives in Berlin.","noun":"Bruder"},{"id":"NOM_M_05","combo":"NOM_M","caseDe":"Nominativ","genderDe":"Maskulin","abbr":"m.","answer":"der","blank":"___ Vater kocht heute Abend.","en":"The father is cooking this evening.","noun":"Vater"},{"id":"NOM_M_06","combo":"NOM_M","caseDe":"Nominativ","genderDe":"Maskulin","abbr":"m.","answer":"der","blank":"___ Freund kommt später vorbei.","en":"The friend is coming by later.","noun":"Freund"},{"id":"NOM_M_07","combo":"NOM_M","caseDe":"Nominativ","genderDe":"Maskulin","abbr":"m.","answer":"der","blank":"___ Nachbar repariert sein Fahrrad.","en":"The neighbor is repairing his bicycle.","noun":"Nachbar"},{"id":"NOM_M_08","combo":"NOM_M","caseDe":"Nominativ","genderDe":"Maskulin","abbr":"m.","answer":"der","blank":"___ Chef beginnt die Besprechung.","en":"The boss is starting the meeting.","noun":"Chef"},{"id":"NOM_M_09","combo":"NOM_M","caseDe":"Nominativ","genderDe":"Maskulin","abbr":"m.","answer":"der","blank":"___ Student lernt in der Bibliothek.","en":"The student is studying in the library.","noun":"Student"},{"id":"NOM_M_10","combo":"NOM_M","caseDe":"Nominativ","genderDe":"Maskulin","abbr":"m.","answer":"der","blank":"___ Fahrer hält an der Haltestelle.","en":"The driver is stopping at the bus stop.","noun":"Fahrer"},{"id":"NOM_M_11","combo":"NOM_M","caseDe":"Nominativ","genderDe":"Maskulin","abbr":"m.","answer":"der","blank":"___ Verkäufer hilft einer Kundin.","en":"The salesperson is helping a customer.","noun":"Verkäufer"},{"id":"NOM_M_12","combo":"NOM_M","caseDe":"Nominativ","genderDe":"Maskulin","abbr":"m.","answer":"der","blank":"___ Kellner bringt die Getränke.","en":"The waiter is bringing the drinks.","noun":"Kellner"},{"id":"NOM_M_13","combo":"NOM_M","caseDe":"Nominativ","genderDe":"Maskulin","abbr":"m.","answer":"der","blank":"___ Junge spielt im Garten.","en":"The boy is playing in the garden.","noun":"Junge"},{"id":"NOM_M_14","combo":"NOM_M","caseDe":"Nominativ","genderDe":"Maskulin","abbr":"m.","answer":"der","blank":"___ Hund schläft unter dem Tisch.","en":"The dog is sleeping under the table.","noun":"Hund"},{"id":"NOM_M_15","combo":"NOM_M","caseDe":"Nominativ","genderDe":"Maskulin","abbr":"m.","answer":"der","blank":"___ Bus fährt um acht Uhr ab.","en":"The bus leaves at eight o'clock.","noun":"Bus"},{"id":"NOM_M_16","combo":"NOM_M","caseDe":"Nominativ","genderDe":"Maskulin","abbr":"m.","answer":"der","blank":"___ Film beginnt in fünf Minuten.","en":"The film starts in five minutes.","noun":"Film"},{"id":"NOM_F_01","combo":"NOM_F","caseDe":"Nominativ","genderDe":"Feminin","abbr":"f.","answer":"die","blank":"___ Frau wartet vor der Apotheke.","en":"The woman is waiting in front of the pharmacy.","noun":"Frau"},{"id":"NOM_F_02","combo":"NOM_F","caseDe":"Nominativ","genderDe":"Feminin","abbr":"f.","answer":"die","blank":"___ Lehrerin schreibt an die Tafel.","en":"The teacher is writing on the board.","noun":"Lehrerin"},{"id":"NOM_F_03","combo":"NOM_F","caseDe":"Nominativ","genderDe":"Feminin","abbr":"f.","answer":"die","blank":"___ Ärztin spricht mit einem Patienten.","en":"The doctor is speaking with a patient.","noun":"Ärztin"},{"id":"NOM_F_04","combo":"NOM_F","caseDe":"Nominativ","genderDe":"Feminin","abbr":"f.","answer":"die","blank":"___ Schwester arbeitet heute zu Hause.","en":"The sister is working from home today.","noun":"Schwester"},{"id":"NOM_F_05","combo":"NOM_F","caseDe":"Nominativ","genderDe":"Feminin","abbr":"f.","answer":"die","blank":"___ Mutter liest die Zeitung.","en":"The mother is reading the newspaper.","noun":"Mutter"},{"id":"NOM_F_06","combo":"NOM_F","caseDe":"Nominativ","genderDe":"Feminin","abbr":"f.","answer":"die","blank":"___ Freundin kommt am Wochenende.","en":"The friend is coming on the weekend.","noun":"Freundin"},{"id":"NOM_F_07","combo":"NOM_F","caseDe":"Nominativ","genderDe":"Feminin","abbr":"f.","answer":"die","blank":"___ Nachbarin gießt die Blumen.","en":"The neighbor is watering the flowers.","noun":"Nachbarin"},{"id":"NOM_F_08","combo":"NOM_F","caseDe":"Nominativ","genderDe":"Feminin","abbr":"f.","answer":"die","blank":"___ Chefin öffnet die Besprechung.","en":"The boss is opening the meeting.","noun":"Chefin"},{"id":"NOM_F_09","combo":"NOM_F","caseDe":"Nominativ","genderDe":"Feminin","abbr":"f.","answer":"die","blank":"___ Studentin wartet auf den Zug.","en":"The student is waiting for the train.","noun":"Studentin"},{"id":"NOM_F_10","combo":"NOM_F","caseDe":"Nominativ","genderDe":"Feminin","abbr":"f.","answer":"die","blank":"___ Fahrerin sucht einen Parkplatz.","en":"The driver is looking for a parking space.","noun":"Fahrerin"},{"id":"NOM_F_11","combo":"NOM_F","caseDe":"Nominativ","genderDe":"Feminin","abbr":"f.","answer":"die","blank":"___ Verkäuferin räumt das Regal ein.","en":"The salesperson is stocking the shelf.","noun":"Verkäuferin"},{"id":"NOM_F_12","combo":"NOM_F","caseDe":"Nominativ","genderDe":"Feminin","abbr":"f.","answer":"die","blank":"___ Kellnerin bringt die Rechnung.","en":"The waitress is bringing the bill.","noun":"Kellnerin"},{"id":"NOM_F_13","combo":"NOM_F","caseDe":"Nominativ","genderDe":"Feminin","abbr":"f.","answer":"die","blank":"___ Katze sitzt auf dem Sofa.","en":"The cat is sitting on the sofa.","noun":"Katze"},{"id":"NOM_F_14","combo":"NOM_F","caseDe":"Nominativ","genderDe":"Feminin","abbr":"f.","answer":"die","blank":"___ Lampe steht neben dem Bett.","en":"The lamp is next to the bed.","noun":"Lampe"},{"id":"NOM_F_15","combo":"NOM_F","caseDe":"Nominativ","genderDe":"Feminin","abbr":"f.","answer":"die","blank":"___ Tür ist noch offen.","en":"The door is still open.","noun":"Tür"},{"id":"NOM_F_16","combo":"NOM_F","caseDe":"Nominativ","genderDe":"Feminin","abbr":"f.","answer":"die","blank":"___ Schule beginnt um halb neun.","en":"The school day starts at half past eight.","noun":"Schule"},{"id":"NOM_N_01","combo":"NOM_N","caseDe":"Nominativ","genderDe":"Neutrum","abbr":"n.","answer":"das","blank":"___ Kind spielt mit einem Ball.","en":"The child is playing with a ball.","noun":"Kind"},{"id":"NOM_N_02","combo":"NOM_N","caseDe":"Nominativ","genderDe":"Neutrum","abbr":"n.","answer":"das","blank":"___ Mädchen wartet auf seine Freundin.","en":"The girl is waiting for her friend.","noun":"Mädchen"},{"id":"NOM_N_03","combo":"NOM_N","caseDe":"Nominativ","genderDe":"Neutrum","abbr":"n.","answer":"das","blank":"___ Baby schläft schon.","en":"The baby is already sleeping.","noun":"Baby"},{"id":"NOM_N_04","combo":"NOM_N","caseDe":"Nominativ","genderDe":"Neutrum","abbr":"n.","answer":"das","blank":"___ Auto steht vor dem Haus.","en":"The car is parked in front of the house.","noun":"Auto"},{"id":"NOM_N_05","combo":"NOM_N","caseDe":"Nominativ","genderDe":"Neutrum","abbr":"n.","answer":"das","blank":"___ Haus gehört meiner Tante.","en":"The house belongs to my aunt.","noun":"Haus"},{"id":"NOM_N_06","combo":"NOM_N","caseDe":"Nominativ","genderDe":"Neutrum","abbr":"n.","answer":"das","blank":"___ Buch liegt auf dem Tisch.","en":"The book is lying on the table.","noun":"Buch"},{"id":"NOM_N_07","combo":"NOM_N","caseDe":"Nominativ","genderDe":"Neutrum","abbr":"n.","answer":"das","blank":"___ Handy klingelt schon wieder.","en":"The phone is ringing again.","noun":"Handy"},{"id":"NOM_N_08","combo":"NOM_N","caseDe":"Nominativ","genderDe":"Neutrum","abbr":"n.","answer":"das","blank":"___ Fenster ist noch geschlossen.","en":"The window is still closed.","noun":"Fenster"},{"id":"NOM_N_09","combo":"NOM_N","caseDe":"Nominativ","genderDe":"Neutrum","abbr":"n.","answer":"das","blank":"___ Wetter wird morgen besser.","en":"The weather will be better tomorrow.","noun":"Wetter"},{"id":"NOM_N_10","combo":"NOM_N","caseDe":"Nominativ","genderDe":"Neutrum","abbr":"n.","answer":"das","blank":"___ Essen ist gleich fertig.","en":"The food will be ready soon.","noun":"Essen"},{"id":"NOM_N_11","combo":"NOM_N","caseDe":"Nominativ","genderDe":"Neutrum","abbr":"n.","answer":"das","blank":"___ Fahrrad steht im Keller.","en":"The bicycle is in the basement.","noun":"Fahrrad"},{"id":"NOM_N_12","combo":"NOM_N","caseDe":"Nominativ","genderDe":"Neutrum","abbr":"n.","answer":"das","blank":"___ Bild hängt über dem Sofa.","en":"The picture is hanging above the sofa.","noun":"Bild"},{"id":"NOM_N_13","combo":"NOM_N","caseDe":"Nominativ","genderDe":"Neutrum","abbr":"n.","answer":"das","blank":"___ Zimmer ist sehr ruhig.","en":"The room is very quiet.","noun":"Zimmer"},{"id":"NOM_N_14","combo":"NOM_N","caseDe":"Nominativ","genderDe":"Neutrum","abbr":"n.","answer":"das","blank":"___ Radio läuft den ganzen Morgen.","en":"The radio is on all morning.","noun":"Radio"},{"id":"NOM_N_15","combo":"NOM_N","caseDe":"Nominativ","genderDe":"Neutrum","abbr":"n.","answer":"das","blank":"___ Paket kommt wahrscheinlich morgen.","en":"The package will probably arrive tomorrow.","noun":"Paket"},{"id":"NOM_N_16","combo":"NOM_N","caseDe":"Nominativ","genderDe":"Neutrum","abbr":"n.","answer":"das","blank":"___ Problem ist leicht zu lösen.","en":"The problem is easy to solve.","noun":"Problem"},{"id":"NOM_P_01","combo":"NOM_P","caseDe":"Nominativ","genderDe":"Plural","abbr":"Pl.","answer":"die","blank":"___ Kinder spielen auf dem Spielplatz.","en":"The children are playing at the playground.","noun":"Kinder"},{"id":"NOM_P_02","combo":"NOM_P","caseDe":"Nominativ","genderDe":"Plural","abbr":"Pl.","answer":"die","blank":"___ Leute warten vor dem Eingang.","en":"The people are waiting in front of the entrance.","noun":"Leute"},{"id":"NOM_P_03","combo":"NOM_P","caseDe":"Nominativ","genderDe":"Plural","abbr":"Pl.","answer":"die","blank":"___ Freunde kommen heute Abend.","en":"The friends are coming this evening.","noun":"Freunde"},{"id":"NOM_P_04","combo":"NOM_P","caseDe":"Nominativ","genderDe":"Plural","abbr":"Pl.","answer":"die","blank":"___ Nachbarn feiern im Garten.","en":"The neighbors are celebrating in the garden.","noun":"Nachbarn"},{"id":"NOM_P_05","combo":"NOM_P","caseDe":"Nominativ","genderDe":"Plural","abbr":"Pl.","answer":"die","blank":"___ Eltern arbeiten beide heute.","en":"The parents are both working today.","noun":"Eltern"},{"id":"NOM_P_06","combo":"NOM_P","caseDe":"Nominativ","genderDe":"Plural","abbr":"Pl.","answer":"die","blank":"___ Studenten lernen für die Prüfung.","en":"The students are studying for the exam.","noun":"Studenten"},{"id":"NOM_P_07","combo":"NOM_P","caseDe":"Nominativ","genderDe":"Plural","abbr":"Pl.","answer":"die","blank":"___ Gäste sitzen schon am Tisch.","en":"The guests are already sitting at the table.","noun":"Gäste"},{"id":"NOM_P_08","combo":"NOM_P","caseDe":"Nominativ","genderDe":"Plural","abbr":"Pl.","answer":"die","blank":"___ Kollegen treffen sich um neun.","en":"The colleagues are meeting at nine.","noun":"Kollegen"},{"id":"NOM_P_09","combo":"NOM_P","caseDe":"Nominativ","genderDe":"Plural","abbr":"Pl.","answer":"die","blank":"___ Hunde laufen durch den Park.","en":"The dogs are running through the park.","noun":"Hunde"},{"id":"NOM_P_10","combo":"NOM_P","caseDe":"Nominativ","genderDe":"Plural","abbr":"Pl.","answer":"die","blank":"___ Katzen schlafen auf dem Sofa.","en":"The cats are sleeping on the sofa.","noun":"Katzen"},{"id":"NOM_P_11","combo":"NOM_P","caseDe":"Nominativ","genderDe":"Plural","abbr":"Pl.","answer":"die","blank":"___ Autos stehen vor dem Gebäude.","en":"The cars are parked in front of the building.","noun":"Autos"},{"id":"NOM_P_12","combo":"NOM_P","caseDe":"Nominativ","genderDe":"Plural","abbr":"Pl.","answer":"die","blank":"___ Bücher liegen auf dem Boden.","en":"The books are lying on the floor.","noun":"Bücher"},{"id":"NOM_P_13","combo":"NOM_P","caseDe":"Nominativ","genderDe":"Plural","abbr":"Pl.","answer":"die","blank":"___ Busse fahren heute seltener.","en":"The buses are running less often today.","noun":"Busse"},{"id":"NOM_P_14","combo":"NOM_P","caseDe":"Nominativ","genderDe":"Plural","abbr":"Pl.","answer":"die","blank":"___ Geschäfte schließen um acht.","en":"The shops close at eight.","noun":"Geschäfte"},{"id":"NOM_P_15","combo":"NOM_P","caseDe":"Nominativ","genderDe":"Plural","abbr":"Pl.","answer":"die","blank":"___ Schulen bleiben morgen geschlossen.","en":"The schools will remain closed tomorrow.","noun":"Schulen"},{"id":"NOM_P_16","combo":"NOM_P","caseDe":"Nominativ","genderDe":"Plural","abbr":"Pl.","answer":"die","blank":"___ Familien treffen sich am Sonntag.","en":"The families are meeting on Sunday.","noun":"Familien"},{"id":"AKK_M_01","combo":"AKK_M","caseDe":"Akkusativ","genderDe":"Maskulin","abbr":"m.","answer":"den","blank":"Ich sehe ___ Mann jeden Morgen.","en":"I see the man every morning.","noun":"Mann"},{"id":"AKK_M_02","combo":"AKK_M","caseDe":"Akkusativ","genderDe":"Maskulin","abbr":"m.","answer":"den","blank":"Wir besuchen ___ Lehrer nach dem Unterricht.","en":"We are visiting the teacher after class.","noun":"Lehrer"},{"id":"AKK_M_03","combo":"AKK_M","caseDe":"Akkusativ","genderDe":"Maskulin","abbr":"m.","answer":"den","blank":"Sie ruft ___ Arzt sofort an.","en":"She is calling the doctor right away.","noun":"Arzt"},{"id":"AKK_M_04","combo":"AKK_M","caseDe":"Akkusativ","genderDe":"Maskulin","abbr":"m.","answer":"den","blank":"Er trifft ___ Bruder am Bahnhof.","en":"He is meeting the brother at the station.","noun":"Bruder"},{"id":"AKK_M_05","combo":"AKK_M","caseDe":"Akkusativ","genderDe":"Maskulin","abbr":"m.","answer":"den","blank":"Ich frage ___ Vater nach dem Schlüssel.","en":"I am asking the father about the key.","noun":"Vater"},{"id":"AKK_M_06","combo":"AKK_M","caseDe":"Akkusativ","genderDe":"Maskulin","abbr":"m.","answer":"den","blank":"Wir laden ___ Freund zum Essen ein.","en":"We are inviting the friend to dinner.","noun":"Freund"},{"id":"AKK_M_07","combo":"AKK_M","caseDe":"Akkusativ","genderDe":"Maskulin","abbr":"m.","answer":"den","blank":"Sie grüßt ___ Nachbarn im Treppenhaus.","en":"She greets the neighbor in the stairwell.","noun":"Nachbar"},{"id":"AKK_M_08","combo":"AKK_M","caseDe":"Akkusativ","genderDe":"Maskulin","abbr":"m.","answer":"den","blank":"Er informiert ___ Chef über das Problem.","en":"He is informing the boss about the problem.","noun":"Chef"},{"id":"AKK_M_09","combo":"AKK_M","caseDe":"Akkusativ","genderDe":"Maskulin","abbr":"m.","answer":"den","blank":"Ich kenne ___ Studenten aus dem Kurs.","en":"I know the student from the course.","noun":"Student"},{"id":"AKK_M_10","combo":"AKK_M","caseDe":"Akkusativ","genderDe":"Maskulin","abbr":"m.","answer":"den","blank":"Wir sehen ___ Fahrer vor dem Bus.","en":"We see the driver in front of the bus.","noun":"Fahrer"},{"id":"AKK_M_11","combo":"AKK_M","caseDe":"Akkusativ","genderDe":"Maskulin","abbr":"m.","answer":"den","blank":"Sie fragt ___ Verkäufer nach dem Preis.","en":"She asks the salesperson about the price.","noun":"Verkäufer"},{"id":"AKK_M_12","combo":"AKK_M","caseDe":"Akkusativ","genderDe":"Maskulin","abbr":"m.","answer":"den","blank":"Er ruft ___ Kellner an den Tisch.","en":"He calls the waiter over to the table.","noun":"Kellner"},{"id":"AKK_M_13","combo":"AKK_M","caseDe":"Akkusativ","genderDe":"Maskulin","abbr":"m.","answer":"den","blank":"Ich sehe ___ Jungen im Park.","en":"I see the boy in the park.","noun":"Junge"},{"id":"AKK_M_14","combo":"AKK_M","caseDe":"Akkusativ","genderDe":"Maskulin","abbr":"m.","answer":"den","blank":"Wir nehmen ___ Hund heute mit.","en":"We are taking the dog with us today.","noun":"Hund"},{"id":"AKK_M_15","combo":"AKK_M","caseDe":"Akkusativ","genderDe":"Maskulin","abbr":"m.","answer":"den","blank":"Sie nimmt ___ Bus um sieben Uhr.","en":"She takes the bus at seven o'clock.","noun":"Bus"},{"id":"AKK_M_16","combo":"AKK_M","caseDe":"Akkusativ","genderDe":"Maskulin","abbr":"m.","answer":"den","blank":"Er mag ___ Film sehr.","en":"He likes the film a lot.","noun":"Film"},{"id":"AKK_F_01","combo":"AKK_F","caseDe":"Akkusativ","genderDe":"Feminin","abbr":"f.","answer":"die","blank":"Ich sehe ___ Frau an der Kasse.","en":"I see the woman at the checkout.","noun":"Frau"},{"id":"AKK_F_02","combo":"AKK_F","caseDe":"Akkusativ","genderDe":"Feminin","abbr":"f.","answer":"die","blank":"Wir besuchen ___ Lehrerin am Nachmittag.","en":"We are visiting the teacher in the afternoon.","noun":"Lehrerin"},{"id":"AKK_F_03","combo":"AKK_F","caseDe":"Akkusativ","genderDe":"Feminin","abbr":"f.","answer":"die","blank":"Er ruft ___ Ärztin morgen an.","en":"He is calling the doctor tomorrow.","noun":"Ärztin"},{"id":"AKK_F_04","combo":"AKK_F","caseDe":"Akkusativ","genderDe":"Feminin","abbr":"f.","answer":"die","blank":"Sie trifft ___ Schwester in der Stadt.","en":"She is meeting the sister in town.","noun":"Schwester"},{"id":"AKK_F_05","combo":"AKK_F","caseDe":"Akkusativ","genderDe":"Feminin","abbr":"f.","answer":"die","blank":"Ich frage ___ Mutter nach dem Rezept.","en":"I ask the mother about the recipe.","noun":"Mutter"},{"id":"AKK_F_06","combo":"AKK_F","caseDe":"Akkusativ","genderDe":"Feminin","abbr":"f.","answer":"die","blank":"Wir laden ___ Freundin zum Kaffee ein.","en":"We are inviting the friend for coffee.","noun":"Freundin"},{"id":"AKK_F_07","combo":"AKK_F","caseDe":"Akkusativ","genderDe":"Feminin","abbr":"f.","answer":"die","blank":"Er grüßt ___ Nachbarin vor dem Haus.","en":"He greets the neighbor in front of the house.","noun":"Nachbarin"},{"id":"AKK_F_08","combo":"AKK_F","caseDe":"Akkusativ","genderDe":"Feminin","abbr":"f.","answer":"die","blank":"Sie informiert ___ Chefin über den Termin.","en":"She informs the boss about the appointment.","noun":"Chefin"},{"id":"AKK_F_09","combo":"AKK_F","caseDe":"Akkusativ","genderDe":"Feminin","abbr":"f.","answer":"die","blank":"Ich kenne ___ Studentin aus Hamburg.","en":"I know the student from Hamburg.","noun":"Studentin"},{"id":"AKK_F_10","combo":"AKK_F","caseDe":"Akkusativ","genderDe":"Feminin","abbr":"f.","answer":"die","blank":"Wir sehen ___ Fahrerin neben dem Auto.","en":"We see the driver next to the car.","noun":"Fahrerin"},{"id":"AKK_F_11","combo":"AKK_F","caseDe":"Akkusativ","genderDe":"Feminin","abbr":"f.","answer":"die","blank":"Er fragt ___ Verkäuferin nach einer Größe.","en":"He asks the salesperson about a size.","noun":"Verkäuferin"},{"id":"AKK_F_12","combo":"AKK_F","caseDe":"Akkusativ","genderDe":"Feminin","abbr":"f.","answer":"die","blank":"Sie ruft ___ Kellnerin an den Tisch.","en":"She calls the waitress over to the table.","noun":"Kellnerin"},{"id":"AKK_F_13","combo":"AKK_F","caseDe":"Akkusativ","genderDe":"Feminin","abbr":"f.","answer":"die","blank":"Ich füttere ___ Katze jeden Morgen.","en":"I feed the cat every morning.","noun":"Katze"},{"id":"AKK_F_14","combo":"AKK_F","caseDe":"Akkusativ","genderDe":"Feminin","abbr":"f.","answer":"die","blank":"Wir kaufen ___ Lampe für das Wohnzimmer.","en":"We are buying the lamp for the living room.","noun":"Lampe"},{"id":"AKK_F_15","combo":"AKK_F","caseDe":"Akkusativ","genderDe":"Feminin","abbr":"f.","answer":"die","blank":"Er öffnet ___ Tür ganz langsam.","en":"He opens the door very slowly.","noun":"Tür"},{"id":"AKK_F_16","combo":"AKK_F","caseDe":"Akkusativ","genderDe":"Feminin","abbr":"f.","answer":"die","blank":"Sie besucht ___ Schule am Freitag.","en":"She is visiting the school on Friday.","noun":"Schule"},{"id":"AKK_N_01","combo":"AKK_N","caseDe":"Akkusativ","genderDe":"Neutrum","abbr":"n.","answer":"das","blank":"Ich sehe ___ Kind auf dem Spielplatz.","en":"I see the child at the playground.","noun":"Kind"},{"id":"AKK_N_02","combo":"AKK_N","caseDe":"Akkusativ","genderDe":"Neutrum","abbr":"n.","answer":"das","blank":"Wir treffen ___ Mädchen vor der Schule.","en":"We meet the girl in front of the school.","noun":"Mädchen"},{"id":"AKK_N_03","combo":"AKK_N","caseDe":"Akkusativ","genderDe":"Neutrum","abbr":"n.","answer":"das","blank":"Sie trägt ___ Baby ins Zimmer.","en":"She carries the baby into the room.","noun":"Baby"},{"id":"AKK_N_04","combo":"AKK_N","caseDe":"Akkusativ","genderDe":"Neutrum","abbr":"n.","answer":"das","blank":"Er wäscht ___ Auto am Samstag.","en":"He washes the car on Saturday.","noun":"Auto"},{"id":"AKK_N_05","combo":"AKK_N","caseDe":"Akkusativ","genderDe":"Neutrum","abbr":"n.","answer":"das","blank":"Ich fotografiere ___ Haus von außen.","en":"I photograph the house from outside.","noun":"Haus"},{"id":"AKK_N_06","combo":"AKK_N","caseDe":"Akkusativ","genderDe":"Neutrum","abbr":"n.","answer":"das","blank":"Wir lesen ___ Buch im Kurs.","en":"We are reading the book in class.","noun":"Buch"},{"id":"AKK_N_07","combo":"AKK_N","caseDe":"Akkusativ","genderDe":"Neutrum","abbr":"n.","answer":"das","blank":"Sie sucht ___ Handy in ihrer Tasche.","en":"She is looking for the phone in her bag.","noun":"Handy"},{"id":"AKK_N_08","combo":"AKK_N","caseDe":"Akkusativ","genderDe":"Neutrum","abbr":"n.","answer":"das","blank":"Er öffnet ___ Fenster am Morgen.","en":"He opens the window in the morning.","noun":"Fenster"},{"id":"AKK_N_09","combo":"AKK_N","caseDe":"Akkusativ","genderDe":"Neutrum","abbr":"n.","answer":"das","blank":"Ich mag ___ Wetter heute.","en":"I like the weather today.","noun":"Wetter"},{"id":"AKK_N_10","combo":"AKK_N","caseDe":"Akkusativ","genderDe":"Neutrum","abbr":"n.","answer":"das","blank":"Wir bestellen ___ Essen online.","en":"We order the food online.","noun":"Essen"},{"id":"AKK_N_11","combo":"AKK_N","caseDe":"Akkusativ","genderDe":"Neutrum","abbr":"n.","answer":"das","blank":"Sie repariert ___ Fahrrad selbst.","en":"She repairs the bicycle herself.","noun":"Fahrrad"},{"id":"AKK_N_12","combo":"AKK_N","caseDe":"Akkusativ","genderDe":"Neutrum","abbr":"n.","answer":"das","blank":"Er betrachtet ___ Bild lange.","en":"He looks at the picture for a long time.","noun":"Bild"},{"id":"AKK_N_13","combo":"AKK_N","caseDe":"Akkusativ","genderDe":"Neutrum","abbr":"n.","answer":"das","blank":"Ich putze ___ Zimmer am Wochenende.","en":"I clean the room on the weekend.","noun":"Zimmer"},{"id":"AKK_N_14","combo":"AKK_N","caseDe":"Akkusativ","genderDe":"Neutrum","abbr":"n.","answer":"das","blank":"Wir hören ___ Radio beim Frühstück.","en":"We listen to the radio at breakfast.","noun":"Radio"},{"id":"AKK_N_15","combo":"AKK_N","caseDe":"Akkusativ","genderDe":"Neutrum","abbr":"n.","answer":"das","blank":"Sie öffnet ___ Paket sofort.","en":"She opens the package right away.","noun":"Paket"},{"id":"AKK_N_16","combo":"AKK_N","caseDe":"Akkusativ","genderDe":"Neutrum","abbr":"n.","answer":"das","blank":"Er löst ___ Problem allein.","en":"He solves the problem alone.","noun":"Problem"},{"id":"AKK_P_01","combo":"AKK_P","caseDe":"Akkusativ","genderDe":"Plural","abbr":"Pl.","answer":"die","blank":"Ich sehe ___ Kinder auf dem Schulhof.","en":"I see the children in the schoolyard.","noun":"Kinder"},{"id":"AKK_P_02","combo":"AKK_P","caseDe":"Akkusativ","genderDe":"Plural","abbr":"Pl.","answer":"die","blank":"Wir fragen ___ Leute nach dem Weg.","en":"We ask the people for directions.","noun":"Leute"},{"id":"AKK_P_03","combo":"AKK_P","caseDe":"Akkusativ","genderDe":"Plural","abbr":"Pl.","answer":"die","blank":"Sie besucht ___ Freunde am Wochenende.","en":"She visits the friends on the weekend.","noun":"Freunde"},{"id":"AKK_P_04","combo":"AKK_P","caseDe":"Akkusativ","genderDe":"Plural","abbr":"Pl.","answer":"die","blank":"Er grüßt ___ Nachbarn jeden Morgen.","en":"He greets the neighbors every morning.","noun":"Nachbarn"},{"id":"AKK_P_05","combo":"AKK_P","caseDe":"Akkusativ","genderDe":"Plural","abbr":"Pl.","answer":"die","blank":"Ich rufe ___ Eltern heute Abend an.","en":"I am calling the parents this evening.","noun":"Eltern"},{"id":"AKK_P_06","combo":"AKK_P","caseDe":"Akkusativ","genderDe":"Plural","abbr":"Pl.","answer":"die","blank":"Wir treffen ___ Studenten vor der Mensa.","en":"We meet the students in front of the cafeteria.","noun":"Studenten"},{"id":"AKK_P_07","combo":"AKK_P","caseDe":"Akkusativ","genderDe":"Plural","abbr":"Pl.","answer":"die","blank":"Sie begrüßt ___ Gäste an der Tür.","en":"She welcomes the guests at the door.","noun":"Gäste"},{"id":"AKK_P_08","combo":"AKK_P","caseDe":"Akkusativ","genderDe":"Plural","abbr":"Pl.","answer":"die","blank":"Er informiert ___ Kollegen über die Änderung.","en":"He informs the colleagues about the change.","noun":"Kollegen"},{"id":"AKK_P_09","combo":"AKK_P","caseDe":"Akkusativ","genderDe":"Plural","abbr":"Pl.","answer":"die","blank":"Ich füttere ___ Hunde am Nachmittag.","en":"I feed the dogs in the afternoon.","noun":"Hunde"},{"id":"AKK_P_10","combo":"AKK_P","caseDe":"Akkusativ","genderDe":"Plural","abbr":"Pl.","answer":"die","blank":"Wir sehen ___ Katzen im Garten.","en":"We see the cats in the garden.","noun":"Katzen"},{"id":"AKK_P_11","combo":"AKK_P","caseDe":"Akkusativ","genderDe":"Plural","abbr":"Pl.","answer":"die","blank":"Sie verkauft ___ Autos im Internet.","en":"She sells the cars online.","noun":"Autos"},{"id":"AKK_P_12","combo":"AKK_P","caseDe":"Akkusativ","genderDe":"Plural","abbr":"Pl.","answer":"die","blank":"Er trägt ___ Bücher nach oben.","en":"He carries the books upstairs.","noun":"Bücher"},{"id":"AKK_P_13","combo":"AKK_P","caseDe":"Akkusativ","genderDe":"Plural","abbr":"Pl.","answer":"die","blank":"Ich nehme ___ Busse auf dieser Linie.","en":"I take the buses on this route.","noun":"Busse"},{"id":"AKK_P_14","combo":"AKK_P","caseDe":"Akkusativ","genderDe":"Plural","abbr":"Pl.","answer":"die","blank":"Wir besuchen ___ Geschäfte in der Innenstadt.","en":"We visit the shops downtown.","noun":"Geschäfte"},{"id":"AKK_P_15","combo":"AKK_P","caseDe":"Akkusativ","genderDe":"Plural","abbr":"Pl.","answer":"die","blank":"Sie kennt ___ Schulen in der Gegend.","en":"She knows the schools in the area.","noun":"Schulen"},{"id":"AKK_P_16","combo":"AKK_P","caseDe":"Akkusativ","genderDe":"Plural","abbr":"Pl.","answer":"die","blank":"Er lädt ___ Familien zum Fest ein.","en":"He invites the families to the celebration.","noun":"Familien"},{"id":"DAT_M_01","combo":"DAT_M","caseDe":"Dativ","genderDe":"Maskulin","abbr":"m.","answer":"dem","blank":"Ich spreche mit ___ Mann vor dem Haus.","en":"I am speaking with the man in front of the house.","noun":"Mann"},{"id":"DAT_M_02","combo":"DAT_M","caseDe":"Dativ","genderDe":"Maskulin","abbr":"m.","answer":"dem","blank":"Wir sind bei ___ Lehrer im Büro.","en":"We are with the teacher in his office.","noun":"Lehrer"},{"id":"DAT_M_03","combo":"DAT_M","caseDe":"Dativ","genderDe":"Maskulin","abbr":"m.","answer":"dem","blank":"Sie spricht mit ___ Arzt über die Untersuchung.","en":"She is speaking with the doctor about the examination.","noun":"Arzt"},{"id":"DAT_M_04","combo":"DAT_M","caseDe":"Dativ","genderDe":"Maskulin","abbr":"m.","answer":"dem","blank":"Er bekommt Hilfe von ___ Bruder.","en":"He gets help from the brother.","noun":"Bruder"},{"id":"DAT_M_05","combo":"DAT_M","caseDe":"Dativ","genderDe":"Maskulin","abbr":"m.","answer":"dem","blank":"Ich fahre mit ___ Vater in die Stadt.","en":"I am going into town with the father.","noun":"Vater"},{"id":"DAT_M_06","combo":"DAT_M","caseDe":"Dativ","genderDe":"Maskulin","abbr":"m.","answer":"dem","blank":"Wir wohnen bei ___ Freund für zwei Tage.","en":"We are staying with the friend for two days.","noun":"Freund"},{"id":"DAT_M_07","combo":"DAT_M","caseDe":"Dativ","genderDe":"Maskulin","abbr":"m.","answer":"dem","blank":"Sie redet mit ___ Nachbarn über den Lärm.","en":"She talks with the neighbor about the noise.","noun":"Nachbar"},{"id":"DAT_M_08","combo":"DAT_M","caseDe":"Dativ","genderDe":"Maskulin","abbr":"m.","answer":"dem","blank":"Er arbeitet mit ___ Chef an dem Plan.","en":"He is working on the plan with the boss.","noun":"Chef"},{"id":"DAT_M_09","combo":"DAT_M","caseDe":"Dativ","genderDe":"Maskulin","abbr":"m.","answer":"dem","blank":"Ich lerne mit ___ Studenten in der Bibliothek.","en":"I am studying with the student in the library.","noun":"Student"},{"id":"DAT_M_10","combo":"DAT_M","caseDe":"Dativ","genderDe":"Maskulin","abbr":"m.","answer":"dem","blank":"Wir fahren mit ___ Fahrer zum Hotel.","en":"We are going to the hotel with the driver.","noun":"Fahrer"},{"id":"DAT_M_11","combo":"DAT_M","caseDe":"Dativ","genderDe":"Maskulin","abbr":"m.","answer":"dem","blank":"Sie spricht mit ___ Verkäufer über den Preis.","en":"She is speaking with the salesperson about the price.","noun":"Verkäufer"},{"id":"DAT_M_12","combo":"DAT_M","caseDe":"Dativ","genderDe":"Maskulin","abbr":"m.","answer":"dem","blank":"Er bekommt die Rechnung von ___ Kellner.","en":"He gets the bill from the waiter.","noun":"Kellner"},{"id":"DAT_M_13","combo":"DAT_M","caseDe":"Dativ","genderDe":"Maskulin","abbr":"m.","answer":"dem","blank":"Ich spiele mit ___ Jungen im Garten.","en":"I am playing with the boy in the garden.","noun":"Junge"},{"id":"DAT_M_14","combo":"DAT_M","caseDe":"Dativ","genderDe":"Maskulin","abbr":"m.","answer":"dem","blank":"Wir gehen mit ___ Hund spazieren.","en":"We are going for a walk with the dog.","noun":"Hund"},{"id":"DAT_M_15","combo":"DAT_M","caseDe":"Dativ","genderDe":"Maskulin","abbr":"m.","answer":"dem","blank":"Sie fährt mit ___ Bus zur Arbeit.","en":"She goes to work by bus.","noun":"Bus"},{"id":"DAT_M_16","combo":"DAT_M","caseDe":"Dativ","genderDe":"Maskulin","abbr":"m.","answer":"dem","blank":"Nach ___ Film gehen wir nach Hause.","en":"After the film, we are going home.","noun":"Film"},{"id":"DAT_F_01","combo":"DAT_F","caseDe":"Dativ","genderDe":"Feminin","abbr":"f.","answer":"der","blank":"Ich spreche mit ___ Frau an der Rezeption.","en":"I am speaking with the woman at reception.","noun":"Frau"},{"id":"DAT_F_02","combo":"DAT_F","caseDe":"Dativ","genderDe":"Feminin","abbr":"f.","answer":"der","blank":"Wir sind bei ___ Lehrerin im Klassenzimmer.","en":"We are with the teacher in the classroom.","noun":"Lehrerin"},{"id":"DAT_F_03","combo":"DAT_F","caseDe":"Dativ","genderDe":"Feminin","abbr":"f.","answer":"der","blank":"Er spricht mit ___ Ärztin über seine Schmerzen.","en":"He is speaking with the doctor about his pain.","noun":"Ärztin"},{"id":"DAT_F_04","combo":"DAT_F","caseDe":"Dativ","genderDe":"Feminin","abbr":"f.","answer":"der","blank":"Sie bekommt eine Nachricht von ___ Schwester.","en":"She gets a message from the sister.","noun":"Schwester"},{"id":"DAT_F_05","combo":"DAT_F","caseDe":"Dativ","genderDe":"Feminin","abbr":"f.","answer":"der","blank":"Ich fahre mit ___ Mutter zum Markt.","en":"I am going to the market with the mother.","noun":"Mutter"},{"id":"DAT_F_06","combo":"DAT_F","caseDe":"Dativ","genderDe":"Feminin","abbr":"f.","answer":"der","blank":"Wir übernachten bei ___ Freundin.","en":"We are staying overnight with the friend.","noun":"Freundin"},{"id":"DAT_F_07","combo":"DAT_F","caseDe":"Dativ","genderDe":"Feminin","abbr":"f.","answer":"der","blank":"Er redet mit ___ Nachbarin im Garten.","en":"He talks with the neighbor in the garden.","noun":"Nachbarin"},{"id":"DAT_F_08","combo":"DAT_F","caseDe":"Dativ","genderDe":"Feminin","abbr":"f.","answer":"der","blank":"Sie arbeitet mit ___ Chefin an dem Bericht.","en":"She is working on the report with the boss.","noun":"Chefin"},{"id":"DAT_F_09","combo":"DAT_F","caseDe":"Dativ","genderDe":"Feminin","abbr":"f.","answer":"der","blank":"Ich lerne mit ___ Studentin für die Prüfung.","en":"I am studying for the exam with the student.","noun":"Studentin"},{"id":"DAT_F_10","combo":"DAT_F","caseDe":"Dativ","genderDe":"Feminin","abbr":"f.","answer":"der","blank":"Wir fahren mit ___ Fahrerin zum Flughafen.","en":"We are going to the airport with the driver.","noun":"Fahrerin"},{"id":"DAT_F_11","combo":"DAT_F","caseDe":"Dativ","genderDe":"Feminin","abbr":"f.","answer":"der","blank":"Er spricht mit ___ Verkäuferin über die Jacke.","en":"He is speaking with the salesperson about the jacket.","noun":"Verkäuferin"},{"id":"DAT_F_12","combo":"DAT_F","caseDe":"Dativ","genderDe":"Feminin","abbr":"f.","answer":"der","blank":"Sie bekommt die Karte von ___ Kellnerin.","en":"She gets the menu from the waitress.","noun":"Kellnerin"},{"id":"DAT_F_13","combo":"DAT_F","caseDe":"Dativ","genderDe":"Feminin","abbr":"f.","answer":"der","blank":"Ich spiele mit ___ Katze im Wohnzimmer.","en":"I am playing with the cat in the living room.","noun":"Katze"},{"id":"DAT_F_14","combo":"DAT_F","caseDe":"Dativ","genderDe":"Feminin","abbr":"f.","answer":"der","blank":"Der Stuhl steht neben ___ Lampe.","en":"The chair is next to the lamp.","noun":"Lampe"},{"id":"DAT_F_15","combo":"DAT_F","caseDe":"Dativ","genderDe":"Feminin","abbr":"f.","answer":"der","blank":"Wir warten vor ___ Tür.","en":"We are waiting in front of the door.","noun":"Tür"},{"id":"DAT_F_16","combo":"DAT_F","caseDe":"Dativ","genderDe":"Feminin","abbr":"f.","answer":"der","blank":"Die Kinder sind in ___ Schule.","en":"The children are at school.","noun":"Schule"},{"id":"DAT_N_01","combo":"DAT_N","caseDe":"Dativ","genderDe":"Neutrum","abbr":"n.","answer":"dem","blank":"Ich spiele mit ___ Kind im Garten.","en":"I am playing with the child in the garden.","noun":"Kind"},{"id":"DAT_N_02","combo":"DAT_N","caseDe":"Dativ","genderDe":"Neutrum","abbr":"n.","answer":"dem","blank":"Wir sprechen mit ___ Mädchen nach dem Kurs.","en":"We are speaking with the girl after the class.","noun":"Mädchen"},{"id":"DAT_N_03","combo":"DAT_N","caseDe":"Dativ","genderDe":"Neutrum","abbr":"n.","answer":"dem","blank":"Sie sitzt mit ___ Baby im Wohnzimmer.","en":"She is sitting in the living room with the baby.","noun":"Baby"},{"id":"DAT_N_04","combo":"DAT_N","caseDe":"Dativ","genderDe":"Neutrum","abbr":"n.","answer":"dem","blank":"Er fährt mit ___ Auto zur Arbeit.","en":"He drives to work in the car.","noun":"Auto"},{"id":"DAT_N_05","combo":"DAT_N","caseDe":"Dativ","genderDe":"Neutrum","abbr":"n.","answer":"dem","blank":"Ich stehe vor ___ Haus und warte.","en":"I am standing in front of the house and waiting.","noun":"Haus"},{"id":"DAT_N_06","combo":"DAT_N","caseDe":"Dativ","genderDe":"Neutrum","abbr":"n.","answer":"dem","blank":"Wir lernen mit ___ Buch aus dem Kurs.","en":"We are studying with the book from the class.","noun":"Buch"},{"id":"DAT_N_07","combo":"DAT_N","caseDe":"Dativ","genderDe":"Neutrum","abbr":"n.","answer":"dem","blank":"Sie telefoniert mit ___ Handy ihrer Schwester.","en":"She is calling with her sister's phone.","noun":"Handy"},{"id":"DAT_N_08","combo":"DAT_N","caseDe":"Dativ","genderDe":"Neutrum","abbr":"n.","answer":"dem","blank":"Der Tisch steht vor ___ Fenster.","en":"The table is in front of the window.","noun":"Fenster"},{"id":"DAT_N_09","combo":"DAT_N","caseDe":"Dativ","genderDe":"Neutrum","abbr":"n.","answer":"dem","blank":"Bei ___ Wetter bleibe ich zu Hause.","en":"In this weather, I stay at home.","noun":"Wetter"},{"id":"DAT_N_10","combo":"DAT_N","caseDe":"Dativ","genderDe":"Neutrum","abbr":"n.","answer":"dem","blank":"Nach ___ Essen trinken wir Kaffee.","en":"After the meal, we drink coffee.","noun":"Essen"},{"id":"DAT_N_11","combo":"DAT_N","caseDe":"Dativ","genderDe":"Neutrum","abbr":"n.","answer":"dem","blank":"Er fährt mit ___ Fahrrad zur Uni.","en":"He rides the bicycle to university.","noun":"Fahrrad"},{"id":"DAT_N_12","combo":"DAT_N","caseDe":"Dativ","genderDe":"Neutrum","abbr":"n.","answer":"dem","blank":"Ich stehe vor ___ Bild und lese den Text.","en":"I am standing in front of the picture and reading the text.","noun":"Bild"},{"id":"DAT_N_13","combo":"DAT_N","caseDe":"Dativ","genderDe":"Neutrum","abbr":"n.","answer":"dem","blank":"Wir warten in ___ Zimmer.","en":"We are waiting in the room.","noun":"Zimmer"},{"id":"DAT_N_14","combo":"DAT_N","caseDe":"Dativ","genderDe":"Neutrum","abbr":"n.","answer":"dem","blank":"Sie sitzt neben ___ Radio.","en":"She is sitting next to the radio.","noun":"Radio"},{"id":"DAT_N_15","combo":"DAT_N","caseDe":"Dativ","genderDe":"Neutrum","abbr":"n.","answer":"dem","blank":"Er kommt mit ___ Paket zur Tür.","en":"He comes to the door with the package.","noun":"Paket"},{"id":"DAT_N_16","combo":"DAT_N","caseDe":"Dativ","genderDe":"Neutrum","abbr":"n.","answer":"dem","blank":"Wir beschäftigen uns mit ___ Problem.","en":"We are dealing with the problem.","noun":"Problem"},{"id":"DAT_P_01","combo":"DAT_P","caseDe":"Dativ","genderDe":"Plural","abbr":"Pl.","answer":"den","blank":"Ich spreche mit ___ Kindern im Garten.","en":"I am speaking with the children in the garden.","noun":"Kinder"},{"id":"DAT_P_02","combo":"DAT_P","caseDe":"Dativ","genderDe":"Plural","abbr":"Pl.","answer":"den","blank":"Wir reden mit ___ Leuten vor dem Eingang.","en":"We are talking with the people in front of the entrance.","noun":"Leute"},{"id":"DAT_P_03","combo":"DAT_P","caseDe":"Dativ","genderDe":"Plural","abbr":"Pl.","answer":"den","blank":"Sie fährt mit ___ Freunden ans Meer.","en":"She is going to the seaside with the friends.","noun":"Freunde"},{"id":"DAT_P_04","combo":"DAT_P","caseDe":"Dativ","genderDe":"Plural","abbr":"Pl.","answer":"den","blank":"Er spricht mit ___ Nachbarn über den Garten.","en":"He is speaking with the neighbors about the garden.","noun":"Nachbarn"},{"id":"DAT_P_05","combo":"DAT_P","caseDe":"Dativ","genderDe":"Plural","abbr":"Pl.","answer":"den","blank":"Ich esse mit ___ Eltern zu Abend.","en":"I am having dinner with the parents.","noun":"Eltern"},{"id":"DAT_P_06","combo":"DAT_P","caseDe":"Dativ","genderDe":"Plural","abbr":"Pl.","answer":"den","blank":"Wir lernen mit ___ Studenten in der Bibliothek.","en":"We are studying with the students in the library.","noun":"Studenten"},{"id":"DAT_P_07","combo":"DAT_P","caseDe":"Dativ","genderDe":"Plural","abbr":"Pl.","answer":"den","blank":"Sie sitzt bei ___ Gästen am Tisch.","en":"She is sitting at the table with the guests.","noun":"Gäste"},{"id":"DAT_P_08","combo":"DAT_P","caseDe":"Dativ","genderDe":"Plural","abbr":"Pl.","answer":"den","blank":"Er arbeitet mit ___ Kollegen an einem Projekt.","en":"He is working on a project with the colleagues.","noun":"Kollegen"},{"id":"DAT_P_09","combo":"DAT_P","caseDe":"Dativ","genderDe":"Plural","abbr":"Pl.","answer":"den","blank":"Ich gehe mit ___ Hunden in den Park.","en":"I am going to the park with the dogs.","noun":"Hunde"},{"id":"DAT_P_10","combo":"DAT_P","caseDe":"Dativ","genderDe":"Plural","abbr":"Pl.","answer":"den","blank":"Wir spielen mit ___ Katzen im Garten.","en":"We are playing with the cats in the garden.","noun":"Katzen"},{"id":"DAT_P_11","combo":"DAT_P","caseDe":"Dativ","genderDe":"Plural","abbr":"Pl.","answer":"den","blank":"Sie fährt mit ___ Autos zum Testgelände.","en":"She drives the cars to the test site.","noun":"Autos"},{"id":"DAT_P_12","combo":"DAT_P","caseDe":"Dativ","genderDe":"Plural","abbr":"Pl.","answer":"den","blank":"Er lernt mit ___ Büchern aus der Bibliothek.","en":"He studies with the books from the library.","noun":"Bücher"},{"id":"DAT_P_13","combo":"DAT_P","caseDe":"Dativ","genderDe":"Plural","abbr":"Pl.","answer":"den","blank":"Ich fahre mit ___ Bussen in die Innenstadt.","en":"I take the buses into the city center.","noun":"Busse"},{"id":"DAT_P_14","combo":"DAT_P","caseDe":"Dativ","genderDe":"Plural","abbr":"Pl.","answer":"den","blank":"Wir arbeiten mit ___ Geschäften in der Region.","en":"We work with the shops in the region.","noun":"Geschäfte"},{"id":"DAT_P_15","combo":"DAT_P","caseDe":"Dativ","genderDe":"Plural","abbr":"Pl.","answer":"den","blank":"Sie spricht mit ___ Schulen über das Projekt.","en":"She is speaking with the schools about the project.","noun":"Schulen"},{"id":"DAT_P_16","combo":"DAT_P","caseDe":"Dativ","genderDe":"Plural","abbr":"Pl.","answer":"den","blank":"Er feiert mit ___ Familien aus der Nachbarschaft.","en":"He is celebrating with the families from the neighborhood.","noun":"Familien"},{"id":"GEN_M_01","combo":"GEN_M","caseDe":"Genitiv","genderDe":"Maskulin","abbr":"m.","answer":"des","blank":"Das Auto ___ Mannes steht vor dem Haus.","en":"The man's car is parked in front of the house.","noun":"Mann"},{"id":"GEN_M_02","combo":"GEN_M","caseDe":"Genitiv","genderDe":"Maskulin","abbr":"m.","answer":"des","blank":"Die Stimme ___ Lehrers ist sehr ruhig.","en":"The teacher's voice is very calm.","noun":"Lehrer"},{"id":"GEN_M_03","combo":"GEN_M","caseDe":"Genitiv","genderDe":"Maskulin","abbr":"m.","answer":"des","blank":"Die Praxis ___ Arztes öffnet um acht.","en":"The doctor's practice opens at eight.","noun":"Arzt"},{"id":"GEN_M_04","combo":"GEN_M","caseDe":"Genitiv","genderDe":"Maskulin","abbr":"m.","answer":"des","blank":"Das Zimmer ___ Bruders ist klein.","en":"The brother's room is small.","noun":"Bruder"},{"id":"GEN_M_05","combo":"GEN_M","caseDe":"Genitiv","genderDe":"Maskulin","abbr":"m.","answer":"des","blank":"Der Schlüssel ___ Vaters liegt auf dem Tisch.","en":"The father's key is on the table.","noun":"Vater"},{"id":"GEN_M_06","combo":"GEN_M","caseDe":"Genitiv","genderDe":"Maskulin","abbr":"m.","answer":"des","blank":"Die Jacke ___ Freundes hängt an der Tür.","en":"The friend's jacket is hanging on the door.","noun":"Freund"},{"id":"GEN_M_07","combo":"GEN_M","caseDe":"Genitiv","genderDe":"Maskulin","abbr":"m.","answer":"des","blank":"Der Garten ___ Nachbarn ist sehr schön.","en":"The neighbor's garden is very beautiful.","noun":"Nachbar"},{"id":"GEN_M_08","combo":"GEN_M","caseDe":"Genitiv","genderDe":"Maskulin","abbr":"m.","answer":"des","blank":"Das Büro ___ Chefs ist im zweiten Stock.","en":"The boss's office is on the second floor.","noun":"Chef"},{"id":"GEN_M_09","combo":"GEN_M","caseDe":"Genitiv","genderDe":"Maskulin","abbr":"m.","answer":"des","blank":"Das Fahrrad ___ Studenten ist neu.","en":"The student's bicycle is new.","noun":"Student"},{"id":"GEN_M_10","combo":"GEN_M","caseDe":"Genitiv","genderDe":"Maskulin","abbr":"m.","answer":"des","blank":"Die Pause ___ Fahrers dauert zehn Minuten.","en":"The driver's break lasts ten minutes.","noun":"Fahrer"},{"id":"GEN_M_11","combo":"GEN_M","caseDe":"Genitiv","genderDe":"Maskulin","abbr":"m.","answer":"des","blank":"Der Name ___ Verkäufers steht auf dem Schild.","en":"The salesperson's name is on the sign.","noun":"Verkäufer"},{"id":"GEN_M_12","combo":"GEN_M","caseDe":"Genitiv","genderDe":"Maskulin","abbr":"m.","answer":"des","blank":"Das Tablett ___ Kellners ist schwer.","en":"The waiter's tray is heavy.","noun":"Kellner"},{"id":"GEN_M_13","combo":"GEN_M","caseDe":"Genitiv","genderDe":"Maskulin","abbr":"m.","answer":"des","blank":"Der Ball ___ Jungen liegt im Garten.","en":"The boy's ball is lying in the garden.","noun":"Junge"},{"id":"GEN_M_14","combo":"GEN_M","caseDe":"Genitiv","genderDe":"Maskulin","abbr":"m.","answer":"des","blank":"Das Halsband ___ Hundes ist rot.","en":"The dog's collar is red.","noun":"Hund"},{"id":"GEN_M_15","combo":"GEN_M","caseDe":"Genitiv","genderDe":"Maskulin","abbr":"m.","answer":"des","blank":"Die Tür ___ Busses ist noch offen.","en":"The bus door is still open.","noun":"Bus"},{"id":"GEN_M_16","combo":"GEN_M","caseDe":"Genitiv","genderDe":"Maskulin","abbr":"m.","answer":"des","blank":"Das Ende ___ Films ist überraschend.","en":"The end of the film is surprising.","noun":"Film"},{"id":"GEN_F_01","combo":"GEN_F","caseDe":"Genitiv","genderDe":"Feminin","abbr":"f.","answer":"der","blank":"Das Auto ___ Frau steht vor der Garage.","en":"The woman's car is parked in front of the garage.","noun":"Frau"},{"id":"GEN_F_02","combo":"GEN_F","caseDe":"Genitiv","genderDe":"Feminin","abbr":"f.","answer":"der","blank":"Der Schreibtisch ___ Lehrerin steht am Fenster.","en":"The teacher's desk is by the window.","noun":"Lehrerin"},{"id":"GEN_F_03","combo":"GEN_F","caseDe":"Genitiv","genderDe":"Feminin","abbr":"f.","answer":"der","blank":"Die Praxis ___ Ärztin ist heute geschlossen.","en":"The doctor's practice is closed today.","noun":"Ärztin"},{"id":"GEN_F_04","combo":"GEN_F","caseDe":"Genitiv","genderDe":"Feminin","abbr":"f.","answer":"der","blank":"Die Wohnung ___ Schwester liegt im Zentrum.","en":"The sister's apartment is downtown.","noun":"Schwester"},{"id":"GEN_F_05","combo":"GEN_F","caseDe":"Genitiv","genderDe":"Feminin","abbr":"f.","answer":"der","blank":"Die Tasche ___ Mutter liegt auf dem Stuhl.","en":"The mother's bag is on the chair.","noun":"Mutter"},{"id":"GEN_F_06","combo":"GEN_F","caseDe":"Genitiv","genderDe":"Feminin","abbr":"f.","answer":"der","blank":"Die Nummer ___ Freundin steht im Handy.","en":"The friend's number is in the phone.","noun":"Freundin"},{"id":"GEN_F_07","combo":"GEN_F","caseDe":"Genitiv","genderDe":"Feminin","abbr":"f.","answer":"der","blank":"Der Hund ___ Nachbarin bellt oft.","en":"The neighbor's dog barks often.","noun":"Nachbarin"},{"id":"GEN_F_08","combo":"GEN_F","caseDe":"Genitiv","genderDe":"Feminin","abbr":"f.","answer":"der","blank":"Das Büro ___ Chefin ist nebenan.","en":"The boss's office is next door.","noun":"Chefin"},{"id":"GEN_F_09","combo":"GEN_F","caseDe":"Genitiv","genderDe":"Feminin","abbr":"f.","answer":"der","blank":"Das Buch ___ Studentin liegt hier.","en":"The student's book is here.","noun":"Studentin"},{"id":"GEN_F_10","combo":"GEN_F","caseDe":"Genitiv","genderDe":"Feminin","abbr":"f.","answer":"der","blank":"Das Auto ___ Fahrerin ist blau.","en":"The driver's car is blue.","noun":"Fahrerin"},{"id":"GEN_F_11","combo":"GEN_F","caseDe":"Genitiv","genderDe":"Feminin","abbr":"f.","answer":"der","blank":"Der Ausweis ___ Verkäuferin liegt an der Kasse.","en":"The salesperson's ID is at the checkout.","noun":"Verkäuferin"},{"id":"GEN_F_12","combo":"GEN_F","caseDe":"Genitiv","genderDe":"Feminin","abbr":"f.","answer":"der","blank":"Die Schürze ___ Kellnerin ist schwarz.","en":"The waitress's apron is black.","noun":"Kellnerin"},{"id":"GEN_F_13","combo":"GEN_F","caseDe":"Genitiv","genderDe":"Feminin","abbr":"f.","answer":"der","blank":"Das Futter ___ Katze steht in der Küche.","en":"The cat's food is in the kitchen.","noun":"Katze"},{"id":"GEN_F_14","combo":"GEN_F","caseDe":"Genitiv","genderDe":"Feminin","abbr":"f.","answer":"der","blank":"Das Licht ___ Lampe ist sehr warm.","en":"The lamp's light is very warm.","noun":"Lampe"},{"id":"GEN_F_15","combo":"GEN_F","caseDe":"Genitiv","genderDe":"Feminin","abbr":"f.","answer":"der","blank":"Der Griff ___ Tür ist locker.","en":"The door handle is loose.","noun":"Tür"},{"id":"GEN_F_16","combo":"GEN_F","caseDe":"Genitiv","genderDe":"Feminin","abbr":"f.","answer":"der","blank":"Der Eingang ___ Schule ist auf der anderen Seite.","en":"The entrance to the school is on the other side.","noun":"Schule"},{"id":"GEN_N_01","combo":"GEN_N","caseDe":"Genitiv","genderDe":"Neutrum","abbr":"n.","answer":"des","blank":"Die Tasche ___ Kindes liegt auf der Bank.","en":"The child's bag is on the bench.","noun":"Kind"},{"id":"GEN_N_02","combo":"GEN_N","caseDe":"Genitiv","genderDe":"Neutrum","abbr":"n.","answer":"des","blank":"Das Fahrrad ___ Mädchens steht vor der Schule.","en":"The girl's bicycle is in front of the school.","noun":"Mädchen"},{"id":"GEN_N_03","combo":"GEN_N","caseDe":"Genitiv","genderDe":"Neutrum","abbr":"n.","answer":"des","blank":"Das Zimmer ___ Babys ist sehr ruhig.","en":"The baby's room is very quiet.","noun":"Baby"},{"id":"GEN_N_04","combo":"GEN_N","caseDe":"Genitiv","genderDe":"Neutrum","abbr":"n.","answer":"des","blank":"Die Farbe ___ Autos gefällt mir.","en":"I like the color of the car.","noun":"Auto"},{"id":"GEN_N_05","combo":"GEN_N","caseDe":"Genitiv","genderDe":"Neutrum","abbr":"n.","answer":"des","blank":"Das Dach ___ Hauses ist neu.","en":"The roof of the house is new.","noun":"Haus"},{"id":"GEN_N_06","combo":"GEN_N","caseDe":"Genitiv","genderDe":"Neutrum","abbr":"n.","answer":"des","blank":"Der Titel ___ Buches ist sehr lang.","en":"The title of the book is very long.","noun":"Buch"},{"id":"GEN_N_07","combo":"GEN_N","caseDe":"Genitiv","genderDe":"Neutrum","abbr":"n.","answer":"des","blank":"Der Akku ___ Handys ist fast leer.","en":"The phone's battery is almost empty.","noun":"Handy"},{"id":"GEN_N_08","combo":"GEN_N","caseDe":"Genitiv","genderDe":"Neutrum","abbr":"n.","answer":"des","blank":"Der Rahmen ___ Fensters ist weiß.","en":"The window frame is white.","noun":"Fenster"},{"id":"GEN_N_09","combo":"GEN_N","caseDe":"Genitiv","genderDe":"Neutrum","abbr":"n.","answer":"des","blank":"Die Änderung ___ Wetters kommt am Abend.","en":"The change in the weather will come in the evening.","noun":"Wetter"},{"id":"GEN_N_10","combo":"GEN_N","caseDe":"Genitiv","genderDe":"Neutrum","abbr":"n.","answer":"des","blank":"Der Geruch ___ Essens ist wunderbar.","en":"The smell of the food is wonderful.","noun":"Essen"},{"id":"GEN_N_11","combo":"GEN_N","caseDe":"Genitiv","genderDe":"Neutrum","abbr":"n.","answer":"des","blank":"Der Reifen ___ Fahrrads ist kaputt.","en":"The bicycle tire is broken.","noun":"Fahrrad"},{"id":"GEN_N_12","combo":"GEN_N","caseDe":"Genitiv","genderDe":"Neutrum","abbr":"n.","answer":"des","blank":"Die Farbe ___ Bildes ist sehr kräftig.","en":"The color of the picture is very strong.","noun":"Bild"},{"id":"GEN_N_13","combo":"GEN_N","caseDe":"Genitiv","genderDe":"Neutrum","abbr":"n.","answer":"des","blank":"Die Tür ___ Zimmers ist geschlossen.","en":"The room door is closed.","noun":"Zimmer"},{"id":"GEN_N_14","combo":"GEN_N","caseDe":"Genitiv","genderDe":"Neutrum","abbr":"n.","answer":"des","blank":"Die Lautstärke ___ Radios ist zu hoch.","en":"The radio volume is too high.","noun":"Radio"},{"id":"GEN_N_15","combo":"GEN_N","caseDe":"Genitiv","genderDe":"Neutrum","abbr":"n.","answer":"des","blank":"Der Inhalt ___ Pakets ist zerbrechlich.","en":"The contents of the package are fragile.","noun":"Paket"},{"id":"GEN_N_16","combo":"GEN_N","caseDe":"Genitiv","genderDe":"Neutrum","abbr":"n.","answer":"des","blank":"Die Ursache ___ Problems ist noch unklar.","en":"The cause of the problem is still unclear.","noun":"Problem"},{"id":"GEN_P_01","combo":"GEN_P","caseDe":"Genitiv","genderDe":"Plural","abbr":"Pl.","answer":"der","blank":"Die Stimmen ___ Kinder sind sehr laut.","en":"The children's voices are very loud.","noun":"Kinder"},{"id":"GEN_P_02","combo":"GEN_P","caseDe":"Genitiv","genderDe":"Plural","abbr":"Pl.","answer":"der","blank":"Die Meinung ___ Leute ist unterschiedlich.","en":"The people's opinion is divided.","noun":"Leute"},{"id":"GEN_P_03","combo":"GEN_P","caseDe":"Genitiv","genderDe":"Plural","abbr":"Pl.","answer":"der","blank":"Das Haus ___ Freunde liegt am See.","en":"The friends' house is by the lake.","noun":"Freunde"},{"id":"GEN_P_04","combo":"GEN_P","caseDe":"Genitiv","genderDe":"Plural","abbr":"Pl.","answer":"der","blank":"Der Garten ___ Nachbarn ist groß.","en":"The neighbors' garden is large.","noun":"Nachbarn"},{"id":"GEN_P_05","combo":"GEN_P","caseDe":"Genitiv","genderDe":"Plural","abbr":"Pl.","answer":"der","blank":"Das Auto ___ Eltern steht draußen.","en":"The parents' car is outside.","noun":"Eltern"},{"id":"GEN_P_06","combo":"GEN_P","caseDe":"Genitiv","genderDe":"Plural","abbr":"Pl.","answer":"der","blank":"Die Bücher ___ Studenten liegen auf dem Tisch.","en":"The students' books are on the table.","noun":"Studenten"},{"id":"GEN_P_07","combo":"GEN_P","caseDe":"Genitiv","genderDe":"Plural","abbr":"Pl.","answer":"der","blank":"Die Jacken ___ Gäste hängen im Flur.","en":"The guests' jackets are hanging in the hallway.","noun":"Gäste"},{"id":"GEN_P_08","combo":"GEN_P","caseDe":"Genitiv","genderDe":"Plural","abbr":"Pl.","answer":"der","blank":"Das Büro ___ Kollegen ist im dritten Stock.","en":"The colleagues' office is on the third floor.","noun":"Kollegen"},{"id":"GEN_P_09","combo":"GEN_P","caseDe":"Genitiv","genderDe":"Plural","abbr":"Pl.","answer":"der","blank":"Das Futter ___ Hunde steht in der Küche.","en":"The dogs' food is in the kitchen.","noun":"Hunde"},{"id":"GEN_P_10","combo":"GEN_P","caseDe":"Genitiv","genderDe":"Plural","abbr":"Pl.","answer":"der","blank":"Die Körbe ___ Katzen stehen im Wohnzimmer.","en":"The cats' baskets are in the living room.","noun":"Katzen"},{"id":"GEN_P_11","combo":"GEN_P","caseDe":"Genitiv","genderDe":"Plural","abbr":"Pl.","answer":"der","blank":"Die Schlüssel ___ Autos liegen im Schrank.","en":"The car keys are in the cabinet.","noun":"Autos"},{"id":"GEN_P_12","combo":"GEN_P","caseDe":"Genitiv","genderDe":"Plural","abbr":"Pl.","answer":"der","blank":"Die Seiten ___ Bücher sind schon gelb.","en":"The pages of the books are already yellow.","noun":"Bücher"},{"id":"GEN_P_13","combo":"GEN_P","caseDe":"Genitiv","genderDe":"Plural","abbr":"Pl.","answer":"der","blank":"Die Fahrer ___ Busse machen gerade Pause.","en":"The bus drivers are taking a break right now.","noun":"Busse"},{"id":"GEN_P_14","combo":"GEN_P","caseDe":"Genitiv","genderDe":"Plural","abbr":"Pl.","answer":"der","blank":"Die Öffnungszeiten ___ Geschäfte stehen online.","en":"The shops' opening hours are online.","noun":"Geschäfte"},{"id":"GEN_P_15","combo":"GEN_P","caseDe":"Genitiv","genderDe":"Plural","abbr":"Pl.","answer":"der","blank":"Die Webseiten ___ Schulen sind aktuell.","en":"The schools' websites are up to date.","noun":"Schulen"},{"id":"GEN_P_16","combo":"GEN_P","caseDe":"Genitiv","genderDe":"Plural","abbr":"Pl.","answer":"der","blank":"Die Wohnungen ___ Familien liegen im selben Haus.","en":"The families' apartments are in the same building.","noun":"Familien"}];
+const comboMeta = {"NOM_M":{"caseDe":"Nominativ","genderDe":"Maskulin","abbr":"m.","answer":"der"},"NOM_F":{"caseDe":"Nominativ","genderDe":"Feminin","abbr":"f.","answer":"die"},"NOM_N":{"caseDe":"Nominativ","genderDe":"Neutrum","abbr":"n.","answer":"das"},"NOM_P":{"caseDe":"Nominativ","genderDe":"Plural","abbr":"Pl.","answer":"die"},"AKK_M":{"caseDe":"Akkusativ","genderDe":"Maskulin","abbr":"m.","answer":"den"},"AKK_F":{"caseDe":"Akkusativ","genderDe":"Feminin","abbr":"f.","answer":"die"},"AKK_N":{"caseDe":"Akkusativ","genderDe":"Neutrum","abbr":"n.","answer":"das"},"AKK_P":{"caseDe":"Akkusativ","genderDe":"Plural","abbr":"Pl.","answer":"die"},"DAT_M":{"caseDe":"Dativ","genderDe":"Maskulin","abbr":"m.","answer":"dem"},"DAT_F":{"caseDe":"Dativ","genderDe":"Feminin","abbr":"f.","answer":"der"},"DAT_N":{"caseDe":"Dativ","genderDe":"Neutrum","abbr":"n.","answer":"dem"},"DAT_P":{"caseDe":"Dativ","genderDe":"Plural","abbr":"Pl.","answer":"den"},"GEN_M":{"caseDe":"Genitiv","genderDe":"Maskulin","abbr":"m.","answer":"des"},"GEN_F":{"caseDe":"Genitiv","genderDe":"Feminin","abbr":"f.","answer":"der"},"GEN_N":{"caseDe":"Genitiv","genderDe":"Neutrum","abbr":"n.","answer":"des"},"GEN_P":{"caseDe":"Genitiv","genderDe":"Plural","abbr":"Pl.","answer":"der"}};
+const comboKeys = Object.keys(comboMeta);
+const articles = ["der","die","das","den","dem","des"];
+const bankByCombo = Object.fromEntries(comboKeys.map(k => [k, sentenceBank.filter(x => x.combo === k)]));
+const byId = Object.fromEntries(sentenceBank.map(x => [x.id, x]));
+const TOTAL = sentenceBank.length;
+const STATE_KEY = "german-definite-articles-fill-beta-v1";
+const MODE_KEY = "german-definite-articles-mode-v1";
+const $ = id => document.getElementById(id);
 
-function shuffledIndices(previousLast=null){
-  const arr=items.map((_,i)=>i);
-  for(let i=arr.length-1;i>0;i--){
+function shuffle(arr){
+  const a=[...arr];
+  for(let i=a.length-1;i>0;i--){
     const j=Math.floor(Math.random()*(i+1));
-    [arr[i],arr[j]]=[arr[j],arr[i]];
+    [a[i],a[j]]=[a[j],a[i]];
   }
+  return a;
+}
+function sameArray(a,b){
+  return Array.isArray(a)&&Array.isArray(b)&&a.length===b.length&&a.every((v,i)=>v===b[i]);
+}
+function pct(n){ return Math.round((n/TOTAL)*100); }
+function cap(s){ return s.charAt(0).toUpperCase()+s.slice(1); }
+function filledSentence(blank, article){
+  const starts = /^\s*___/.test(blank);
+  return blank.replace("___", starts ? cap(article) : article);
+}
+function sentenceHtml(blank, article=null){
+  if(article){
+    const starts=/^\s*___/.test(blank);
+    const shown=starts?cap(article):article;
+    return blank.replace("___", `<span class="filled-article">${shown}</span>`);
+  }
+  return blank.replace("___", `<span class="blank-slot">___</span>`);
+}
+
+/* ---------- Mode switch ---------- */
+let mode = "table";
+function setMode(next){
+  mode=next;
+  localStorage.setItem(MODE_KEY, mode);
+  $("tableModeBtn").classList.toggle("active",mode==="table");
+  $("fillModeBtn").classList.toggle("active",mode==="fill");
+  $("tableMode").classList.toggle("hidden",mode!=="table");
+  $("fillMode").classList.toggle("hidden",mode!=="fill");
+  $("pageSubtitle").textContent = mode==="table"
+    ? "Case + gender → type the article → check → next"
+    : "Sentence context → choose der / die / das / den / dem / des";
+  if(mode==="table"){ renderTable(); }
+  else { ensureFillRound(); renderFill(); }
+}
+
+/* ---------- Original Table Drill ---------- */
+let tableOrder=[], tablePos=0, tableRound=1, tableChecked=false;
+
+function shuffledTableIndices(previousLast=null){
+  const arr=shuffle(tableItems.map((_,i)=>i));
   if(previousLast!==null && arr.length>1 && arr[0]===previousLast){
     [arr[0],arr[1]]=[arr[1],arr[0]];
   }
   return arr;
 }
-function current(){ return items[order[pos]]; }
+function tableCurrent(){ return tableItems[tableOrder[tablePos]]; }
 function normalize(s){ return s.trim().toLowerCase(); }
 
-function render(){
-  const item=current();
+function renderTable(){
+  if(!tableOrder.length) tableOrder=shuffledTableIndices();
+  const item=tableCurrent();
   $("caseText").textContent=`${item.caseEn} · ${item.caseDe}`;
   $("genderText").textContent=`${item.genderEn} · ${item.genderDe}`;
-  $("roundText").textContent=`Round / Runde ${round}`;
-  $("progressText").textContent=`${pos+1} / ${order.length}`;
-  $("barFill").style.width=`${((pos+1)/order.length)*100}%`;
+  $("headerMeta").innerHTML=`<div>Round / Runde ${tableRound}</div><div>${tablePos+1} / ${tableOrder.length}</div>`;
+  $("barFill").style.width=`${((tablePos+1)/tableOrder.length)*100}%`;
 
+  if(!tableChecked){
+    $("answerInput").disabled=false;
+    $("tableCheckBtn").classList.remove("hidden");
+    $("tableNextBtn").classList.add("hidden");
+    $("tableSkipBtn").classList.remove("hidden");
+  }
+}
+function resetTableQuestion(){
   $("answerInput").value="";
   $("answerInput").disabled=false;
   $("answerInput").className="";
-  $("result").textContent="";
-  $("result").className="result";
-  $("checkBtn").disabled=true;
-  $("checkBtn").classList.remove("hidden");
-  $("nextBtn").classList.add("hidden");
-  $("skipBtn").classList.remove("hidden");
-  checked=false;
-  $("answerInput").focus();
+  $("tableResult").textContent="";
+  $("tableResult").className="result";
+  $("tableCheckBtn").disabled=true;
+  $("tableCheckBtn").classList.remove("hidden");
+  $("tableNextBtn").classList.add("hidden");
+  $("tableSkipBtn").classList.remove("hidden");
+  tableChecked=false;
+  renderTable();
+  if(mode==="table") $("answerInput").focus();
 }
-
-function checkAnswer(){
+function checkTable(){
   if(!$("answerInput").value.trim()) return;
-  const item=current();
+  const item=tableCurrent();
   const ok=normalize($("answerInput").value)===item.answer;
   $("answerInput").disabled=true;
-  if(ok){
-    $("answerInput").classList.add("correct");
-    $("result").className="result ok";
-    $("result").textContent="✓ correct / richtig";
-  }else{
-    $("answerInput").classList.add("wrong");
-    $("result").className="result bad";
-    $("result").textContent=`✗ correct answer / richtige Antwort: ${item.answer}`;
+  $("answerInput").classList.add(ok?"correct":"wrong");
+  $("tableResult").className=`result ${ok?"ok":"bad"}`;
+  $("tableResult").textContent=ok ? "✓ correct / richtig" : `✗ correct answer / richtige Antwort: ${item.answer}`;
+  $("tableCheckBtn").classList.add("hidden");
+  $("tableNextBtn").classList.remove("hidden");
+  $("tableSkipBtn").classList.add("hidden");
+  tableChecked=true;
+}
+function nextTable(){
+  if(tablePos<tableOrder.length-1) tablePos++;
+  else{
+    const prev=tableOrder[tableOrder.length-1];
+    tableOrder=shuffledTableIndices(prev);
+    tablePos=0; tableRound++;
   }
-  $("checkBtn").classList.add("hidden");
-  $("nextBtn").classList.remove("hidden");
-  $("skipBtn").classList.add("hidden");
-  checked=true;
+  resetTableQuestion();
+}
+function reshuffleTable(){
+  const currentIndex=tableOrder[tablePos];
+  tableOrder=shuffledTableIndices();
+  if(tableOrder.length>1 && tableOrder[0]===currentIndex) [tableOrder[0],tableOrder[1]]=[tableOrder[1],tableOrder[0]];
+  tablePos=0; tableRound=1;
+  resetTableQuestion();
 }
 
-function nextItem(){
-  if(pos<order.length-1){
-    pos+=1;
-  }else{
-    const previousLast=order[order.length-1];
-    order=shuffledIndices(previousLast);
-    pos=0;
-    round+=1;
-  }
-  render();
+/* ---------- Sentence Fill-in Beta ---------- */
+function defaultFillState(){
+  return {
+    version:1,
+    cycle:1,
+    roundNumber:1,
+    checked:[],
+    seen:[],
+    skipped:Object.fromEntries(comboKeys.map(k=>[k,[]])),
+    previousOrder:[],
+    activeRound:null,
+    cycleCompletePending:false
+  };
 }
+function loadFillState(){
+  try{
+    const raw=JSON.parse(localStorage.getItem(STATE_KEY)||"null");
+    if(!raw || raw.version!==1) return defaultFillState();
+    raw.checked=Array.isArray(raw.checked)?raw.checked.filter(id=>byId[id]):[];
+    raw.seen=Array.isArray(raw.seen)?raw.seen.filter(id=>byId[id]):[];
+    raw.skipped=raw.skipped||{};
+    for(const k of comboKeys){
+      raw.skipped[k]=Array.isArray(raw.skipped[k])?raw.skipped[k].filter(id=>byId[id]&&byId[id].combo===k):[];
+    }
+    return Object.assign(defaultFillState(),raw);
+  }catch(e){ return defaultFillState(); }
+}
+let fillState=loadFillState();
+let genderOpen=false, englishOpen=false;
 
-function reshuffle(){
-  const currentIndex=order[pos];
-  order=shuffledIndices();
-  if(order.length>1 && order[0]===currentIndex){
+function saveFill(){ localStorage.setItem(STATE_KEY,JSON.stringify(fillState)); }
+function checkedSet(){ return new Set(fillState.checked); }
+function seenSet(){ return new Set(fillState.seen); }
+
+function makeOrder(){
+  let order=shuffle(comboKeys);
+  const prev=fillState.previousOrder||[];
+  for(let tries=0;tries<30;tries++){
+    const badSame=sameArray(order,prev);
+    const badBoundary=prev.length && order[0]===prev[prev.length-1];
+    if(!badSame && !badBoundary) return order;
+    order=shuffle(comboKeys);
+  }
+  if(prev.length && order[0]===prev[prev.length-1] && order.length>1){
     [order[0],order[1]]=[order[1],order[0]];
   }
-  pos=0;
-  round=1;
-  render();
+  return order;
 }
 
+function chooseSentence(combo){
+  const checked=checkedSet(), seen=seenSet();
+  const pool=bankByCombo[combo];
+
+  // 1) Strict priority: sentences never shown in this cycle.
+  const fresh=pool.filter(x=>!seen.has(x.id));
+  if(fresh.length) return fresh[Math.floor(Math.random()*fresh.length)].id;
+
+  // 2) After the full fresh pool for this combination is exhausted:
+  //    bring back unresolved skipped sentences, oldest first.
+  const unresolved=(fillState.skipped[combo]||[]).filter(id=>!checked.has(id));
+  if(unresolved.length) return unresolved[0];
+
+  // 3) Fixed 16-combination rounds require a filler if this combo is already complete
+  //    while another combo still has unresolved skips. Repeats only happen after fresh exhaustion.
+  const reviewed=pool.filter(x=>checked.has(x.id));
+  if(reviewed.length){
+    const lastId=fillState.activeRound?.items?.[combo];
+    const choices=reviewed.filter(x=>x.id!==lastId);
+    const src=choices.length?choices:reviewed;
+    return src[Math.floor(Math.random()*src.length)].id;
+  }
+
+  // Defensive fallback.
+  return pool[Math.floor(Math.random()*pool.length)].id;
+}
+
+function createRound(){
+  const order=makeOrder();
+  const items={};
+  for(const combo of order) items[combo]=chooseSentence(combo);
+  fillState.activeRound={
+    order,items,pos:0,stats:{correct:0,incorrect:0,skipped:0},
+    qState:{selected:null,checked:false,ok:null},
+    complete:false
+  };
+  saveFill();
+}
+function ensureFillRound(){
+  if(!fillState.activeRound) createRound();
+}
+function currentFillItem(){
+  const r=fillState.activeRound;
+  const combo=r.order[r.pos];
+  return byId[r.items[combo]];
+}
+function currentCombo(){ return fillState.activeRound.order[fillState.activeRound.pos]; }
+
+function addUnique(arr,id){ if(!arr.includes(id)) arr.push(id); }
+function removeValue(arr,id){
+  const i=arr.indexOf(id);
+  if(i>=0) arr.splice(i,1);
+}
+function markSeen(id){ addUnique(fillState.seen,id); }
+function markChecked(id){
+  addUnique(fillState.checked,id);
+  const combo=byId[id].combo;
+  removeValue(fillState.skipped[combo],id);
+  if(fillState.checked.length===TOTAL) fillState.cycleCompletePending=true;
+}
+function markSkipped(id){
+  const item=byId[id];
+  if(fillState.checked.includes(id)) return; // review filler: no unresolved debt
+  markSeen(id);
+  removeValue(fillState.skipped[item.combo],id);
+  fillState.skipped[item.combo].push(id); // move to back if skipped again
+}
+function cycleText(prefix=""){
+  const n=fillState.checked.length;
+  return `${prefix}Cycle ${fillState.cycle} · ${n} / ${TOTAL} checked · ${pct(n)}%`;
+}
+function renderReveal(){
+  const item=currentFillItem();
+  $("genderHintContent").textContent=`${item.noun} · ${item.genderDe} (${item.abbr})`;
+  $("englishContent").textContent=item.en;
+  $("genderHintContent").classList.toggle("hidden",!genderOpen);
+  $("englishContent").classList.toggle("hidden",!englishOpen);
+  $("genderHintState").textContent=genderOpen?"Tap to hide":"Tap to reveal";
+  $("englishState").textContent=englishOpen?"Tap to hide":"Tap to reveal";
+}
+function renderArticleButtons(){
+  const r=fillState.activeRound, item=currentFillItem(), q=r.qState;
+  $("articleGrid").innerHTML="";
+  for(const article of articles){
+    const b=document.createElement("button");
+    b.className="article-btn";
+    b.textContent=article;
+    b.dataset.article=article;
+    if(q.selected===article) b.classList.add("selected");
+    if(q.checked){
+      b.disabled=true;
+      if(q.ok && q.selected===article) b.classList.add("correct-choice");
+      if(!q.ok && q.selected===article) b.classList.add("wrong-choice");
+      if(!q.ok && item.answer===article) b.classList.add("correct-outline");
+    }
+    b.addEventListener("click",()=>selectArticle(article));
+    $("articleGrid").appendChild(b);
+  }
+}
+function renderFill(){
+  ensureFillRound();
+  const r=fillState.activeRound;
+
+  $("fillExercise").classList.toggle("hidden",!!r.complete);
+  $("roundCompleteCard").classList.toggle("hidden",!r.complete);
+
+  if(r.complete){
+    $("headerMeta").innerHTML=`<div>Round / Runde ${fillState.roundNumber}</div><div class="cycle-mini">${cycleText()}</div>`;
+    $("barFill").style.width="100%";
+    $("statCorrect").textContent=r.stats.correct;
+    $("statIncorrect").textContent=r.stats.incorrect;
+    $("statSkipped").textContent=r.stats.skipped;
+    $("roundCycleProgress").textContent=`Cycle progress: ${fillState.checked.length} / ${TOTAL} checked · ${pct(fillState.checked.length)}%`;
+    $("newRoundBtn").textContent=fillState.cycleCompletePending
+      ? "Start next cycle / Nächsten Zyklus starten →"
+      : "New round / Neue Runde →";
+    return;
+  }
+
+  const item=currentFillItem(), q=r.qState;
+  $("headerMeta").innerHTML=
+    `<div>Round / Runde ${fillState.roundNumber} · Question ${r.pos+1} / 16</div>`+
+    `<div class="cycle-mini">${cycleText()}</div>`;
+  $("barFill").style.width=`${((r.pos+1)/16)*100}%`;
+  $("fillSentence").innerHTML=sentenceHtml(item.blank,q.selected);
+  renderReveal();
+  renderArticleButtons();
+
+  $("fillFeedback").classList.toggle("hidden",!q.checked);
+  $("fillCheckBtn").classList.toggle("hidden",q.checked);
+  $("fillSkipBtn").classList.toggle("hidden",q.checked);
+  $("fillNextBtn").classList.toggle("hidden",!q.checked);
+  $("fillCheckBtn").disabled=!q.selected;
+
+  if(q.checked){
+    $("fillStatus").className=`fill-status ${q.ok?"ok":"bad"}`;
+    $("fillStatus").textContent=q.ok?"✓ Correct / Richtig":"✗ Incorrect / Falsch";
+    $("correctArticle").textContent=item.answer;
+    $("grammarLine").textContent=`${item.caseDe} · ${item.genderDe}`;
+    $("fullSentence").textContent=filledSentence(item.blank,item.answer);
+  }
+}
+function selectArticle(article){
+  const q=fillState.activeRound.qState;
+  if(q.checked) return;
+  q.selected=article;
+  saveFill(); renderFill();
+}
+function checkFill(){
+  const r=fillState.activeRound, q=r.qState, item=currentFillItem();
+  if(q.checked || !q.selected) return;
+  q.checked=true;
+  q.ok=q.selected===item.answer;
+  markSeen(item.id);
+  markChecked(item.id);
+  if(q.ok) r.stats.correct++;
+  else r.stats.incorrect++;
+  saveFill(); renderFill();
+}
+function advanceFill(){
+  const r=fillState.activeRound;
+  if(r.pos<15){
+    r.pos++;
+    r.qState={selected:null,checked:false,ok:null};
+    genderOpen=false; englishOpen=false;
+  }else{
+    r.complete=true;
+    fillState.previousOrder=[...r.order];
+  }
+  saveFill(); renderFill();
+}
+function skipFill(){
+  const r=fillState.activeRound, q=r.qState, item=currentFillItem();
+  if(q.checked) return;
+  markSkipped(item.id);
+  r.stats.skipped++;
+  if(r.pos<15){
+    r.pos++;
+    r.qState={selected:null,checked:false,ok:null};
+    genderOpen=false; englishOpen=false;
+  }else{
+    r.complete=true;
+    fillState.previousOrder=[...r.order];
+  }
+  saveFill(); renderFill();
+}
+function startNewRound(){
+  if(fillState.cycleCompletePending){
+    const nextCycle=fillState.cycle+1;
+    const prevOrder=[...(fillState.previousOrder||[])];
+    fillState=defaultFillState();
+    fillState.cycle=nextCycle;
+    fillState.previousOrder=prevOrder;
+    fillState.roundNumber=1;
+  }else{
+    fillState.roundNumber++;
+    fillState.activeRound=null;
+  }
+  genderOpen=false; englishOpen=false;
+  createRound();
+  saveFill(); renderFill();
+}
+
+/* ---------- Events ---------- */
+$("tableModeBtn").addEventListener("click",()=>setMode("table"));
+$("fillModeBtn").addEventListener("click",()=>setMode("fill"));
+
 $("answerInput").addEventListener("input",()=>{
-  $("checkBtn").disabled=!$("answerInput").value.trim();
+  $("tableCheckBtn").disabled=!$("answerInput").value.trim();
 });
-$("checkBtn").addEventListener("click",checkAnswer);
-$("nextBtn").addEventListener("click",nextItem);
-$("reshuffleBtn").addEventListener("click",reshuffle);
-$("skipBtn").addEventListener("click",nextItem);
+$("tableCheckBtn").addEventListener("click",checkTable);
+$("tableNextBtn").addEventListener("click",nextTable);
+$("reshuffleBtn").addEventListener("click",reshuffleTable);
+$("tableSkipBtn").addEventListener("click",nextTable);
+
+$("genderHintBtn").addEventListener("click",()=>{ genderOpen=!genderOpen; renderReveal(); });
+$("englishBtn").addEventListener("click",()=>{ englishOpen=!englishOpen; renderReveal(); });
+$("fillCheckBtn").addEventListener("click",checkFill);
+$("fillSkipBtn").addEventListener("click",skipFill);
+$("fillNextBtn").addEventListener("click",advanceFill);
+$("newRoundBtn").addEventListener("click",startNewRound);
 
 document.addEventListener("keydown",(e)=>{
   if(e.key!=="Enter") return;
-  if(!checked && !$("checkBtn").disabled){
-    checkAnswer();
-  }else if(checked){
-    nextItem();
+  if(mode==="table"){
+    if(!tableChecked && !$("tableCheckBtn").disabled) checkTable();
+    else if(tableChecked) nextTable();
+  }else{
+    const r=fillState.activeRound;
+    if(!r || r.complete) return;
+    if(!r.qState.checked && r.qState.selected) checkFill();
+    else if(r.qState.checked) advanceFill();
   }
 });
 
-order=shuffledIndices();
-render();
+/* ---------- Init ---------- */
+tableOrder=shuffledTableIndices();
+resetTableQuestion();
+const savedMode=localStorage.getItem(MODE_KEY);
+setMode(savedMode==="fill"?"fill":"table");
 </script>
 
 <script>
