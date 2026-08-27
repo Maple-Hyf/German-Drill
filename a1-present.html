@@ -290,7 +290,26 @@
       min-height:18px;
     }
     .result.ok{color:#2c6f3a}
-    .result.bad{color:#a33}
+    .result.bad{color:#8b3a2f}
+    .correction-label{
+      display:block;
+      margin-bottom:5px;
+      color:#8b5a52;
+      font-size:11px;
+      font-weight:700;
+    }
+    .correction-answer{
+      display:inline-block;
+      padding:5px 9px;
+      border:1px solid #d6a463;
+      border-radius:8px;
+      background:#fff3cf;
+      color:#3d2700;
+      font-size:17px;
+      font-weight:900;
+      letter-spacing:.01em;
+      line-height:1.2;
+    }
     .controls{
       display:flex;
       gap:10px;
@@ -876,7 +895,9 @@ function checkAnswers(){
     } else {
       input.classList.add("wrong");
       result.className = "result bad";
-      result.textContent = `✗ correct answer / richtige Antwort: ${item.f[i]}`;
+      result.innerHTML =
+        `<span class="correction-label">✗ correct answer / richtige Antwort</span>` +
+        `<span class="correction-answer">${item.f[i]}</span>`;
     }
   });
 
