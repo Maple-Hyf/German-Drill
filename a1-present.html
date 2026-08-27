@@ -378,9 +378,12 @@
       .row{grid-template-columns:86px 1fr}
       .verb{font-size:31px}
       .tag-stack{max-width:52%}
-      .badge.long-type{white-space:normal;border-radius:12px}
-      .badge.long-type .tag-part{display:block}
-      .badge.long-type .tag-sep{display:none}
+      .badge{
+        white-space:normal;
+        border-radius:12px;
+      }
+      .badge .tag-part{display:block}
+      .badge .tag-sep{display:none}
       .filter-summary-row{align-items:flex-start}
       .filter-panel{padding:12px}
       .filter-chip{font-size:10.5px}
@@ -763,8 +766,7 @@ function renderStudy(){
   const typeParts = item.type.split(" / ");
   $("typeEn").textContent = typeParts[0] || item.type;
   $("typeDe").textContent = typeParts[1] || "";
-  $("type").classList.toggle("long-type", item.type.length >= 36);
-  $("type").querySelector(".tag-sep").style.display = typeParts[1] ? "" : "none";
+    $("type").querySelector(".tag-sep").style.display = typeParts[1] ? "" : "none";
   $("typeDe").style.display = typeParts[1] ? "" : "none";
 
   $("level").textContent = item.level;
