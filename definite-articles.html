@@ -104,6 +104,45 @@
     .subtitle{font-size:14px}
     .meta{font-size:13px;white-space:nowrap;text-align:right;line-height:1.5}
     .cycle-mini{font-size:11px;color:#8a8a84;font-weight:650}
+    .header-side{
+      display:flex;
+      flex-direction:column;
+      align-items:flex-end;
+      gap:7px;
+    }
+    .fill-history-tools{
+      display:flex;
+      align-items:center;
+      justify-content:flex-end;
+      gap:7px;
+    }
+    .history-tool{
+      min-height:30px;
+      padding:6px 9px;
+      border:1px solid var(--border);
+      border-radius:9px;
+      background:var(--card);
+      color:var(--muted);
+      font:inherit;
+      font-size:11px;
+      font-weight:800;
+      line-height:1;
+      box-shadow:none;
+    }
+    .history-tool:hover:not(:disabled){
+      border-color:#aaa9a2;
+      color:var(--text);
+    }
+    .history-tool.reset{
+      color:#a14c4c;
+      border-color:#e0c0c0;
+      background:#fffafa;
+    }
+    .history-tool.reset:hover:not(:disabled){
+      color:#873636;
+      border-color:#ce9999;
+      background:#fff4f4;
+    }
     .mode-switch{
       display:grid;grid-template-columns:1fr 1fr;gap:8px;
       padding:5px;background:#e8e8e3;border-radius:14px;margin-bottom:14px;
@@ -234,6 +273,8 @@
 
     @media(max-width:620px){
       .wrap{margin-top:18px}.header{align-items:flex-start;flex-direction:column;gap:8px}
+      .header-side{width:100%;align-items:stretch}
+      .fill-history-tools{justify-content:flex-end}
       .meta{text-align:left}.card{padding:20px}
       .prompt{grid-template-columns:1fr}
       .reveal-grid{grid-template-columns:1fr}
@@ -275,6 +316,25 @@
     }
     html[data-theme="dark"] .cycle-mini,
     html[data-theme="dark"] .round-cycle{color:#8f8f88}
+    html[data-theme="dark"] .history-tool{
+      background:#292927;
+      color:#aaa9a2;
+      border-color:#45453f;
+    }
+    html[data-theme="dark"] .history-tool:hover:not(:disabled){
+      border-color:#66665f;
+      color:#f1f0ea;
+    }
+    html[data-theme="dark"] .history-tool.reset{
+      background:#322323;
+      color:#df9696;
+      border-color:#684444;
+    }
+    html[data-theme="dark"] .history-tool.reset:hover:not(:disabled){
+      background:#3b2727;
+      color:#efaaaa;
+      border-color:#855555;
+    }
     html[data-theme="dark"] .mode-switch{background:#2d2d2a}
     html[data-theme="dark"] .mode-btn{color:#aaa9a2}
     html[data-theme="dark"] .mode-btn.active{
@@ -341,7 +401,13 @@
       <h1>Definite Article Trainer</h1>
       <div class="subtitle" id="pageSubtitle">Case + gender → choose the article → check → next</div>
     </div>
-    <div class="meta" id="headerMeta"></div>
+    <div class="header-side">
+      <div class="fill-history-tools hidden" id="fillHistoryTools">
+        <button type="button" class="history-tool" id="reloadLastBtn" disabled>↶ Reload Last</button>
+        <button type="button" class="history-tool reset" id="resetFillBtn">Reset</button>
+      </div>
+      <div class="meta" id="headerMeta"></div>
+    </div>
   </div>
 
   <div class="mode-switch" aria-label="Practice mode">
@@ -481,6 +547,7 @@ const bankByCombo = Object.fromEntries(comboKeys.map(k => [k, sentenceBank.filte
 const byId = Object.fromEntries(sentenceBank.map(x => [x.id, x]));
 const TOTAL = sentenceBank.length;
 const STATE_KEY = "german-definite-articles-fill-beta-v1";
+const RESET_BACKUP_KEY = "german-definite-articles-fill-beta-reset-backup-v1";
 const MODE_KEY = "german-definite-articles-mode-v1";
 const $ = id => document.getElementById(id);
 
@@ -522,6 +589,8 @@ function setMode(next){
   $("pageSubtitle").textContent = mode==="table"
     ? "Case + gender → choose the article → check → next"
     : "Sentence context → choose der / die / das / den / dem / des";
+  $("fillHistoryTools").classList.toggle("hidden", mode!=="fill");
+  updateReloadButton();
   if(mode==="table"){ renderTable(); }
   else { ensureFillRound(); renderFill(); }
 }
@@ -628,18 +697,34 @@ function defaultFillState(){
     cycleCompletePending:false
   };
 }
+function normalizeFillState(raw){
+  if(!raw || raw.version!==1) return null;
+  raw.checked=Array.isArray(raw.checked)?raw.checked.filter(id=>byId[id]):[];
+  raw.seen=Array.isArray(raw.seen)?raw.seen.filter(id=>byId[id]):[];
+  raw.skipped=raw.skipped||{};
+  for(const k of comboKeys){
+    raw.skipped[k]=Array.isArray(raw.skipped[k])
+      ? raw.skipped[k].filter(id=>byId[id]&&byId[id].combo===k)
+      : [];
+  }
+  return Object.assign(defaultFillState(),raw);
+}
 function loadFillState(){
   try{
     const raw=JSON.parse(localStorage.getItem(STATE_KEY)||"null");
-    if(!raw || raw.version!==1) return defaultFillState();
-    raw.checked=Array.isArray(raw.checked)?raw.checked.filter(id=>byId[id]):[];
-    raw.seen=Array.isArray(raw.seen)?raw.seen.filter(id=>byId[id]):[];
-    raw.skipped=raw.skipped||{};
-    for(const k of comboKeys){
-      raw.skipped[k]=Array.isArray(raw.skipped[k])?raw.skipped[k].filter(id=>byId[id]&&byId[id].combo===k):[];
-    }
-    return Object.assign(defaultFillState(),raw);
+    return normalizeFillState(raw) || defaultFillState();
   }catch(e){ return defaultFillState(); }
+}
+function loadResetBackup(){
+  try{
+    const raw=JSON.parse(localStorage.getItem(RESET_BACKUP_KEY)||"null");
+    return normalizeFillState(raw);
+  }catch(e){ return null; }
+}
+function updateReloadButton(){
+  const btn=$("reloadLastBtn");
+  if(!btn) return;
+  btn.disabled=!loadResetBackup();
 }
 let fillState=loadFillState();
 let genderOpen=false, englishOpen=false;
@@ -802,7 +887,7 @@ function renderFill(){
   $("fillSkipBtn").classList.toggle("hidden",q.checked);
   $("fillNextBtn").classList.toggle("hidden",!q.checked);
   $("fillCheckBtn").disabled=!q.selected;
-  $("fillReshuffleBtn").disabled=(q.checked ? (r.pos>=14) : (r.pos>=15));
+  $("fillReshuffleBtn").disabled=q.checked || r.pos>=15;
 
   if(q.checked){
     $("fillStatus").className=`fill-status ${q.ok?"ok":"bad"}`;
@@ -858,28 +943,51 @@ function skipFill(){
 }
 function reshuffleFill(){
   const r=fillState.activeRound;
-  if(!r || r.complete) return;
+  if(!r || r.complete || r.qState.checked) return;
 
-  const start=r.qState.checked ? r.pos+1 : r.pos;
+  const start=r.pos;
   const remaining=r.order.slice(start);
   if(remaining.length<=1) return;
 
   let mixed=shuffle(remaining);
   for(let tries=0;tries<20 && sameArray(mixed,remaining);tries++) mixed=shuffle(remaining);
 
-  // Before Check, make the visible question change when possible.
-  if(!r.qState.checked && mixed.length>1 && mixed[0]===remaining[0]){
+  // Make the visible question change when possible.
+  if(mixed.length>1 && mixed[0]===remaining[0]){
     [mixed[0],mixed[1]]=[mixed[1],mixed[0]];
   }
 
   r.order.splice(start,remaining.length,...mixed);
-
-  if(!r.qState.checked){
-    r.qState={selected:null,checked:false,ok:null};
-    genderOpen=false;
-    englishOpen=false;
-  }
+  r.qState={selected:null,checked:false,ok:null};
+  genderOpen=false;
+  englishOpen=false;
   saveFill();
+  renderFill();
+}
+
+function resetFillProgress(){
+  // One-level persistent undo: save the exact state immediately before Reset.
+  try{
+    localStorage.setItem(RESET_BACKUP_KEY, JSON.stringify(fillState));
+  }catch(e){}
+
+  fillState=defaultFillState();
+  genderOpen=false;
+  englishOpen=false;
+  createRound(); // keeps checked at 0 and starts a fresh 16-question round
+  saveFill();
+  updateReloadButton();
+  renderFill();
+}
+
+function reloadLastFillState(){
+  const backup=loadResetBackup();
+  if(!backup) return;
+  fillState=backup;
+  genderOpen=false;
+  englishOpen=false;
+  saveFill();
+  updateReloadButton();
   renderFill();
 }
 
@@ -915,6 +1023,8 @@ $("fillCheckBtn").addEventListener("click",checkFill);
 $("fillSkipBtn").addEventListener("click",skipFill);
 $("fillNextBtn").addEventListener("click",advanceFill);
 $("fillReshuffleBtn").addEventListener("click",reshuffleFill);
+$("reloadLastBtn").addEventListener("click",reloadLastFillState);
+$("resetFillBtn").addEventListener("click",resetFillProgress);
 $("newRoundBtn").addEventListener("click",startNewRound);
 
 document.addEventListener("keydown",(e)=>{
