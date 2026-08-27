@@ -3,7 +3,80 @@
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#f4f4f1"><meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="German Drill"><link rel="manifest" href="./manifest.webmanifest">
-<link rel="apple-touch-icon" href="./apple-touch-icon.png"><title>German Sentence Builder</title>
+<link rel="apple-touch-icon" href="./apple-touch-icon.png">
+  <script>
+  (() => {
+    const KEY = "german-drill-theme-v1";
+    const MODES = ["system", "dark", "light"];
+    const LABELS = {
+      system: "◐ System",
+      dark: "☾ Dark",
+      light: "☀︎ Light"
+    };
+    const DARK_BG = "#171716";
+    const LIGHT_BG = "#f4f4f1";
+
+    function readMode(){
+      try{
+        const value = localStorage.getItem(KEY);
+        return MODES.includes(value) ? value : "system";
+      }catch(e){
+        return "system";
+      }
+    }
+    function resolvedTheme(mode){
+      if(mode === "system"){
+        return window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches
+          ? "dark" : "light";
+      }
+      return mode;
+    }
+    function updateButton(){
+      const btn = document.getElementById("themeToggle");
+      if(btn) btn.textContent = LABELS[readMode()];
+    }
+    function apply(mode, persist){
+      const resolved = resolvedTheme(mode);
+      document.documentElement.dataset.theme = resolved;
+      document.documentElement.dataset.themeMode = mode;
+      document.documentElement.style.colorScheme = resolved;
+
+      const meta = document.querySelector('meta[name="theme-color"]');
+      if(meta) meta.setAttribute("content", resolved === "dark" ? DARK_BG : LIGHT_BG);
+
+      if(persist){
+        try{ localStorage.setItem(KEY, mode); }catch(e){}
+      }
+      updateButton();
+    }
+    function cycle(){
+      const current = readMode();
+      const next = MODES[(MODES.indexOf(current) + 1) % MODES.length];
+      apply(next, true);
+    }
+
+    const initial = readMode();
+    apply(initial, false);
+
+    if(window.matchMedia){
+      const media = window.matchMedia("(prefers-color-scheme: dark)");
+      const onChange = () => {
+        if(readMode() === "system") apply("system", false);
+      };
+      if(media.addEventListener) media.addEventListener("change", onChange);
+      else if(media.addListener) media.addListener(onChange);
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      updateButton();
+      const btn = document.getElementById("themeToggle");
+      if(btn) btn.addEventListener("click", cycle);
+    });
+
+    window.GermanDrillTheme = { apply, cycle, readMode };
+  })();
+  </script>
+<title>German Sentence Builder</title>
 <style>
 :root{--bg:#f4f4f1;--card:#fff;--text:#181818;--muted:#6d6d68;--border:#deded8;--soft:#f7f7f4;--ok:#eaf7ed;--okb:#b9d9bf;--bad:#fff0f0;--badb:#e5b8b8;--shadow:0 10px 34px rgba(0,0,0,.07)}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,"Noto Sans","PingFang SC","Microsoft YaHei",sans-serif}button{font:inherit}.hidden{display:none!important}
@@ -19,8 +92,77 @@
 .reorder-hint{font-size:11px;color:var(--muted);line-height:1.4}
 .result{margin-top:16px;min-height:48px;border-radius:12px;padding:11px 13px;font-size:13px;line-height:1.5;background:#fafaf8;border:1px solid var(--border)}.result.ok{background:var(--ok);border-color:var(--okb);color:#2c6f3a}.result.bad{background:var(--bad);border-color:var(--badb);color:#8a3030}.expected{display:block;margin-top:5px;color:var(--text);font-weight:750}.translation-block{width:100%;margin-top:9px;border:1px solid var(--border);border-radius:12px;background:#fff;color:var(--text);padding:11px 13px;text-align:left;cursor:pointer}.translation-block:hover{background:#fafaf8}.translation-label{display:block;font-size:11px;font-weight:800;color:var(--muted);margin-bottom:5px}.translation-text{display:block;font-size:13px;line-height:1.5;font-weight:650}.translation-block:not(.revealed) .translation-text{color:#888;font-weight:650}.controls{display:flex;gap:9px;flex-wrap:wrap;margin-top:18px}.secondary,.skip,.not-now{border-radius:12px;padding:11px 14px;font-weight:800;cursor:pointer}.secondary{border:0;background:#ecece7;color:#222}.skip{background:#fff3cf;color:#5a4212;border:2px solid #d69a24}.not-now{background:#f0f0ec;color:#666;border:1px dashed #bbb}.small{margin-left:auto;background:transparent;border:0;color:var(--muted);font-size:12px;font-weight:700;cursor:pointer;padding:10px 4px}.round{text-align:center;padding:8px 0}.round h2{margin:0 0 8px;font-size:24px}.stats{display:flex;justify-content:center;gap:16px;flex-wrap:wrap;color:var(--muted);font-size:13px;margin:14px 0 22px}.round-actions{display:flex;justify-content:center;gap:10px;flex-wrap:wrap}
 @media(max-width:620px){.wrap{margin-top:18px}.header{align-items:flex-start}.filters{grid-template-columns:1fr}.card{padding:19px}.chunk{font-size:13px;padding:9px 10px}.zone,.bank{min-height:72px}.small{width:100%;margin-left:0;text-align:left}.reorder-controls{margin-top:-7px}.reorder-btn,.reorder-done{min-height:38px}.translation-block{min-height:58px}}
+
+
+    .page-nav{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      margin-bottom:14px;
+    }
+    .page-nav .back-link,.page-nav .back{margin-bottom:0}
+    .theme-toggle{
+      flex:0 0 auto;
+      min-height:34px;
+      padding:7px 10px;
+      border:1px solid var(--border);
+      border-radius:10px;
+      background:var(--card);
+      color:var(--muted);
+      box-shadow:none;
+      font:inherit;
+      font-size:12px;
+      font-weight:800;
+      line-height:1;
+      cursor:pointer;
+      white-space:nowrap;
+    }
+    .theme-toggle:hover{border-color:#9c9c96;color:var(--text)}
+    html[data-theme="dark"] .theme-toggle:hover{border-color:#66665f}
+
+html[data-theme="dark"]{
+  --bg:#171716;--card:#232321;--text:#f1f0ea;--muted:#aaa9a2;--border:#3b3b37;
+  --soft:#2a2a27;--ok:#183522;--okb:#39724a;--bad:#3a2020;--badb:#7b4545;
+  --shadow:0 12px 34px rgba(0,0,0,.28)
+}
+html[data-theme="dark"] .beta,
+html[data-theme="dark"] .cat{background:#292927;color:#b8b7b0}
+html[data-theme="dark"] .filter.active,
+html[data-theme="dark"] .pool-btn.active,
+html[data-theme="dark"] .primary,
+html[data-theme="dark"] .start-btn,
+html[data-theme="dark"] .reorder-done{
+  background:#ecebe5;color:#181818;border-color:#ecebe5
+}
+html[data-theme="dark"] .filter.active .desc{color:#66665f}
+html[data-theme="dark"] .pool-btn{color:var(--text)}
+html[data-theme="dark"] .bar{background:#32322f}
+html[data-theme="dark"] .bar>div{background:#d5d4ce}
+html[data-theme="dark"] .zone{background:#1f1f1d}
+html[data-theme="dark"] .zone.empty:before{color:#73736d}
+html[data-theme="dark"] .chunk{
+  border-color:#45453f;background:#31312e;color:#f0efe9;box-shadow:0 1px 2px rgba(0,0,0,.15)
+}
+html[data-theme="dark"] .zone .chunk{background:#3a3a36}
+html[data-theme="dark"] .zone .chunk.reorder-selected{
+  outline-color:#d7bc71;background:#453a1d;color:#f5e0a0
+}
+html[data-theme="dark"] .reorder-btn,
+html[data-theme="dark"] .secondary{background:#30302d;color:#e1e0da}
+html[data-theme="dark"] .result{background:#292927}
+html[data-theme="dark"] .result.ok{color:#9cdda9}
+html[data-theme="dark"] .result.bad{color:#efaaa2}
+html[data-theme="dark"] .translation-block{background:#292927;color:var(--text)}
+html[data-theme="dark"] .translation-block:hover{background:#30302d}
+html[data-theme="dark"] .translation-block:not(.revealed) .translation-text{color:#8d8d86}
+html[data-theme="dark"] .skip{background:#3b3018;color:#f0ce80;border-color:#a8791d}
+html[data-theme="dark"] .not-now{
+  background:#2c2c29;color:#aaa9a2;border-color:#5b5b55
+}
+
 </style></head><body><main class="wrap">
-<a href="./index.html" class="back">← Back to Dashboard</a><div class="header"><div><h1>Sentence Builder</h1><div class="sub">Arrange the chunks into the recommended German word order.</div></div><div class="beta">512 sentences</div></div>
+<div class="page-nav"><a href="./index.html" class="back">← Back to Dashboard</a><button type="button" class="theme-toggle" id="themeToggle">◐ System</button></div><div class="header"><div><h1>Sentence Builder</h1><div class="sub">Arrange the chunks into the recommended German word order.</div></div><div class="beta">512 sentences</div></div>
 <section id="setup" class="card"><div class="setup-block"><div class="setup-title">Sentence type / Satzart</div><div id="sentenceTypeFilters" class="filters"></div></div><div class="setup-block"><div class="setup-title">Grammar / Grammatik</div><div id="grammarFilters" class="filters"></div></div><div class="setup-block"><div class="setup-title">Pool size / Rundengröße</div><div class="pool-options"><button class="pool-btn" data-size="10">10</button><button class="pool-btn active" data-size="20">20</button><button class="pool-btn" data-size="30">30</button></div></div><div class="start-row"><button id="start" class="start-btn">Start</button><span id="setupStatus" class="muted" style="font-size:12px"></span></div><div class="note">This trainer checks one recommended / standard order. Final punctuation appears automatically when all word chunks are in the answer. Use Reorder → tap a chunk → tap another chunk to move it → Done. German can sometimes allow other valid orders depending on emphasis. “Not now” hides the current structure for the rest of this round only.</div></section>
 <section id="exercise" class="card hidden"><div class="exercise-top"><div id="cat" class="cat"></div><div id="progress" class="progress"></div></div><div class="bar"><div id="bar"></div></div><div class="prompt" id="answerPrompt">Tap chunks to move them between areas.</div><div id="answer" class="zone empty"></div><div id="reorderControls" class="reorder-controls hidden"><button id="reorderBtn" class="reorder-btn">Reorder</button><button id="reorderDoneBtn" class="reorder-done hidden">Done</button><span id="reorderHint" class="reorder-hint"></span></div><div class="prompt">Available chunks</div><div id="bank" class="bank"></div><div id="result" class="result">Build the sentence, then Check.</div><button id="translationBlock" class="translation-block hidden" type="button"><span class="translation-label">English translation</span><span id="translationText" class="translation-text">Tap to reveal</span></button><div class="controls"><button id="check" class="primary">Check</button><button id="next" class="primary hidden">Next →</button><button id="skip" class="skip">Skip →</button><button id="notNow" class="not-now">Not now</button><button id="changeFilters" class="small">Change filters</button></div></section>
 <section id="round" class="card hidden"><div class="round"><h2>Round complete</h2><div class="muted">New round = new random sample with the same filters.</div><div id="stats" class="stats"></div><div class="round-actions"><button id="again" class="primary">Same filters · New round</button><button id="change" class="secondary">Change filters</button></div></div></section>

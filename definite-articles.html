@@ -9,7 +9,80 @@
   <meta name="apple-mobile-web-app-title" content="German Drill" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
-  <title>German Definite Article Trainer</title>
+  
+  <script>
+  (() => {
+    const KEY = "german-drill-theme-v1";
+    const MODES = ["system", "dark", "light"];
+    const LABELS = {
+      system: "◐ System",
+      dark: "☾ Dark",
+      light: "☀︎ Light"
+    };
+    const DARK_BG = "#171716";
+    const LIGHT_BG = "#f4f4f1";
+
+    function readMode(){
+      try{
+        const value = localStorage.getItem(KEY);
+        return MODES.includes(value) ? value : "system";
+      }catch(e){
+        return "system";
+      }
+    }
+    function resolvedTheme(mode){
+      if(mode === "system"){
+        return window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches
+          ? "dark" : "light";
+      }
+      return mode;
+    }
+    function updateButton(){
+      const btn = document.getElementById("themeToggle");
+      if(btn) btn.textContent = LABELS[readMode()];
+    }
+    function apply(mode, persist){
+      const resolved = resolvedTheme(mode);
+      document.documentElement.dataset.theme = resolved;
+      document.documentElement.dataset.themeMode = mode;
+      document.documentElement.style.colorScheme = resolved;
+
+      const meta = document.querySelector('meta[name="theme-color"]');
+      if(meta) meta.setAttribute("content", resolved === "dark" ? DARK_BG : LIGHT_BG);
+
+      if(persist){
+        try{ localStorage.setItem(KEY, mode); }catch(e){}
+      }
+      updateButton();
+    }
+    function cycle(){
+      const current = readMode();
+      const next = MODES[(MODES.indexOf(current) + 1) % MODES.length];
+      apply(next, true);
+    }
+
+    const initial = readMode();
+    apply(initial, false);
+
+    if(window.matchMedia){
+      const media = window.matchMedia("(prefers-color-scheme: dark)");
+      const onChange = () => {
+        if(readMode() === "system") apply("system", false);
+      };
+      if(media.addEventListener) media.addEventListener("change", onChange);
+      else if(media.addListener) media.addListener(onChange);
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      updateButton();
+      const btn = document.getElementById("themeToggle");
+      if(btn) btn.addEventListener("click", cycle);
+    });
+
+    window.GermanDrillTheme = { apply, cycle, readMode };
+  })();
+  </script>
+<title>German Definite Article Trainer</title>
   <style>
     :root{
       --bg:#f4f4f1; --card:#fff; --text:#181818; --muted:#6d6d68;
@@ -166,11 +239,103 @@
       .reveal-grid{grid-template-columns:1fr}
       .fill-question{font-size:21px;padding:16px}
     }
-  </style>
+  
+
+    .page-nav{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      margin-bottom:14px;
+    }
+    .page-nav .back-link,.page-nav .back{margin-bottom:0}
+    .theme-toggle{
+      flex:0 0 auto;
+      min-height:34px;
+      padding:7px 10px;
+      border:1px solid var(--border);
+      border-radius:10px;
+      background:var(--card);
+      color:var(--muted);
+      box-shadow:none;
+      font:inherit;
+      font-size:12px;
+      font-weight:800;
+      line-height:1;
+      cursor:pointer;
+      white-space:nowrap;
+    }
+    .theme-toggle:hover{border-color:#9c9c96;color:var(--text)}
+    html[data-theme="dark"] .theme-toggle:hover{border-color:#66665f}
+
+    html[data-theme="dark"]{
+      --bg:#171716;--card:#232321;--text:#f1f0ea;--muted:#aaa9a2;--border:#3b3b37;
+      --soft:#2a2a27;--ok:#183522;--ok-border:#39724a;--bad:#3a2020;--bad-border:#7b4545;
+      --shadow:0 12px 34px rgba(0,0,0,.28);--warm:#3b3018;--warm-border:#9b762d;
+    }
+    html[data-theme="dark"] .cycle-mini,
+    html[data-theme="dark"] .round-cycle{color:#8f8f88}
+    html[data-theme="dark"] .mode-switch{background:#2d2d2a}
+    html[data-theme="dark"] .mode-btn{color:#aaa9a2}
+    html[data-theme="dark"] .mode-btn.active{
+      background:#454540;color:#f3f2ec;box-shadow:0 2px 9px rgba(0,0,0,.22)
+    }
+    html[data-theme="dark"] .beta{color:#d1ac57}
+    html[data-theme="dark"] .bar{background:#32322f}
+    html[data-theme="dark"] .bar>div{background:#d5d4ce}
+    html[data-theme="dark"] .grammar-en-sub{color:#7f7f79}
+    html[data-theme="dark"] input{background:#1d1d1b;color:var(--text)}
+    html[data-theme="dark"] .primary{background:#ecebe5;color:#181818}
+    html[data-theme="dark"] .secondary{background:#30302d;color:#e1e0da}
+    html[data-theme="dark"] .skip{
+      background:#3b3018;color:#f0ce80;border-color:#a8791d;
+      box-shadow:0 0 0 2px rgba(168,121,29,.14)
+    }
+    html[data-theme="dark"] .skip:hover{background:#493a18}
+    html[data-theme="dark"] .blank-slot{border-bottom-color:#8d8d86}
+    html[data-theme="dark"] .filled-article{background:#3a3a36;color:#f2f1eb}
+    html[data-theme="dark"] .reveal-card{background:#232321;color:var(--text)}
+    html[data-theme="dark"] .reveal-card.expanded{
+      background:#292927;border-color:#484842;box-shadow:0 4px 14px rgba(0,0,0,.18)
+    }
+    html[data-theme="dark"] .reveal-card.expanded .reveal-title{color:#95958e}
+    html[data-theme="dark"] .reveal-content{color:#f1f0ea}
+    html[data-theme="dark"] .reveal-grammar{
+      background:#373733;border-color:#4a4a44;color:#deddd6
+    }
+    html[data-theme="dark"] .reveal-translation{border-left-color:#686861}
+    html[data-theme="dark"] .article-btn{
+      background:#30302d;border-color:#45453f;color:#efeee8
+    }
+    html[data-theme="dark"] .article-btn.selected{
+      background:#44443f;border-color:#77776f;box-shadow:0 0 0 2px rgba(255,255,255,.04)
+    }
+    html[data-theme="dark"] .article-btn.correct-choice{
+      background:var(--ok);border-color:var(--ok-border);color:#9cdda9
+    }
+    html[data-theme="dark"] .article-btn.wrong-choice{
+      background:var(--bad);border-color:var(--bad-border);color:#efaaa2
+    }
+    html[data-theme="dark"] .article-btn.correct-outline{
+      background:#232321;border-color:#5eaa6c;color:#9cdda9;
+      box-shadow:0 0 0 2px rgba(94,170,108,.12)
+    }
+    html[data-theme="dark"] .fill-status.ok{color:#9cdda9}
+    html[data-theme="dark"] .fill-status.bad{color:#efaaa2}
+    html[data-theme="dark"] .answer-block{background:#292927}
+    html[data-theme="dark"] .correct-article{color:#f4d27a}
+    html[data-theme="dark"] .grammar-line{color:#c5c4bd}
+    html[data-theme="dark"] .table-answer-label{color:#95958e}
+    html[data-theme="dark"] .note{border-top-color:#393935}
+
+</style>
 </head>
 <body>
 <div class="wrap">
-  <a class="back-link" href="index.html">← Back to Dashboard</a>
+  <div class="page-nav">
+    <a class="back-link" href="index.html">← Back to Dashboard</a>
+    <button type="button" class="theme-toggle" id="themeToggle">◐ System</button>
+  </div>
   <div class="header">
     <div>
       <h1>Definite Article Trainer</h1>

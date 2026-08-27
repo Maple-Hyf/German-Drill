@@ -9,7 +9,80 @@
   <meta name="apple-mobile-web-app-title" content="German Drill" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
-  <title>German Drill</title>
+  
+  <script>
+  (() => {
+    const KEY = "german-drill-theme-v1";
+    const MODES = ["system", "dark", "light"];
+    const LABELS = {
+      system: "◐ System",
+      dark: "☾ Dark",
+      light: "☀︎ Light"
+    };
+    const DARK_BG = "#171716";
+    const LIGHT_BG = "#f4f4f1";
+
+    function readMode(){
+      try{
+        const value = localStorage.getItem(KEY);
+        return MODES.includes(value) ? value : "system";
+      }catch(e){
+        return "system";
+      }
+    }
+    function resolvedTheme(mode){
+      if(mode === "system"){
+        return window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches
+          ? "dark" : "light";
+      }
+      return mode;
+    }
+    function updateButton(){
+      const btn = document.getElementById("themeToggle");
+      if(btn) btn.textContent = LABELS[readMode()];
+    }
+    function apply(mode, persist){
+      const resolved = resolvedTheme(mode);
+      document.documentElement.dataset.theme = resolved;
+      document.documentElement.dataset.themeMode = mode;
+      document.documentElement.style.colorScheme = resolved;
+
+      const meta = document.querySelector('meta[name="theme-color"]');
+      if(meta) meta.setAttribute("content", resolved === "dark" ? DARK_BG : LIGHT_BG);
+
+      if(persist){
+        try{ localStorage.setItem(KEY, mode); }catch(e){}
+      }
+      updateButton();
+    }
+    function cycle(){
+      const current = readMode();
+      const next = MODES[(MODES.indexOf(current) + 1) % MODES.length];
+      apply(next, true);
+    }
+
+    const initial = readMode();
+    apply(initial, false);
+
+    if(window.matchMedia){
+      const media = window.matchMedia("(prefers-color-scheme: dark)");
+      const onChange = () => {
+        if(readMode() === "system") apply("system", false);
+      };
+      if(media.addEventListener) media.addEventListener("change", onChange);
+      else if(media.addListener) media.addListener(onChange);
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      updateButton();
+      const btn = document.getElementById("themeToggle");
+      if(btn) btn.addEventListener("click", cycle);
+    });
+
+    window.GermanDrillTheme = { apply, cycle, readMode };
+  })();
+  </script>
+<title>German Drill</title>
   <style>
     :root{
       --bg:#f4f4f1;
@@ -115,11 +188,53 @@
       .wrap{margin-top:20px}
       .grid{grid-template-columns:1fr}
     }
-  </style>
+  
+
+    .page-nav{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      margin-bottom:14px;
+    }
+    .page-nav .back-link,.page-nav .back{margin-bottom:0}
+    .theme-toggle{
+      flex:0 0 auto;
+      min-height:34px;
+      padding:7px 10px;
+      border:1px solid var(--border);
+      border-radius:10px;
+      background:var(--card);
+      color:var(--muted);
+      box-shadow:none;
+      font:inherit;
+      font-size:12px;
+      font-weight:800;
+      line-height:1;
+      cursor:pointer;
+      white-space:nowrap;
+    }
+    .theme-toggle:hover{border-color:#9c9c96;color:var(--text)}
+    html[data-theme="dark"] .theme-toggle:hover{border-color:#66665f}
+
+    .dashboard-top{
+      display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:7px;
+    }
+    .dashboard-top .eyebrow{margin-bottom:0}
+    html[data-theme="dark"]{
+      --bg:#171716;--card:#232321;--text:#f1f0ea;--muted:#aaa9a2;
+      --border:#3b3b37;--shadow:0 12px 34px rgba(0,0,0,.28);
+    }
+    html[data-theme="dark"] .badge{background:#2a2a27;color:#b8b7b0}
+    html[data-theme="dark"] .card:hover{border-color:#66665f}
+    html[data-theme="dark"] .coming{opacity:.48}
+    html[data-theme="dark"] .footer{color:#878780}
+
+</style>
 </head>
 <body>
   <main class="wrap">
-    <div class="eyebrow">German Drill</div>
+    <div class="dashboard-top"><div class="eyebrow">German Drill</div><button type="button" class="theme-toggle" id="themeToggle">◐ System</button></div>
     <h1>Choose a drill</h1>
     <div class="sub">Quick practice. No tracking. No streaks. Just drill.</div>
 
