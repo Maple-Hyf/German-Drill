@@ -1,9 +1,10 @@
-const CACHE_NAME = "german-drill-pwa-v2";
+const CACHE_NAME = "german-drill-pwa-v4-sentence-builder";
 const PRECACHE = [
   "./",
   "./index.html",
   "./a1-present.html",
   "./definite-articles.html",
+  "./sentence-builder.html",
   "./manifest.webmanifest",
   "./icon-192.png",
   "./icon-512.png",
