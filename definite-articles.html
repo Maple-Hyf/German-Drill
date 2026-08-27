@@ -93,14 +93,34 @@
     .reveal-card{
       width:100%;text-align:left;background:#fff;border:1px solid var(--border);color:var(--text);
       padding:12px 13px;border-radius:12px;font-size:13px;line-height:1.4;min-height:66px;
+      transition:background .15s ease,border-color .15s ease,box-shadow .15s ease;
+    }
+    .reveal-card.expanded{
+      background:#fafaf7;
+      border-color:#cfcfc8;
+      box-shadow:0 4px 14px rgba(0,0,0,.04);
     }
     .reveal-title{font-weight:800;display:block}
-    .reveal-state{font-size:11px;color:var(--muted);font-weight:650;display:block;margin-top:2px}
-    .reveal-content{
-      font-size:15px;font-weight:800;line-height:1.45;margin-top:8px;display:block;
-      padding:9px 10px;background:#f6f6f2;border:1px solid #e4e4de;border-radius:9px;color:#202020;
+    .reveal-card.expanded .reveal-title{
+      color:#777;font-size:11px;font-weight:750;letter-spacing:.01em;
     }
-    .article-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}
+    .reveal-state{font-size:11px;color:var(--muted);font-weight:650;display:block;margin-top:2px}
+    .reveal-card.expanded .reveal-state{display:none}
+    .reveal-content{
+      margin-top:10px;display:block;color:#202020;
+    }
+    .reveal-noun{
+      display:block;font-size:21px;font-weight:900;letter-spacing:-.15px;line-height:1.15;
+    }
+    .reveal-grammar{
+      display:inline-block;margin-top:7px;padding:5px 8px;border-radius:8px;
+      background:#ecece6;border:1px solid #d9d9d1;font-size:13px;font-weight:850;color:#444;
+    }
+    .reveal-translation{
+      display:block;margin-top:2px;padding-left:11px;border-left:3px solid #bdbdb5;
+      font-size:18px;font-weight:760;line-height:1.48;letter-spacing:-.08px;
+    }
+    .article-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
     .article-btn{
       min-height:54px;padding:8px;background:#f3f3ef;border:1px solid var(--border);
       color:#202020;border-radius:12px;font-size:18px;font-weight:850;
@@ -143,7 +163,6 @@
       .wrap{margin-top:18px}.header{align-items:flex-start;flex-direction:column;gap:8px}
       .meta{text-align:left}.card{padding:20px}
       .prompt{grid-template-columns:1fr}
-      .article-grid{grid-template-columns:repeat(3,1fr)}
       .reveal-grid{grid-template-columns:1fr}
       .fill-question{font-size:21px;padding:16px}
     }
@@ -214,12 +233,17 @@
         <button class="reveal-card" id="genderHintBtn">
           <span class="reveal-title">Gender/Number hint</span>
           <span class="reveal-state" id="genderHintState">Tap to reveal</span>
-          <span class="reveal-content hidden" id="genderHintContent"></span>
+          <span class="reveal-content hidden" id="genderHintContent">
+            <span class="reveal-noun" id="genderHintNoun"></span>
+            <span class="reveal-grammar" id="genderHintGrammar"></span>
+          </span>
         </button>
         <button class="reveal-card" id="englishBtn">
           <span class="reveal-title">English translation</span>
           <span class="reveal-state" id="englishState">Tap to reveal</span>
-          <span class="reveal-content hidden" id="englishContent"></span>
+          <span class="reveal-content hidden" id="englishContent">
+            <span class="reveal-translation" id="englishTranslationText"></span>
+          </span>
         </button>
       </div>
 
@@ -547,10 +571,16 @@ function cycleText(prefix=""){
 }
 function renderReveal(){
   const item=currentFillItem();
-  $("genderHintContent").textContent=`${item.noun} · ${item.genderDe} (${item.abbr})`;
-  $("englishContent").textContent=item.en;
+  $("genderHintNoun").textContent=item.noun;
+  $("genderHintGrammar").textContent=`${item.genderDe} (${item.abbr})`;
+  $("englishTranslationText").textContent=item.en;
+
   $("genderHintContent").classList.toggle("hidden",!genderOpen);
   $("englishContent").classList.toggle("hidden",!englishOpen);
+
+  $("genderHintBtn").classList.toggle("expanded",genderOpen);
+  $("englishBtn").classList.toggle("expanded",englishOpen);
+
   $("genderHintState").textContent=genderOpen?"Tap to hide":"Tap to reveal";
   $("englishState").textContent=englishOpen?"Tap to hide":"Tap to reveal";
 }
