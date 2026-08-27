@@ -48,7 +48,8 @@
     .prompt{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:22px}
     .prompt-box{background:var(--soft);border:1px solid var(--border);border-radius:14px;padding:16px}
     .small{color:var(--muted);font-size:12px;margin-bottom:4px}
-    .big{font-size:24px;font-weight:780;letter-spacing:-.2px}
+    .grammar-de-main{font-size:26px;font-weight:860;letter-spacing:-.25px;line-height:1.15}
+    .grammar-en-sub{margin-top:5px;color:#92928c;font-size:12px;font-weight:650}
     .answer-label{font-size:13px;font-weight:750;margin-bottom:8px}
     input{
       width:100%;min-height:50px;padding:12px 14px;font:inherit;font-size:20px;font-weight:700;
@@ -81,8 +82,8 @@
       margin-bottom:13px;
     }
     .blank-slot{
-      display:inline-block;min-width:54px;text-align:center;border-bottom:2px solid #8e8e89;
-      color:#777;
+      display:inline-block;min-width:58px;height:1.05em;vertical-align:-.06em;
+      border-bottom:2px solid #8e8e89;
     }
     .filled-article{
       display:inline-block;min-width:44px;text-align:center;border-radius:7px;
@@ -95,7 +96,10 @@
     }
     .reveal-title{font-weight:800;display:block}
     .reveal-state{font-size:11px;color:var(--muted);font-weight:650;display:block;margin-top:2px}
-    .reveal-content{font-size:14px;font-weight:650;margin-top:7px;display:block}
+    .reveal-content{
+      font-size:15px;font-weight:800;line-height:1.45;margin-top:8px;display:block;
+      padding:9px 10px;background:#f6f6f2;border:1px solid #e4e4de;border-radius:9px;color:#202020;
+    }
     .article-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}
     .article-btn{
       min-height:54px;padding:8px;background:#f3f3ef;border:1px solid var(--border);
@@ -121,6 +125,8 @@
     }
     .grammar-line{margin-top:9px;font-size:13px;font-weight:800;color:#555}
     .full-sentence{margin-top:8px;font-size:17px;font-weight:720;line-height:1.45}
+    .table-answer-block{padding:13px 16px}
+    .table-answer-label{font-size:11px;color:#777;font-weight:750;margin-bottom:6px}
     .round-complete{text-align:center;padding:8px 2px 2px}
     .round-complete h2{margin:0 0 8px;font-size:24px}
     .round-stats{display:flex;justify-content:center;gap:18px;flex-wrap:wrap;margin:18px 0 9px}
@@ -149,7 +155,7 @@
   <div class="header">
     <div>
       <h1>Definite Article Trainer</h1>
-      <div class="subtitle" id="pageSubtitle">Case + gender → type the article → check → next</div>
+      <div class="subtitle" id="pageSubtitle">Case + gender → choose the article → check → next</div>
     </div>
     <div class="meta" id="headerMeta"></div>
   </div>
@@ -166,18 +172,27 @@
       <div class="prompt-label">Prompt / Aufgabe</div>
       <div class="prompt">
         <div class="prompt-box">
-          <div class="small">Case / Kasus</div>
-          <div class="big" id="caseText"></div>
+          <div class="small">Kasus</div>
+          <div class="grammar-de-main" id="caseDeText"></div>
+          <div class="grammar-en-sub" id="caseEnText"></div>
         </div>
         <div class="prompt-box">
-          <div class="small">Gender / Genus</div>
-          <div class="big" id="genderText"></div>
+          <div class="small">Genus / Numerus</div>
+          <div class="grammar-de-main" id="genderDeText"></div>
+          <div class="grammar-en-sub" id="genderEnText"></div>
         </div>
       </div>
 
       <div class="answer-label">Definite article / bestimmter Artikel</div>
-      <input id="answerInput" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" aria-label="Definite article answer" />
-      <div class="result" id="tableResult"></div>
+      <div class="article-grid" id="tableArticleGrid"></div>
+
+      <div id="tableFeedback" class="hidden">
+        <div id="tableStatus" class="fill-status"></div>
+        <div class="answer-block table-answer-block">
+          <div class="table-answer-label">richtige Antwort</div>
+          <div class="correct-article" id="tableCorrectArticle"></div>
+        </div>
+      </div>
 
       <div class="controls">
         <button class="primary" id="tableCheckBtn" disabled>Check / Prüfen</button>
@@ -185,7 +200,7 @@
         <button class="secondary" id="reshuffleBtn">Reshuffle / Neu mischen</button>
         <button class="skip" id="tableSkipBtn">Skip / Überspringen →</button>
       </div>
-      <div class="hint">Type only the article: <b>der, die, das, den, dem, des</b>.</div>
+      <div class="hint">Choose one article: <b>der, die, das, den, dem, des</b>.</div>
     </div>
     <div class="footer">4 cases × 4 genders · 16 combinations · random order · endless repeat</div>
   </section>
@@ -221,8 +236,9 @@
 
       <div class="controls">
         <button class="primary" id="fillCheckBtn" disabled>Check / Prüfen</button>
-        <button class="skip" id="fillSkipBtn">Skip / Überspringen →</button>
         <button class="primary hidden" id="fillNextBtn">Next / Weiter →</button>
+        <button class="secondary" id="fillReshuffleBtn">Reshuffle / Neu mischen</button>
+        <button class="skip" id="fillSkipBtn">Skip / Überspringen →</button>
       </div>
 
       <div class="note">
@@ -302,7 +318,7 @@ function sentenceHtml(blank, article=null){
     const shown=starts?cap(article):article;
     return blank.replace("___", `<span class="filled-article">${shown}</span>`);
   }
-  return blank.replace("___", `<span class="blank-slot">___</span>`);
+  return blank.replace("___", `<span class="blank-slot" aria-label="blank">&nbsp;</span>`);
 }
 
 /* ---------- Mode switch ---------- */
@@ -315,14 +331,14 @@ function setMode(next){
   $("tableMode").classList.toggle("hidden",mode!=="table");
   $("fillMode").classList.toggle("hidden",mode!=="fill");
   $("pageSubtitle").textContent = mode==="table"
-    ? "Case + gender → type the article → check → next"
+    ? "Case + gender → choose the article → check → next"
     : "Sentence context → choose der / die / das / den / dem / des";
   if(mode==="table"){ renderTable(); }
   else { ensureFillRound(); renderFill(); }
 }
 
-/* ---------- Original Table Drill ---------- */
-let tableOrder=[], tablePos=0, tableRound=1, tableChecked=false;
+/* ---------- Table Drill ---------- */
+let tableOrder=[], tablePos=0, tableRound=1, tableChecked=false, tableSelected=null;
 
 function shuffledTableIndices(previousLast=null){
   const arr=shuffle(tableItems.map((_,i)=>i));
@@ -332,49 +348,65 @@ function shuffledTableIndices(previousLast=null){
   return arr;
 }
 function tableCurrent(){ return tableItems[tableOrder[tablePos]]; }
-function normalize(s){ return s.trim().toLowerCase(); }
 
+function renderTableArticleButtons(){
+  const item=tableCurrent();
+  $("tableArticleGrid").innerHTML="";
+  for(const article of articles){
+    const b=document.createElement("button");
+    b.className="article-btn";
+    b.textContent=article;
+    if(tableSelected===article) b.classList.add("selected");
+    if(tableChecked){
+      b.disabled=true;
+      const ok=tableSelected===item.answer;
+      if(ok && tableSelected===article) b.classList.add("correct-choice");
+      if(!ok && tableSelected===article) b.classList.add("wrong-choice");
+      if(!ok && item.answer===article) b.classList.add("correct-outline");
+    }
+    b.addEventListener("click",()=>selectTableArticle(article));
+    $("tableArticleGrid").appendChild(b);
+  }
+}
+function selectTableArticle(article){
+  if(tableChecked) return;
+  tableSelected=article;
+  $("tableCheckBtn").disabled=false;
+  renderTableArticleButtons();
+}
 function renderTable(){
   if(!tableOrder.length) tableOrder=shuffledTableIndices();
   const item=tableCurrent();
-  $("caseText").textContent=`${item.caseEn} · ${item.caseDe}`;
-  $("genderText").textContent=`${item.genderEn} · ${item.genderDe}`;
+  $("caseDeText").textContent=item.caseDe;
+  $("caseEnText").textContent=item.caseEn;
+  $("genderDeText").textContent=item.genderDe;
+  $("genderEnText").textContent=item.genderEn;
   $("headerMeta").innerHTML=`<div>Round / Runde ${tableRound}</div><div>${tablePos+1} / ${tableOrder.length}</div>`;
   $("barFill").style.width=`${((tablePos+1)/tableOrder.length)*100}%`;
+  renderTableArticleButtons();
 
-  if(!tableChecked){
-    $("answerInput").disabled=false;
-    $("tableCheckBtn").classList.remove("hidden");
-    $("tableNextBtn").classList.add("hidden");
-    $("tableSkipBtn").classList.remove("hidden");
+  $("tableFeedback").classList.toggle("hidden",!tableChecked);
+  $("tableCheckBtn").classList.toggle("hidden",tableChecked);
+  $("tableNextBtn").classList.toggle("hidden",!tableChecked);
+  $("tableSkipBtn").classList.toggle("hidden",tableChecked);
+  $("tableCheckBtn").disabled=!tableSelected;
+
+  if(tableChecked){
+    const ok=tableSelected===item.answer;
+    $("tableStatus").className=`fill-status ${ok?"ok":"bad"}`;
+    $("tableStatus").textContent=ok?"✓ Correct / Richtig":"✗ Incorrect / Falsch";
+    $("tableCorrectArticle").textContent=item.answer;
   }
 }
 function resetTableQuestion(){
-  $("answerInput").value="";
-  $("answerInput").disabled=false;
-  $("answerInput").className="";
-  $("tableResult").textContent="";
-  $("tableResult").className="result";
-  $("tableCheckBtn").disabled=true;
-  $("tableCheckBtn").classList.remove("hidden");
-  $("tableNextBtn").classList.add("hidden");
-  $("tableSkipBtn").classList.remove("hidden");
+  tableSelected=null;
   tableChecked=false;
   renderTable();
-  if(mode==="table") $("answerInput").focus();
 }
 function checkTable(){
-  if(!$("answerInput").value.trim()) return;
-  const item=tableCurrent();
-  const ok=normalize($("answerInput").value)===item.answer;
-  $("answerInput").disabled=true;
-  $("answerInput").classList.add(ok?"correct":"wrong");
-  $("tableResult").className=`result ${ok?"ok":"bad"}`;
-  $("tableResult").textContent=ok ? "✓ correct / richtig" : `✗ correct answer / richtige Antwort: ${item.answer}`;
-  $("tableCheckBtn").classList.add("hidden");
-  $("tableNextBtn").classList.remove("hidden");
-  $("tableSkipBtn").classList.add("hidden");
+  if(!tableSelected || tableChecked) return;
   tableChecked=true;
+  renderTable();
 }
 function nextTable(){
   if(tablePos<tableOrder.length-1) tablePos++;
@@ -575,6 +607,7 @@ function renderFill(){
   $("fillSkipBtn").classList.toggle("hidden",q.checked);
   $("fillNextBtn").classList.toggle("hidden",!q.checked);
   $("fillCheckBtn").disabled=!q.selected;
+  $("fillReshuffleBtn").disabled=(q.checked ? (r.pos>=14) : (r.pos>=15));
 
   if(q.checked){
     $("fillStatus").className=`fill-status ${q.ok?"ok":"bad"}`;
@@ -628,6 +661,33 @@ function skipFill(){
   }
   saveFill(); renderFill();
 }
+function reshuffleFill(){
+  const r=fillState.activeRound;
+  if(!r || r.complete) return;
+
+  const start=r.qState.checked ? r.pos+1 : r.pos;
+  const remaining=r.order.slice(start);
+  if(remaining.length<=1) return;
+
+  let mixed=shuffle(remaining);
+  for(let tries=0;tries<20 && sameArray(mixed,remaining);tries++) mixed=shuffle(remaining);
+
+  // Before Check, make the visible question change when possible.
+  if(!r.qState.checked && mixed.length>1 && mixed[0]===remaining[0]){
+    [mixed[0],mixed[1]]=[mixed[1],mixed[0]];
+  }
+
+  r.order.splice(start,remaining.length,...mixed);
+
+  if(!r.qState.checked){
+    r.qState={selected:null,checked:false,ok:null};
+    genderOpen=false;
+    englishOpen=false;
+  }
+  saveFill();
+  renderFill();
+}
+
 function startNewRound(){
   if(fillState.cycleCompletePending){
     const nextCycle=fillState.cycle+1;
@@ -649,9 +709,6 @@ function startNewRound(){
 $("tableModeBtn").addEventListener("click",()=>setMode("table"));
 $("fillModeBtn").addEventListener("click",()=>setMode("fill"));
 
-$("answerInput").addEventListener("input",()=>{
-  $("tableCheckBtn").disabled=!$("answerInput").value.trim();
-});
 $("tableCheckBtn").addEventListener("click",checkTable);
 $("tableNextBtn").addEventListener("click",nextTable);
 $("reshuffleBtn").addEventListener("click",reshuffleTable);
@@ -662,12 +719,13 @@ $("englishBtn").addEventListener("click",()=>{ englishOpen=!englishOpen; renderR
 $("fillCheckBtn").addEventListener("click",checkFill);
 $("fillSkipBtn").addEventListener("click",skipFill);
 $("fillNextBtn").addEventListener("click",advanceFill);
+$("fillReshuffleBtn").addEventListener("click",reshuffleFill);
 $("newRoundBtn").addEventListener("click",startNewRound);
 
 document.addEventListener("keydown",(e)=>{
   if(e.key!=="Enter") return;
   if(mode==="table"){
-    if(!tableChecked && !$("tableCheckBtn").disabled) checkTable();
+    if(!tableChecked && tableSelected) checkTable();
     else if(tableChecked) nextTable();
   }else{
     const r=fillState.activeRound;
