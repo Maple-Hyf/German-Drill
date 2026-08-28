@@ -412,7 +412,7 @@
 
   <div class="mode-switch" aria-label="Practice mode">
     <button class="mode-btn active" id="tableModeBtn">Table Drill</button>
-    <button class="mode-btn" id="fillModeBtn">Sentence Fill-in <span class="beta">β</span></button>
+    <button class="mode-btn" id="fillModeBtn">Sentence Fill-in</button>
   </div>
 
   <div class="bar"><div id="barFill"></div></div>
@@ -497,7 +497,7 @@
       </div>
 
       <div class="note">
-        Each round covers all 16 Kasus × Genus/Numerus combinations once. New sentences are used before skipped ones return.
+        Each round covers all 16 Kasus × Genus/Numerus combinations once. Wrong answers return first. Fresh sentences come next; skipped sentences return later.
       </div>
     </div>
 
@@ -515,7 +515,7 @@
       </div>
     </div>
 
-    <div class="footer">256 curated sentence prompts · 16 per combination · local cycle progress</div>
+    <div class="footer">256 curated sentence prompts · checked only after a correct answer · local cycle progress</div>
   </section>
 </div>
 
@@ -755,6 +755,7 @@ function defaultFillState(){
     roundNumber:1,
     checked:[],
     seen:[],
+    wrong:Object.fromEntries(comboKeys.map(k=>[k,[]])),
     skipped:Object.fromEntries(comboKeys.map(k=>[k,[]])),
     previousOrder:[],
     activeRound:null,
@@ -765,10 +766,14 @@ function normalizeFillState(raw){
   if(!raw || raw.version!==1) return null;
   raw.checked=Array.isArray(raw.checked)?raw.checked.filter(id=>byId[id]):[];
   raw.seen=Array.isArray(raw.seen)?raw.seen.filter(id=>byId[id]):[];
+  raw.wrong=raw.wrong||{};
   raw.skipped=raw.skipped||{};
   for(const k of comboKeys){
+    raw.wrong[k]=Array.isArray(raw.wrong[k])
+      ? raw.wrong[k].filter(id=>byId[id]&&byId[id].combo===k&&!raw.checked.includes(id))
+      : [];
     raw.skipped[k]=Array.isArray(raw.skipped[k])
-      ? raw.skipped[k].filter(id=>byId[id]&&byId[id].combo===k)
+      ? raw.skipped[k].filter(id=>byId[id]&&byId[id].combo===k&&!raw.checked.includes(id))
       : [];
   }
   return Object.assign(defaultFillState(),raw);
@@ -816,17 +821,21 @@ function chooseSentence(combo){
   const checked=checkedSet(), seen=seenSet();
   const pool=bankByCombo[combo];
 
-  // 1) Strict priority: sentences never shown in this cycle.
+  // 1) Mastery priority: wrong answers return first for this exact grammar combination.
+  const wrong=(fillState.wrong[combo]||[]).filter(id=>!checked.has(id));
+  if(wrong.length) return wrong[0];
+
+  // 2) Then use sentences never shown in this cycle.
   const fresh=pool.filter(x=>!seen.has(x.id));
   if(fresh.length) return fresh[Math.floor(Math.random()*fresh.length)].id;
 
-  // 2) After the full fresh pool for this combination is exhausted:
-  //    bring back unresolved skipped sentences, oldest first.
-  const unresolved=(fillState.skipped[combo]||[]).filter(id=>!checked.has(id));
+  // 3) Skipped-only sentences return after fresh material is exhausted.
+  const unresolved=(fillState.skipped[combo]||[])
+    .filter(id=>!checked.has(id) && !(fillState.wrong[combo]||[]).includes(id));
   if(unresolved.length) return unresolved[0];
 
-  // 3) Fixed 16-combination rounds require a filler if this combo is already complete
-  //    while another combo still has unresolved skips. Repeats only happen after fresh exhaustion.
+  // 4) Fixed 16-combination rounds need a filler if this combination is already mastered
+  //    while another combination still has unresolved work.
   const reviewed=pool.filter(x=>checked.has(x.id));
   if(reviewed.length){
     const lastId=fillState.activeRound?.items?.[combo];
@@ -869,13 +878,23 @@ function markSeen(id){ addUnique(fillState.seen,id); }
 function markChecked(id){
   addUnique(fillState.checked,id);
   const combo=byId[id].combo;
+  removeValue(fillState.wrong[combo],id);
   removeValue(fillState.skipped[combo],id);
   if(fillState.checked.length===TOTAL) fillState.cycleCompletePending=true;
+}
+function markWrong(id){
+  const item=byId[id];
+  if(fillState.checked.includes(id)) return;
+  markSeen(id);
+  removeValue(fillState.wrong[item.combo],id);
+  fillState.wrong[item.combo].push(id);
+  removeValue(fillState.skipped[item.combo],id);
 }
 function markSkipped(id){
   const item=byId[id];
   if(fillState.checked.includes(id)) return; // review filler: no unresolved debt
   markSeen(id);
+  if((fillState.wrong[item.combo]||[]).includes(id)) return;
   removeValue(fillState.skipped[item.combo],id);
   fillState.skipped[item.combo].push(id); // move to back if skipped again
 }
@@ -973,9 +992,15 @@ function checkFill(){
   q.checked=true;
   q.ok=q.selected===item.answer;
   markSeen(item.id);
-  markChecked(item.id);
-  if(q.ok) r.stats.correct++;
-  else r.stats.incorrect++;
+
+  if(q.ok){
+    markChecked(item.id);
+    r.stats.correct++;
+  }else{
+    markWrong(item.id);
+    r.stats.incorrect++;
+  }
+
   saveFill(); renderFill();
 }
 function advanceFill(){
