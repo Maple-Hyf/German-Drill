@@ -320,6 +320,52 @@
       letter-spacing:.02em;
       white-space:nowrap;
     }
+    .grammar-delayed{
+      transition:opacity .28s ease, transform .28s ease;
+      transform-origin:right top;
+    }
+    .grammar-delayed.grammar-hidden{
+      opacity:0;
+      visibility:hidden;
+      transform:translateY(-2px);
+      pointer-events:none;
+    }
+    .test-title-row{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      margin-top:22px;
+      margin-bottom:10px;
+    }
+    .test-title-row .mode-title{margin:0}
+    .star-btn{
+      width:40px;
+      min-width:40px;
+      height:40px;
+      padding:0;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      border:1px solid var(--border);
+      border-radius:11px;
+      background:var(--soft);
+      color:#777;
+      font-size:23px;
+      font-weight:800;
+      line-height:1;
+      box-shadow:none;
+    }
+    .star-btn:hover{
+      border-color:#c19b49;
+      color:#9b731e;
+      background:#fff8e5;
+    }
+    .star-btn.starred{
+      background:#fff3cf;
+      border-color:#d6a463;
+      color:#8c640b;
+    }
     .mode-title{
       margin-top:22px;
       margin-bottom:10px;
@@ -561,6 +607,21 @@
     html[data-theme="dark"] .level-badge{
       border-color:#3b3b37;background:#292927;color:#96968f
     }
+    html[data-theme="dark"] .star-btn{
+      background:#30302d;
+      border-color:#45453f;
+      color:#aaa9a2;
+    }
+    html[data-theme="dark"] .star-btn:hover{
+      background:#3a321d;
+      border-color:#8f702e;
+      color:#e8c86f;
+    }
+    html[data-theme="dark"] .star-btn.starred{
+      background:#3b3018;
+      border-color:#9b762d;
+      color:#f0ce80;
+    }
     html[data-theme="dark"] input{background:#1d1d1b;color:var(--text)}
     html[data-theme="dark"] input:focus{
       border-color:#74746d;box-shadow:0 0 0 3px rgba(255,255,255,.06)
@@ -632,6 +693,13 @@
         </div>
       </div>
 
+      <div class="filter-group">
+        <div class="filter-label">Focus</div>
+        <div class="filter-chips">
+          <button type="button" class="filter-chip" id="starredFilterBtn">★ Starred</button>
+        </div>
+      </div>
+
       <div class="filter-actions">
         <button type="button" class="apply-filter" id="applyFilterBtn">Apply filter</button>
         <button type="button" class="reset-filter" id="resetFilterBtn">All 100</button>
@@ -647,7 +715,7 @@
         <div class="meaning" id="meaning"></div>
       </div>
       <div class="tag-stack">
-        <div class="badge" id="type">
+        <div class="badge grammar-delayed grammar-hidden" id="type">
           <span class="tag-part" id="typeEn"></span>
           <span class="tag-sep"> / </span>
           <span class="tag-part" id="typeDe"></span>
@@ -662,7 +730,10 @@
     </section>
 
     <section id="testSection" class="hidden">
-      <div class="mode-title">Test / Testen</div>
+      <div class="test-title-row">
+        <div class="mode-title">Test / Testen</div>
+        <button type="button" class="star-btn hidden" id="starBtn" aria-label="Star this verb" title="Star this verb">☆</button>
+      </div>
       <div class="table" id="testTable"></div>
 
       <div class="char-helper">
@@ -689,7 +760,7 @@
     </div>
   </div>
 
-  <div class="footer">100 A1 verbs · filterable by priority + conjugation type · random endless repeat · ä ö ü ß helper</div>
+  <div class="footer">100 A1 verbs · filterable by priority + conjugation type + starred focus · random endless repeat · ä ö ü ß helper</div>
 </div>
 
 <script>
@@ -799,6 +870,8 @@ const verbs = [
 const pronouns = ["ich","du","er / sie / es","wir","ihr","sie / Sie"];
 
 const FILTER_STORAGE_KEY = "german-drill-a1-filter-v1";
+const STAR_STORAGE_KEY = "german-drill-a1-starred-v1";
+const GRAMMAR_TAG_DELAY_MS = 5000;
 
 const filterTypes = {
   "regular": {
@@ -838,6 +911,9 @@ let selectedPriorities = new Set(ALL_PRIORITIES);
 let selectedTypes = new Set(ALL_TYPES);
 let draftPriorities = new Set(ALL_PRIORITIES);
 let draftTypes = new Set(ALL_TYPES);
+let selectedStarredFocus = false;
+let draftStarredFocus = false;
+let starredVerbs = new Set();
 
 let order = [];
 let pos = 0;
@@ -846,11 +922,40 @@ let mode = "study";
 let activeInput = null;
 let studyMeaningRevealed = false;
 let studyAnswersRevealed = false;
+let grammarTagTimer = null;
 
 const $ = id => document.getElementById(id);
 
 function typeKeyFor(item){
   return ALL_TYPES.find(key => filterTypes[key].match(item)) || null;
+}
+
+function loadStarredVerbs(){
+  try{
+    const saved = JSON.parse(localStorage.getItem(STAR_STORAGE_KEY) || "[]");
+    const validNames = new Set(verbs.map(item=>item.v));
+    starredVerbs = new Set(Array.isArray(saved) ? saved.filter(v=>validNames.has(v)) : []);
+  }catch{
+    starredVerbs = new Set();
+  }
+}
+
+function saveStarredVerbs(){
+  localStorage.setItem(STAR_STORAGE_KEY, JSON.stringify([...starredVerbs]));
+}
+
+function isStarred(item = current()){
+  return !!item && starredVerbs.has(item.v);
+}
+
+function renderStarButton(){
+  const btn = $("starBtn");
+  if(!btn) return;
+  const starred = isStarred();
+  btn.textContent = starred ? "★" : "☆";
+  btn.classList.toggle("starred", starred);
+  btn.setAttribute("aria-label", starred ? "Remove star from this verb" : "Star this verb");
+  btn.title = starred ? "Remove star" : "Star this verb";
 }
 
 function eligibleIndices(priorities = selectedPriorities, types = selectedTypes){
@@ -876,17 +981,20 @@ function loadFilterSettings(){
 
       if(priorities.length) selectedPriorities = new Set(priorities);
       if(types.length) selectedTypes = new Set(types);
+      selectedStarredFocus = !!saved.starredFocus;
     }
   }catch{}
 
   draftPriorities = new Set(selectedPriorities);
   draftTypes = new Set(selectedTypes);
+  draftStarredFocus = selectedStarredFocus;
 }
 
 function saveFilterSettings(){
   localStorage.setItem(FILTER_STORAGE_KEY, JSON.stringify({
     priorities:[...selectedPriorities],
-    types:[...selectedTypes]
+    types:[...selectedTypes],
+    starredFocus:selectedStarredFocus
   }));
 }
 
@@ -906,7 +1014,8 @@ function filterSummaryText(){
     typeText = `${selectedTypes.size} types`;
   }
 
-  return `${priorityText} · ${typeText} · ${count} verb${count===1?"":"s"}`;
+  const focusText = selectedStarredFocus ? " · ★ Starred first" : "";
+  return `${priorityText} · ${typeText}${focusText} · ${count} verb${count===1?"":"s"}`;
 }
 
 function renderFilterUI(){
@@ -918,7 +1027,11 @@ function renderFilterUI(){
     btn.classList.toggle("active", draftTypes.has(btn.dataset.type));
   });
 
-  const draftCount = eligibleIndices(draftPriorities,draftTypes).length;
+  $("starredFilterBtn").classList.toggle("active", draftStarredFocus);
+
+  const draftEligible = eligibleIndices(draftPriorities,draftTypes);
+  const draftCount = draftEligible.length;
+  const draftStarCount = draftEligible.filter(i=>starredVerbs.has(verbs[i].v)).length;
   const status = $("filterStatus");
 
   if(!draftPriorities.size){
@@ -934,7 +1047,9 @@ function renderFilterUI(){
     status.className = "filter-status error";
     $("applyFilterBtn").disabled = true;
   } else {
-    status.textContent = `${draftCount} verb${draftCount===1?"":"s"} in this filter`;
+    status.textContent = draftStarredFocus
+      ? `${draftCount} verb${draftCount===1?"":"s"} · ${draftStarCount} starred first`
+      : `${draftCount} verb${draftCount===1?"":"s"} in this filter`;
     status.className = "filter-status";
     $("applyFilterBtn").disabled = false;
   }
@@ -942,20 +1057,72 @@ function renderFilterUI(){
   $("filterSummary").textContent = filterSummaryText();
 }
 
-function shuffledIndices(previousLast = null){
-  const arr = eligibleIndices();
-  for(let i=arr.length-1;i>0;i--){
-    const j = Math.floor(Math.random()*(i+1));
-    [arr[i],arr[j]] = [arr[j],arr[i]];
+function shuffleArray(arr){
+  const out=[...arr];
+  for(let i=out.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [out[i],out[j]]=[out[j],out[i]];
   }
+  return out;
+}
+
+function shuffledIndices(previousLast = null){
+  const eligible = eligibleIndices();
+  let arr;
+
+  if(selectedStarredFocus){
+    const starred = eligible.filter(i=>starredVerbs.has(verbs[i].v));
+    const regular = eligible.filter(i=>!starredVerbs.has(verbs[i].v));
+    arr = [...shuffleArray(starred), ...shuffleArray(regular)];
+  }else{
+    arr = shuffleArray(eligible);
+  }
+
   if(previousLast !== null && arr.length > 1 && arr[0] === previousLast){
-    [arr[0],arr[1]] = [arr[1],arr[0]];
+    const firstIsStarred = starredVerbs.has(verbs[arr[0]].v);
+    let swapIndex = -1;
+
+    if(selectedStarredFocus && firstIsStarred){
+      swapIndex = arr.findIndex((idx,i)=>i>0 && starredVerbs.has(verbs[idx].v));
+    }
+    if(swapIndex < 0) swapIndex = 1;
+
+    [arr[0],arr[swapIndex]] = [arr[swapIndex],arr[0]];
   }
   return arr;
 }
 
 function current(){
   return verbs[order[pos]];
+}
+
+function clearGrammarTagTimer(){
+  if(grammarTagTimer !== null){
+    clearTimeout(grammarTagTimer);
+    grammarTagTimer = null;
+  }
+}
+
+function hideGrammarTag(){
+  clearGrammarTagTimer();
+  $("type").classList.add("grammar-hidden");
+}
+
+function revealGrammarTag(){
+  clearGrammarTagTimer();
+  $("type").classList.remove("grammar-hidden");
+}
+
+function scheduleGrammarTagReveal(){
+  clearGrammarTagTimer();
+  const expectedIndex = order[pos];
+
+  grammarTagTimer = setTimeout(()=>{
+    grammarTagTimer = null;
+    if(mode === "study" && order[pos] === expectedIndex){
+      $("type").classList.remove("grammar-hidden");
+    }
+  }, GRAMMAR_TAG_DELAY_MS);
 }
 
 function updateStudyMasks(){
@@ -973,6 +1140,7 @@ function renderStudy(){
   const item = current();
   studyMeaningRevealed = false;
   studyAnswersRevealed = false;
+  hideGrammarTag();
 
   $("verb").textContent = item.v;
   $("meaning").textContent = item.en;
@@ -1035,6 +1203,7 @@ function renderStudy(){
   $("checkBtn").classList.add("hidden");
   $("nextBtn").classList.add("hidden");
   $("skipBtn").classList.remove("hidden");
+  $("starBtn").classList.add("hidden");
   $("checkBtn").disabled = true;
   $("hint").innerHTML =
     `First look at the six forms. When you are ready, start the test. ` +
@@ -1042,9 +1211,11 @@ function renderStudy(){
 
   mode = "study";
   updateStudyMasks();
+  scheduleGrammarTagReveal();
 }
 
 function startTest(){
+  hideGrammarTag();
   studyMeaningRevealed = true;
   $("meaning").classList.remove("masked","study-toggle");
   $("studyTable").classList.remove("study-toggle");
@@ -1055,6 +1226,7 @@ function startTest(){
   $("checkBtn").classList.remove("hidden");
   $("nextBtn").classList.add("hidden");
   $("skipBtn").classList.remove("hidden");
+  $("starBtn").classList.add("hidden");
   $("hint").textContent = "Fill in all six forms before checking your answers.";
   mode = "test";
 
@@ -1105,6 +1277,9 @@ function checkAnswers(){
   $("nextBtn").classList.remove("hidden");
   $("hint").textContent = "Check the answers, then continue. The next verb will start in Study mode again.";
   mode = "checked";
+  revealGrammarTag();
+  renderStarButton();
+  $("starBtn").classList.remove("hidden");
 }
 
 function nextVerb(){
@@ -1138,6 +1313,7 @@ $("filterToggle").addEventListener("click", ()=>{
   if(opening){
     draftPriorities = new Set(selectedPriorities);
     draftTypes = new Set(selectedTypes);
+    draftStarredFocus = selectedStarredFocus;
     renderFilterUI();
     panel.classList.remove("hidden");
     $("filterToggle").textContent = "Close";
@@ -1171,6 +1347,7 @@ $("applyFilterBtn").addEventListener("click", ()=>{
 
   selectedPriorities = new Set(draftPriorities);
   selectedTypes = new Set(draftTypes);
+  selectedStarredFocus = draftStarredFocus;
   saveFilterSettings();
 
   order = shuffledIndices();
@@ -1185,6 +1362,12 @@ $("applyFilterBtn").addEventListener("click", ()=>{
 $("resetFilterBtn").addEventListener("click", ()=>{
   draftPriorities = new Set(ALL_PRIORITIES);
   draftTypes = new Set(ALL_TYPES);
+  draftStarredFocus = false;
+  renderFilterUI();
+});
+
+$("starredFilterBtn").addEventListener("click", ()=>{
+  draftStarredFocus = !draftStarredFocus;
   renderFilterUI();
 });
 
@@ -1198,6 +1381,18 @@ $("studyTable").addEventListener("click", ()=>{
   if(mode !== "study") return;
   studyAnswersRevealed = !studyAnswersRevealed;
   updateStudyMasks();
+});
+
+$("starBtn").addEventListener("click", ()=>{
+  if(mode !== "checked") return;
+
+  const verb = current().v;
+  if(starredVerbs.has(verb)) starredVerbs.delete(verb);
+  else starredVerbs.add(verb);
+
+  saveStarredVerbs();
+  renderStarButton();
+  renderFilterUI();
 });
 
 $("startBtn").addEventListener("click", startTest);
@@ -1251,6 +1446,7 @@ document.addEventListener("keydown",(e)=>{
   }
 });
 
+loadStarredVerbs();
 loadFilterSettings();
 renderFilterUI();
 order = shuffledIndices();
