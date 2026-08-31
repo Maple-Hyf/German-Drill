@@ -584,6 +584,31 @@
     .skip:hover{
       background:#ffe9a8;
     }
+    .skip-pair{
+      display:flex;
+      align-items:stretch;
+      gap:10px;
+    }
+    .undo-skip{
+      width:46px;
+      min-width:46px;
+      padding:0;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      background:#fffaf0;
+      color:#8a6208;
+      border:2px solid #d69a24;
+      box-shadow:0 0 0 2px rgba(214,154,36,.06);
+    }
+    .undo-skip:hover:not(:disabled){
+      background:#fff3cf;
+    }
+    .undo-skip svg{
+      width:20px;
+      height:20px;
+      display:block;
+    }
     button:disabled{
       opacity:.38;
       cursor:not-allowed;
@@ -811,6 +836,10 @@
       box-shadow:0 0 0 2px rgba(168,121,29,.14)
     }
     html[data-theme="dark"] .skip:hover{background:#493a18}
+    html[data-theme="dark"] .undo-skip{
+      background:#2b281d;color:#d8b95f;border-color:#a8791d;box-shadow:none
+    }
+    html[data-theme="dark"] .undo-skip:hover:not(:disabled){background:#3b3018}
     html[data-theme="dark"] .char-btn{
       background:#30302d;color:#efeee8;border-color:#45453f
     }
@@ -936,7 +965,10 @@
       <button class="primary hidden" id="checkBtn" disabled>Check answers / Antworten prüfen</button>
       <button class="primary hidden" id="nextBtn">Next / Weiter →</button>
       <button class="secondary" id="reshuffleBtn">Reshuffle / Neu mischen</button>
-      <button class="skip" id="skipBtn">Skip / Überspringen →</button>
+      <div class="skip-pair">
+        <button type="button" class="undo-skip" id="undoSkipBtn" aria-label="Undo Skip" title="Undo Skip" disabled><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 5v14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M19 6.2 10.8 12 19 17.8V6.2Z" fill="currentColor"/></svg></button>
+        <button class="skip" id="skipBtn">Skip / Überspringen →</button>
+      </div>
     </div>
 
     <div class="hint" id="hint">
@@ -1123,6 +1155,7 @@ let grammarTagTimer = null;
 let starFeedbackTimer = null;
 let clearStarsCountdownTimer = null;
 let clearStarsCountdownValue = CLEAR_STARS_DELAY_SECONDS;
+let undoSkipState = null;
 
 const $ = id => document.getElementById(id);
 
@@ -1318,6 +1351,16 @@ function shuffledIndices(previousLast = null){
 
 function current(){
   return verbs[order[pos]];
+}
+
+function updateUndoSkipButton(){
+  const btn = $("undoSkipBtn");
+  if(btn) btn.disabled = !undoSkipState;
+}
+
+function clearUndoSkipState(){
+  undoSkipState = null;
+  updateUndoSkipButton();
 }
 
 function captureSessionState(){
@@ -1620,6 +1663,7 @@ function normalize(s){
 }
 
 function checkAnswers(){
+  clearUndoSkipState();
   const item = current();
   const inputs = [...$("testTable").querySelectorAll("input")];
 
@@ -1651,6 +1695,7 @@ function checkAnswers(){
 }
 
 function resetSession(){
+  clearUndoSkipState();
   saveSessionResetBackup();
 
   // Preserve the applied filter and all long-term starred data.
@@ -1664,6 +1709,7 @@ function resetSession(){
 }
 
 function reloadLastSession(){
+  clearUndoSkipState();
   const saved = loadSessionResetBackup();
   if(!saved) return;
 
@@ -1721,6 +1767,7 @@ function reloadLastSession(){
 }
 
 function nextVerb(){
+  clearUndoSkipState();
   if(pos < order.length - 1){
     pos += 1;
   } else {
@@ -1732,7 +1779,53 @@ function nextVerb(){
   renderStudy();
 }
 
+function skipCurrentVerb(){
+  const snapshot = captureSessionState();
+  nextVerb();
+  undoSkipState = snapshot;
+  updateUndoSkipButton();
+}
+
+function undoLastSkip(){
+  const saved = undoSkipState;
+  if(!saved) return;
+
+  undoSkipState = null;
+  order = [...saved.order];
+  pos = saved.pos;
+  round = saved.round;
+
+  renderStudy();
+
+  if(saved.mode === "study"){
+    studyMeaningRevealed = saved.studyMeaningRevealed;
+    studyAnswersRevealed = saved.studyAnswersRevealed;
+    updateStudyMasks();
+    if(saved.grammarVisible) revealGrammarTag();
+  }else{
+    startTest();
+    const inputs = [...$("testTable").querySelectorAll("input")];
+    inputs.forEach((input,i)=>{ input.value = saved.testValues[i] || ""; });
+    updateCheckState();
+
+    if(saved.mode === "checked"){
+      checkAnswers();
+    }else{
+      const firstEmpty = inputs.find(input=>!input.value.trim());
+      if(firstEmpty){
+        activeInput = firstEmpty;
+        firstEmpty.focus();
+      }else if(inputs[0]){
+        activeInput = inputs[0];
+      }
+    }
+  }
+
+  updateUndoSkipButton();
+}
+
 function reshuffleNow(){
+  clearUndoSkipState();
   const currentIndex = order[pos];
   order = shuffledIndices();
   // If possible, keep the current verb from immediately reappearing after manual reshuffle.
@@ -1780,6 +1873,7 @@ document.querySelectorAll("[data-type]").forEach(btn=>{
 });
 
 $("applyFilterBtn").addEventListener("click", ()=>{
+  clearUndoSkipState();
   const next = eligibleIndices(draftPriorities,draftTypes);
   if(!next.length) return;
 
@@ -1855,7 +1949,8 @@ $("startBtn").addEventListener("click", startTest);
 $("checkBtn").addEventListener("click", checkAnswers);
 $("nextBtn").addEventListener("click", nextVerb);
 $("reshuffleBtn").addEventListener("click", reshuffleNow);
-$("skipBtn").addEventListener("click", nextVerb);
+$("undoSkipBtn").addEventListener("click", undoLastSkip);
+$("skipBtn").addEventListener("click", skipCurrentVerb);
 
 document.querySelectorAll(".char-btn").forEach(button => {
   button.addEventListener("mousedown", e => e.preventDefault());

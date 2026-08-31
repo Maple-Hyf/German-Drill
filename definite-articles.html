@@ -182,6 +182,13 @@
       box-shadow:0 0 0 2px rgba(214,154,36,.10);
     }
     .skip:hover{background:#ffe9a8}
+    .skip-pair{display:flex;align-items:stretch;gap:10px}
+    .undo-skip{
+      width:46px;min-width:46px;padding:0;display:inline-flex;align-items:center;justify-content:center;
+      background:#fffaf0;color:#8a6208;border:2px solid #d69a24;box-shadow:0 0 0 2px rgba(214,154,36,.06)
+    }
+    .undo-skip:hover:not(:disabled){background:#fff3cf}
+    .undo-skip svg{width:20px;height:20px;display:block}
     button:disabled{opacity:.38;cursor:not-allowed}
     .hint{margin-top:15px;font-size:13px;line-height:1.55}
     .hidden{display:none!important}
@@ -352,6 +359,8 @@
       box-shadow:0 0 0 2px rgba(168,121,29,.14)
     }
     html[data-theme="dark"] .skip:hover{background:#493a18}
+    html[data-theme="dark"] .undo-skip{background:#2b281d;color:#d8b95f;border-color:#a8791d;box-shadow:none}
+    html[data-theme="dark"] .undo-skip:hover:not(:disabled){background:#3b3018}
     html[data-theme="dark"] .blank-slot{border-bottom-color:#8d8d86}
     html[data-theme="dark"] .filled-article{background:#3a3a36;color:#f2f1eb}
     html[data-theme="dark"] .reveal-card{background:#232321;color:var(--text)}
@@ -448,7 +457,10 @@
         <button class="primary" id="tableCheckBtn" disabled>Check / Prüfen</button>
         <button class="primary hidden" id="tableNextBtn">Next / Weiter →</button>
         <button class="secondary" id="reshuffleBtn">Reshuffle / Neu mischen</button>
-        <button class="skip" id="tableSkipBtn">Skip / Überspringen →</button>
+        <div class="skip-pair" id="tableSkipPair">
+          <button type="button" class="undo-skip" id="tableUndoSkipBtn" aria-label="Undo Skip" title="Undo Skip" disabled><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 5v14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M19 6.2 10.8 12 19 17.8V6.2Z" fill="currentColor"/></svg></button>
+          <button class="skip" id="tableSkipBtn">Skip / Überspringen →</button>
+        </div>
       </div>
       <div class="hint">Choose one article: <b>der, die, das, den, dem, des</b>.</div>
     </div>
@@ -493,7 +505,10 @@
         <button class="primary" id="fillCheckBtn" disabled>Check / Prüfen</button>
         <button class="primary hidden" id="fillNextBtn">Next / Weiter →</button>
         <button class="secondary" id="fillReshuffleBtn">Reshuffle / Neu mischen</button>
-        <button class="skip" id="fillSkipBtn">Skip / Überspringen →</button>
+        <div class="skip-pair" id="fillSkipPair">
+          <button type="button" class="undo-skip" id="fillUndoSkipBtn" aria-label="Undo Skip" title="Undo Skip" disabled><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 5v14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M19 6.2 10.8 12 19 17.8V6.2Z" fill="currentColor"/></svg></button>
+          <button class="skip" id="fillSkipBtn">Skip / Überspringen →</button>
+        </div>
       </div>
 
       <div class="note">
@@ -511,7 +526,10 @@
           <div class="stat"><strong id="statSkipped">0</strong><span>Skipped</span></div>
         </div>
         <div class="round-cycle" id="roundCycleProgress"></div>
-        <button class="primary" id="newRoundBtn">New round / Neue Runde →</button>
+        <div class="controls" style="justify-content:center;margin-top:0">
+          <button type="button" class="undo-skip hidden" id="roundUndoSkipBtn" aria-label="Undo Skip" title="Undo Skip"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 5v14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M19 6.2 10.8 12 19 17.8V6.2Z" fill="currentColor"/></svg></button>
+          <button class="primary" id="newRoundBtn">New round / Neue Runde →</button>
+        </div>
       </div>
     </div>
 
@@ -656,7 +674,15 @@ let tablePos=initialTableState?.pos || 0;
 let tableRound=initialTableState?.round || 1;
 let tableChecked=initialTableState?.checked || false;
 let tableSelected=initialTableState?.selected || null;
+let tableUndoSkipState=null;
 
+function updateTableUndoSkipButton(){
+  $("tableUndoSkipBtn").disabled=!tableUndoSkipState;
+}
+function clearTableUndoSkip(){
+  tableUndoSkipState=null;
+  updateTableUndoSkipButton();
+}
 function shuffledTableIndices(previousLast=null){
   const arr=shuffle(tableItems.map((_,i)=>i));
   if(previousLast!==null && arr.length>1 && arr[0]===previousLast){
@@ -706,7 +732,9 @@ function renderTable(){
   $("tableFeedback").classList.toggle("hidden",!tableChecked);
   $("tableCheckBtn").classList.toggle("hidden",tableChecked);
   $("tableNextBtn").classList.toggle("hidden",!tableChecked);
-  $("tableSkipBtn").classList.toggle("hidden",tableChecked);
+  $("tableSkipPair").classList.toggle("hidden",tableChecked);
+  $("tableSkipBtn").classList.remove("hidden");
+  updateTableUndoSkipButton();
   $("tableCheckBtn").disabled=!tableSelected;
   $("reshuffleBtn").disabled=tableChecked;
 
@@ -725,11 +753,13 @@ function resetTableQuestion(){
 }
 function checkTable(){
   if(!tableSelected || tableChecked) return;
+  clearTableUndoSkip();
   tableChecked=true;
   saveTable();
   renderTable();
 }
 function nextTable(){
+  clearTableUndoSkip();
   if(tablePos<tableOrder.length-1) tablePos++;
   else{
     const prev=tableOrder[tableOrder.length-1];
@@ -738,8 +768,27 @@ function nextTable(){
   }
   resetTableQuestion();
 }
+function skipTable(){
+  const snapshot=tableSnapshot();
+  nextTable();
+  tableUndoSkipState=snapshot;
+  updateTableUndoSkipButton();
+}
+function undoTableSkip(){
+  const saved=tableUndoSkipState;
+  if(!saved) return;
+  tableUndoSkipState=null;
+  tableOrder=[...saved.order];
+  tablePos=saved.pos;
+  tableRound=saved.round;
+  tableChecked=saved.checked;
+  tableSelected=saved.selected;
+  saveTable();
+  renderTable();
+}
 function reshuffleTable(){
   if(tableChecked) return;
+  clearTableUndoSkip();
   const currentIndex=tableOrder[tablePos];
   tableOrder=shuffledTableIndices();
   if(tableOrder.length>1 && tableOrder[0]===currentIndex) [tableOrder[0],tableOrder[1]]=[tableOrder[1],tableOrder[0]];
@@ -797,8 +846,18 @@ function updateReloadButton(){
 }
 let fillState=loadFillState();
 let genderOpen=false, englishOpen=false;
+let fillUndoSkipState=null;
 
 function saveFill(){ localStorage.setItem(STATE_KEY,JSON.stringify(fillState)); }
+function updateFillUndoSkipButtons(){
+  const available=!!fillUndoSkipState;
+  $("fillUndoSkipBtn").disabled=!available;
+  $("roundUndoSkipBtn").classList.toggle("hidden",!available);
+}
+function clearFillUndoSkip(){
+  fillUndoSkipState=null;
+  updateFillUndoSkipButtons();
+}
 function checkedSet(){ return new Set(fillState.checked); }
 function seenSet(){ return new Set(fillState.seen); }
 
@@ -939,6 +998,7 @@ function renderArticleButtons(){
 function renderFill(){
   ensureFillRound();
   const r=fillState.activeRound;
+  updateFillUndoSkipButtons();
 
   $("fillExercise").classList.toggle("hidden",!!r.complete);
   $("roundCompleteCard").classList.toggle("hidden",!r.complete);
@@ -967,7 +1027,8 @@ function renderFill(){
 
   $("fillFeedback").classList.toggle("hidden",!q.checked);
   $("fillCheckBtn").classList.toggle("hidden",q.checked);
-  $("fillSkipBtn").classList.toggle("hidden",q.checked);
+  $("fillSkipPair").classList.toggle("hidden",q.checked);
+  $("fillSkipBtn").classList.remove("hidden");
   $("fillNextBtn").classList.toggle("hidden",!q.checked);
   $("fillCheckBtn").disabled=!q.selected;
   $("fillReshuffleBtn").disabled=q.checked || r.pos>=15;
@@ -989,6 +1050,7 @@ function selectArticle(article){
 function checkFill(){
   const r=fillState.activeRound, q=r.qState, item=currentFillItem();
   if(q.checked || !q.selected) return;
+  clearFillUndoSkip();
   q.checked=true;
   q.ok=q.selected===item.answer;
   markSeen(item.id);
@@ -1004,6 +1066,7 @@ function checkFill(){
   saveFill(); renderFill();
 }
 function advanceFill(){
+  clearFillUndoSkip();
   const r=fillState.activeRound;
   if(r.pos<15){
     r.pos++;
@@ -1018,6 +1081,11 @@ function advanceFill(){
 function skipFill(){
   const r=fillState.activeRound, q=r.qState, item=currentFillItem();
   if(q.checked) return;
+  const snapshot={
+    state:JSON.parse(JSON.stringify(fillState)),
+    genderOpen,
+    englishOpen
+  };
   markSkipped(item.id);
   r.stats.skipped++;
   if(r.pos<15){
@@ -1028,11 +1096,23 @@ function skipFill(){
     r.complete=true;
     fillState.previousOrder=[...r.order];
   }
+  fillUndoSkipState=snapshot;
   saveFill(); renderFill();
+}
+function undoFillSkip(){
+  const saved=fillUndoSkipState;
+  if(!saved) return;
+  fillUndoSkipState=null;
+  fillState=saved.state;
+  genderOpen=!!saved.genderOpen;
+  englishOpen=!!saved.englishOpen;
+  saveFill();
+  renderFill();
 }
 function reshuffleFill(){
   const r=fillState.activeRound;
   if(!r || r.complete || r.qState.checked) return;
+  clearFillUndoSkip();
 
   const start=r.pos;
   const remaining=r.order.slice(start);
@@ -1055,6 +1135,7 @@ function reshuffleFill(){
 }
 
 function resetTableProgress(){
+  clearTableUndoSkip();
   // One-level persistent undo for Table Drill.
   try{
     localStorage.setItem(TABLE_RESET_BACKUP_KEY, JSON.stringify(tableSnapshot()));
@@ -1071,6 +1152,7 @@ function resetTableProgress(){
 }
 
 function reloadLastTableState(){
+  clearTableUndoSkip();
   const backup=loadTableResetBackup();
   if(!backup) return;
   tableOrder=[...backup.order];
@@ -1084,6 +1166,7 @@ function reloadLastTableState(){
 }
 
 function resetFillProgress(){
+  clearFillUndoSkip();
   // One-level persistent undo: save the exact state immediately before Reset.
   try{
     localStorage.setItem(RESET_BACKUP_KEY, JSON.stringify(fillState));
@@ -1099,6 +1182,7 @@ function resetFillProgress(){
 }
 
 function reloadLastFillState(){
+  clearFillUndoSkip();
   const backup=loadResetBackup();
   if(!backup) return;
   fillState=backup;
@@ -1120,6 +1204,7 @@ function reloadLastCurrentMode(){
 }
 
 function startNewRound(){
+  clearFillUndoSkip();
   if(fillState.cycleCompletePending){
     const nextCycle=fillState.cycle+1;
     const prevOrder=[...(fillState.previousOrder||[])];
@@ -1143,11 +1228,14 @@ $("fillModeBtn").addEventListener("click",()=>setMode("fill"));
 $("tableCheckBtn").addEventListener("click",checkTable);
 $("tableNextBtn").addEventListener("click",nextTable);
 $("reshuffleBtn").addEventListener("click",reshuffleTable);
-$("tableSkipBtn").addEventListener("click",nextTable);
+$("tableUndoSkipBtn").addEventListener("click",undoTableSkip);
+$("tableSkipBtn").addEventListener("click",skipTable);
 
 $("genderHintBtn").addEventListener("click",()=>{ genderOpen=!genderOpen; renderReveal(); });
 $("englishBtn").addEventListener("click",()=>{ englishOpen=!englishOpen; renderReveal(); });
 $("fillCheckBtn").addEventListener("click",checkFill);
+$("fillUndoSkipBtn").addEventListener("click",undoFillSkip);
+$("roundUndoSkipBtn").addEventListener("click",undoFillSkip);
 $("fillSkipBtn").addEventListener("click",skipFill);
 $("fillNextBtn").addEventListener("click",advanceFill);
 $("fillReshuffleBtn").addEventListener("click",reshuffleFill);
