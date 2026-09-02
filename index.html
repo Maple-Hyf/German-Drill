@@ -300,6 +300,168 @@
     html[data-theme="dark"] .auth-msg{background:#2a2a27}
     html[data-theme="dark"] .auth-msg.bad{color:#ef9292}
 
+
+    .dashboard-controls{
+      position:relative;
+      display:flex;
+      align-items:center;
+      gap:8px;
+    }
+    .status-icon-btn{
+      width:36px;
+      height:36px;
+      padding:0;
+      border:1px solid var(--border);
+      border-radius:10px;
+      background:var(--card);
+      color:var(--muted);
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      cursor:pointer;
+      transition:border-color .15s ease,background .15s ease,color .15s ease;
+    }
+    .status-icon-btn svg{width:18px;height:18px;display:block}
+    .status-icon-btn:hover{border-color:#9c9c96;color:var(--text)}
+    .status-icon-btn.is-active{
+      background:#e8f3e9;
+      border-color:#a9c9ad;
+      color:#3d7044;
+    }
+    html[data-theme="dark"] .status-icon-btn:hover{border-color:#66665f}
+    html[data-theme="dark"] .status-icon-btn.is-active{
+      background:#24382a;
+      border-color:#4c6e54;
+      color:#9fcca8;
+    }
+    .dash-popover{
+      position:absolute;
+      top:44px;
+      right:0;
+      z-index:40;
+      width:min(310px,calc(100vw - 28px));
+      background:var(--card);
+      border:1px solid var(--border);
+      border-radius:16px;
+      box-shadow:0 16px 40px rgba(0,0,0,.12);
+      padding:14px;
+    }
+    html[data-theme="dark"] .dash-popover{box-shadow:0 18px 42px rgba(0,0,0,.38)}
+    .account-head{
+      display:flex;
+      align-items:center;
+      gap:11px;
+    }
+    .account-avatar,
+    .account-avatar-fallback{
+      width:38px;
+      height:38px;
+      border-radius:50%;
+      flex:0 0 auto;
+    }
+    .account-avatar{object-fit:cover;border:1px solid var(--border)}
+    .account-avatar-fallback{
+      display:grid;
+      place-items:center;
+      border:1px solid var(--border);
+      background:#fafaf8;
+      color:var(--muted);
+    }
+    .account-avatar-fallback svg{width:20px;height:20px}
+    html[data-theme="dark"] .account-avatar-fallback{background:#2a2a27}
+    .account-name{font-size:14px;font-weight:780;line-height:1.25}
+    .account-email{margin-top:3px;color:var(--muted);font-size:12px;line-height:1.35;overflow-wrap:anywhere}
+    .account-divider{height:1px;background:var(--border);margin:13px 0 10px}
+    .account-signout{
+      border:0;
+      background:transparent;
+      color:var(--muted);
+      font:inherit;
+      font-size:12px;
+      font-weight:760;
+      padding:5px 0;
+      cursor:pointer;
+    }
+    .account-signout:hover{color:var(--text)}
+    .signout-confirm-title{font-size:14px;font-weight:780}
+    .signout-confirm-copy{margin-top:5px;color:var(--muted);font-size:12px;line-height:1.45}
+    .signout-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:13px}
+    .mini-btn{
+      min-height:34px;
+      padding:7px 10px;
+      border:1px solid var(--border);
+      border-radius:9px;
+      background:var(--card);
+      color:var(--text);
+      font:inherit;
+      font-size:12px;
+      font-weight:760;
+      cursor:pointer;
+    }
+    .mini-btn:hover{border-color:#9c9c96}
+    .mini-btn:disabled{opacity:.42;cursor:not-allowed}
+    .mini-btn.primary{background:var(--text);color:var(--bg);border-color:var(--text)}
+    html[data-theme="dark"] .mini-btn:hover{border-color:#66665f}
+    .calendar-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
+    .calendar-month{font-size:14px;font-weight:800;text-align:center;flex:1}
+    .calendar-nav{
+      width:30px;
+      height:30px;
+      border:1px solid var(--border);
+      border-radius:8px;
+      background:var(--card);
+      color:var(--muted);
+      display:grid;
+      place-items:center;
+      font:inherit;
+      font-size:16px;
+      line-height:1;
+      cursor:pointer;
+    }
+    .calendar-nav:hover{border-color:#9c9c96;color:var(--text)}
+    .calendar-nav:disabled{opacity:.28;cursor:not-allowed}
+    html[data-theme="dark"] .calendar-nav:hover{border-color:#66665f}
+    .calendar-weekdays,
+    .calendar-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px}
+    .calendar-weekdays{margin-bottom:5px}
+    .calendar-weekday{text-align:center;color:var(--muted);font-size:10px;font-weight:780}
+    .calendar-day{
+      aspect-ratio:1;
+      border:1px solid transparent;
+      border-radius:8px;
+      display:grid;
+      place-items:center;
+      font-size:12px;
+      color:var(--text);
+      background:#fafaf8;
+    }
+    html[data-theme="dark"] .calendar-day{background:#2a2a27}
+    .calendar-day.blank{background:transparent}
+    .calendar-day.future{color:var(--muted);opacity:.42}
+    .calendar-day.checked{
+      background:#e8f3e9;
+      border-color:#c3d9c6;
+      color:#315d37;
+      opacity:1;
+    }
+    html[data-theme="dark"] .calendar-day.checked{
+      background:#24382a;
+      border-color:#3f5d47;
+      color:#a8d4b1;
+    }
+    .calendar-day.today{box-shadow:inset 0 0 0 1px #8a8a84}
+    html[data-theme="dark"] .calendar-day.today{box-shadow:inset 0 0 0 1px #85857e}
+    .calendar-status{min-height:16px;margin-top:9px;color:var(--muted);font-size:11px;line-height:1.4}
+    .calendar-status.bad{color:#9d3434}
+    html[data-theme="dark"] .calendar-status.bad{color:#ef9292}
+    @media(max-width:650px){
+      .dashboard-top{align-items:center}
+      .dashboard-controls{gap:6px}
+      .status-icon-btn{width:34px;height:34px}
+      .theme-toggle{min-height:34px;padding:7px 9px}
+      .dash-popover{top:42px}
+    }
+
 </style>
 </head>
 <body>
@@ -317,9 +479,67 @@
   </section>
 
   <main class="wrap hidden" id="dashboardView">
-    <div class="dashboard-top"><div class="eyebrow">German Drill</div><button type="button" class="theme-toggle" data-theme-toggle>◐ System</button></div>
+    <div class="dashboard-top">
+      <div class="eyebrow">German Drill</div>
+      <div class="dashboard-controls" id="dashboardControls">
+        <button id="accountBtn" class="status-icon-btn is-active" type="button" aria-label="Account" title="Account" aria-expanded="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="8" r="3.2"></circle>
+            <path d="M5.8 19c.8-3.2 3-4.8 6.2-4.8s5.4 1.6 6.2 4.8"></path>
+          </svg>
+        </button>
+        <button id="calendarBtn" class="status-icon-btn" type="button" aria-label="Calendar" title="Calendar" aria-expanded="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="4" y="5.5" width="16" height="14" rx="2"></rect>
+            <path d="M8 3.8v3.4M16 3.8v3.4M4 9.3h16"></path>
+          </svg>
+        </button>
+        <button type="button" class="theme-toggle" data-theme-toggle>◐ System</button>
+
+        <div id="accountPopover" class="dash-popover hidden">
+          <div id="accountSummary">
+            <div class="account-head">
+              <img id="accountAvatar" class="account-avatar hidden" alt="" referrerpolicy="no-referrer">
+              <div id="accountAvatarFallback" class="account-avatar-fallback" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="8" r="3.2"></circle>
+                  <path d="M5.8 19c.8-3.2 3-4.8 6.2-4.8s5.4 1.6 6.2 4.8"></path>
+                </svg>
+              </div>
+              <div>
+                <div id="accountName" class="account-name">Google account</div>
+                <div id="accountEmail" class="account-email"></div>
+              </div>
+            </div>
+            <div class="account-divider"></div>
+            <button id="startSignOutBtn" class="account-signout" type="button">Sign out</button>
+          </div>
+          <div id="signOutConfirm" class="hidden">
+            <div class="signout-confirm-title">Sign out?</div>
+            <div class="signout-confirm-copy">Your cloud data stays saved. Sign in again to continue learning.</div>
+            <div class="signout-actions">
+              <button id="cancelSignOutBtn" class="mini-btn" type="button">Cancel</button>
+              <button id="confirmSignOutBtn" class="mini-btn primary" type="button" disabled>Sign out · 3</button>
+            </div>
+          </div>
+        </div>
+
+        <div id="calendarPopover" class="dash-popover hidden">
+          <div class="calendar-head">
+            <button id="calendarPrevBtn" class="calendar-nav" type="button" aria-label="Previous month">‹</button>
+            <div id="calendarMonthLabel" class="calendar-month"></div>
+            <button id="calendarNextBtn" class="calendar-nav" type="button" aria-label="Next month">›</button>
+          </div>
+          <div class="calendar-weekdays" aria-hidden="true">
+            <div class="calendar-weekday">Mon</div><div class="calendar-weekday">Tue</div><div class="calendar-weekday">Wed</div><div class="calendar-weekday">Thu</div><div class="calendar-weekday">Fri</div><div class="calendar-weekday">Sat</div><div class="calendar-weekday">Sun</div>
+          </div>
+          <div id="calendarGrid" class="calendar-grid"></div>
+          <div id="calendarStatus" class="calendar-status"></div>
+        </div>
+      </div>
+    </div>
     <h1>Choose a drill</h1>
-    <div class="sub">Quick practice. No tracking. No streaks. Just drill.</div>
+    <div class="sub">Quick practice. No streaks. Just drill.</div>
 
     <section class="grid">
       <a class="card" href="a1-present.html">
@@ -399,6 +619,9 @@ import {
   getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged,
   setPersistence, browserLocalPersistence
 } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-auth.js";
+import {
+  getFirestore, collection, doc, getDoc, setDoc, serverTimestamp, onSnapshot
+} from "https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyD72gOohLLXe4wmqiXXK3dX-3uRBCL2DhU",
@@ -411,6 +634,7 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
+const db = getFirestore(app);
 await setPersistence(auth, browserLocalPersistence);
 const provider = new GoogleAuthProvider();
 const ALLOWED_UID = "elW0hqe8hoXcePYOd9ySthjv3d23";
@@ -419,11 +643,300 @@ const authGate = document.getElementById("authGate");
 const dashboardView = document.getElementById("dashboardView");
 const signInBtn = document.getElementById("signInBtn");
 const authMsg = document.getElementById("authMsg");
+const accountBtn = document.getElementById("accountBtn");
+const calendarBtn = document.getElementById("calendarBtn");
+const accountPopover = document.getElementById("accountPopover");
+const calendarPopover = document.getElementById("calendarPopover");
+const accountSummary = document.getElementById("accountSummary");
+const signOutConfirm = document.getElementById("signOutConfirm");
+const accountAvatar = document.getElementById("accountAvatar");
+const accountAvatarFallback = document.getElementById("accountAvatarFallback");
+const accountName = document.getElementById("accountName");
+const accountEmail = document.getElementById("accountEmail");
+const startSignOutBtn = document.getElementById("startSignOutBtn");
+const cancelSignOutBtn = document.getElementById("cancelSignOutBtn");
+const confirmSignOutBtn = document.getElementById("confirmSignOutBtn");
+const calendarPrevBtn = document.getElementById("calendarPrevBtn");
+const calendarNextBtn = document.getElementById("calendarNextBtn");
+const calendarMonthLabel = document.getElementById("calendarMonthLabel");
+const calendarGrid = document.getElementById("calendarGrid");
+const calendarStatus = document.getElementById("calendarStatus");
+
+const MIN_CALENDAR_MONTH = 2026 * 12 + 8; // September 2026
+let currentUser = null;
+let attendanceDates = new Set();
+let unsubscribeAttendance = null;
+let calendarYear = 2026;
+let calendarMonth = 8;
+let checkInBusy = false;
+let signOutTimer = null;
 
 function setAuthMessage(message, isError = false){
   authMsg.textContent = message;
   authMsg.classList.toggle("bad", isError);
 }
+
+
+function localDateParts(date = new Date()){
+  return { year: date.getFullYear(), month: date.getMonth(), day: date.getDate() };
+}
+function dateKey(year, month, day){
+  return `${year}-${String(month + 1).padStart(2,"0")}-${String(day).padStart(2,"0")}`;
+}
+function todayKey(){
+  const p = localDateParts();
+  return dateKey(p.year, p.month, p.day);
+}
+function currentTimeZone(){
+  try{ return Intl.DateTimeFormat().resolvedOptions().timeZone || "local"; }
+  catch(e){ return "local"; }
+}
+function monthIndex(year, month){ return year * 12 + month; }
+
+function closeAccountPopover(){
+  accountPopover.classList.add("hidden");
+  accountBtn.setAttribute("aria-expanded","false");
+  resetSignOutConfirm();
+}
+function openAccountPopover(){
+  calendarPopover.classList.add("hidden");
+  calendarBtn.setAttribute("aria-expanded","false");
+  accountPopover.classList.remove("hidden");
+  accountBtn.setAttribute("aria-expanded","true");
+}
+function closeCalendarPopover(){
+  calendarPopover.classList.add("hidden");
+  calendarBtn.setAttribute("aria-expanded","false");
+  setCalendarStatus("");
+}
+function openCalendarPopover(){
+  closeAccountPopover();
+  const now = localDateParts();
+  const idx = Math.max(monthIndex(now.year, now.month), MIN_CALENDAR_MONTH);
+  calendarYear = Math.floor(idx / 12);
+  calendarMonth = idx % 12;
+  renderCalendar();
+  calendarPopover.classList.remove("hidden");
+  calendarBtn.setAttribute("aria-expanded","true");
+}
+function setCalendarStatus(message, isError = false){
+  calendarStatus.textContent = message;
+  calendarStatus.classList.toggle("bad", isError);
+}
+function updateCalendarButton(){
+  const checked = attendanceDates.has(todayKey());
+  calendarBtn.classList.toggle("is-active", checked);
+  calendarBtn.title = checked ? "Calendar · checked in today" : "Calendar";
+  calendarBtn.setAttribute("aria-label", checked ? "Calendar, checked in today" : "Calendar");
+}
+function renderCalendar(){
+  const labelDate = new Date(calendarYear, calendarMonth, 1);
+  calendarMonthLabel.textContent = new Intl.DateTimeFormat("en-US", { month:"long", year:"numeric" }).format(labelDate);
+  calendarPrevBtn.disabled = monthIndex(calendarYear, calendarMonth) <= MIN_CALENDAR_MONTH;
+
+  const firstWeekday = (new Date(calendarYear, calendarMonth, 1).getDay() + 6) % 7;
+  const daysInMonth = new Date(calendarYear, calendarMonth + 1, 0).getDate();
+  const today = todayKey();
+  calendarGrid.innerHTML = "";
+
+  for(let i = 0; i < firstWeekday; i++){
+    const blank = document.createElement("div");
+    blank.className = "calendar-day blank";
+    blank.setAttribute("aria-hidden","true");
+    calendarGrid.appendChild(blank);
+  }
+
+  for(let day = 1; day <= daysInMonth; day++){
+    const key = dateKey(calendarYear, calendarMonth, day);
+    const cell = document.createElement("div");
+    cell.className = "calendar-day";
+    cell.textContent = String(day);
+    if(key > today) cell.classList.add("future");
+    if(attendanceDates.has(key)) cell.classList.add("checked");
+    if(key === today) cell.classList.add("today");
+    cell.setAttribute("aria-label", key + (attendanceDates.has(key) ? ", checked in" : ""));
+    calendarGrid.appendChild(cell);
+  }
+
+  const total = firstWeekday + daysInMonth;
+  const trailing = (7 - (total % 7)) % 7;
+  for(let i = 0; i < trailing; i++){
+    const blank = document.createElement("div");
+    blank.className = "calendar-day blank";
+    blank.setAttribute("aria-hidden","true");
+    calendarGrid.appendChild(blank);
+  }
+}
+
+async function checkInToday(){
+  if(checkInBusy || !currentUser) return false;
+  const key = todayKey();
+  if(attendanceDates.has(key)) return false;
+
+  checkInBusy = true;
+  calendarBtn.disabled = true;
+  setCalendarStatus("Saving…");
+  const ref = doc(db, "users", currentUser.uid, "attendance", key);
+  try{
+    const existing = await getDoc(ref);
+    if(existing.exists()){
+      attendanceDates.add(key);
+      updateCalendarButton();
+      renderCalendar();
+      setCalendarStatus("");
+      return false;
+    }
+
+    await setDoc(ref, {
+      date: key,
+      timezone: currentTimeZone(),
+      checkedAt: serverTimestamp()
+    });
+    attendanceDates.add(key);
+    updateCalendarButton();
+    renderCalendar();
+    setCalendarStatus("");
+    return true;
+  }catch(err){
+    console.error(err);
+    try{
+      const after = await getDoc(ref);
+      if(after.exists()){
+        attendanceDates.add(key);
+        updateCalendarButton();
+        renderCalendar();
+        setCalendarStatus("");
+        return false;
+      }
+    }catch(e){ console.error(e); }
+    setCalendarStatus("Couldn’t save check-in.", true);
+    return false;
+  }finally{
+    checkInBusy = false;
+    calendarBtn.disabled = false;
+  }
+}
+
+function startAttendanceSync(user){
+  if(unsubscribeAttendance){ unsubscribeAttendance(); unsubscribeAttendance = null; }
+  attendanceDates = new Set();
+  updateCalendarButton();
+  unsubscribeAttendance = onSnapshot(
+    collection(db, "users", user.uid, "attendance"),
+    snapshot => {
+      const next = new Set();
+      snapshot.forEach(item => next.add(item.id));
+      attendanceDates = next;
+      updateCalendarButton();
+      if(!calendarPopover.classList.contains("hidden")) renderCalendar();
+    },
+    err => {
+      console.error(err);
+      if(!calendarPopover.classList.contains("hidden")) setCalendarStatus("Couldn’t load calendar.", true);
+    }
+  );
+}
+function stopAttendanceSync(){
+  if(unsubscribeAttendance){ unsubscribeAttendance(); unsubscribeAttendance = null; }
+  attendanceDates = new Set();
+  updateCalendarButton();
+}
+function fillAccount(user){
+  accountName.textContent = user.displayName || "Google account";
+  accountEmail.textContent = user.email || "";
+  if(user.photoURL){
+    accountAvatar.src = user.photoURL;
+    accountAvatar.classList.remove("hidden");
+    accountAvatarFallback.classList.add("hidden");
+  }else{
+    accountAvatar.removeAttribute("src");
+    accountAvatar.classList.add("hidden");
+    accountAvatarFallback.classList.remove("hidden");
+  }
+}
+function resetSignOutConfirm(){
+  if(signOutTimer){ clearInterval(signOutTimer); signOutTimer = null; }
+  accountSummary.classList.remove("hidden");
+  signOutConfirm.classList.add("hidden");
+  confirmSignOutBtn.disabled = true;
+  confirmSignOutBtn.textContent = "Sign out · 3";
+  cancelSignOutBtn.disabled = false;
+}
+function beginSignOutConfirm(){
+  if(signOutTimer) clearInterval(signOutTimer);
+  accountSummary.classList.add("hidden");
+  signOutConfirm.classList.remove("hidden");
+  let remaining = 3;
+  confirmSignOutBtn.disabled = true;
+  confirmSignOutBtn.textContent = `Sign out · ${remaining}`;
+  signOutTimer = setInterval(() => {
+    remaining -= 1;
+    if(remaining > 0){
+      confirmSignOutBtn.textContent = `Sign out · ${remaining}`;
+      return;
+    }
+    clearInterval(signOutTimer);
+    signOutTimer = null;
+    confirmSignOutBtn.disabled = false;
+    confirmSignOutBtn.textContent = "Sign out";
+  }, 1000);
+}
+
+accountBtn.addEventListener("click", () => {
+  if(accountPopover.classList.contains("hidden")) openAccountPopover();
+  else closeAccountPopover();
+});
+calendarBtn.addEventListener("click", async () => {
+  if(!calendarPopover.classList.contains("hidden")){
+    closeCalendarPopover();
+    return;
+  }
+  openCalendarPopover();
+  const created = await checkInToday();
+  if(created){
+    window.setTimeout(() => {
+      if(!calendarPopover.classList.contains("hidden")) closeCalendarPopover();
+    }, 800);
+  }
+});
+calendarPrevBtn.addEventListener("click", () => {
+  if(monthIndex(calendarYear, calendarMonth) <= MIN_CALENDAR_MONTH) return;
+  const idx = monthIndex(calendarYear, calendarMonth) - 1;
+  calendarYear = Math.floor(idx / 12);
+  calendarMonth = idx % 12;
+  renderCalendar();
+});
+calendarNextBtn.addEventListener("click", () => {
+  const idx = monthIndex(calendarYear, calendarMonth) + 1;
+  calendarYear = Math.floor(idx / 12);
+  calendarMonth = idx % 12;
+  renderCalendar();
+});
+startSignOutBtn.addEventListener("click", beginSignOutConfirm);
+cancelSignOutBtn.addEventListener("click", resetSignOutConfirm);
+confirmSignOutBtn.addEventListener("click", async () => {
+  if(confirmSignOutBtn.disabled) return;
+  confirmSignOutBtn.disabled = true;
+  cancelSignOutBtn.disabled = true;
+  confirmSignOutBtn.textContent = "Signing out…";
+  try{ await signOut(auth); }
+  catch(err){
+    console.error(err);
+    cancelSignOutBtn.disabled = false;
+    confirmSignOutBtn.disabled = false;
+    confirmSignOutBtn.textContent = "Sign out";
+  }
+});
+
+document.addEventListener("pointerdown", event => {
+  const target = event.target;
+  if(!accountPopover.classList.contains("hidden") && !accountPopover.contains(target) && !accountBtn.contains(target)){
+    closeAccountPopover();
+  }
+  if(!calendarPopover.classList.contains("hidden") && !calendarPopover.contains(target) && !calendarBtn.contains(target)){
+    closeCalendarPopover();
+  }
+});
 
 signInBtn.addEventListener("click", async () => {
   signInBtn.disabled = true;
@@ -440,11 +953,18 @@ signInBtn.addEventListener("click", async () => {
 
 onAuthStateChanged(auth, async user => {
   if(user && user.uid === ALLOWED_UID){
+    currentUser = user;
+    fillAccount(user);
     authGate.classList.add("hidden");
     dashboardView.classList.remove("hidden");
+    startAttendanceSync(user);
     return;
   }
 
+  currentUser = null;
+  stopAttendanceSync();
+  closeAccountPopover();
+  closeCalendarPopover();
   dashboardView.classList.add("hidden");
   authGate.classList.remove("hidden");
 
