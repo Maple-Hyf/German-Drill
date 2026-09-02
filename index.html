@@ -334,6 +334,16 @@
       border-color:#4c6e54;
       color:#9fcca8;
     }
+    #calendarBtn.is-active{
+      background:#dcecdf;
+      border-color:#8fb99a;
+      color:#2f6539;
+    }
+    html[data-theme="dark"] #calendarBtn.is-active{
+      background:#1f3926;
+      border-color:#4f7959;
+      color:#a8d7b1;
+    }
     .dash-popover{
       position:absolute;
       top:44px;
@@ -401,6 +411,17 @@
     .mini-btn:hover{border-color:#9c9c96}
     .mini-btn:disabled{opacity:.42;cursor:not-allowed}
     .mini-btn.primary{background:var(--text);color:var(--bg);border-color:var(--text)}
+    .mini-btn.primary:disabled{
+      opacity:1;
+      background:#f1f1ee;
+      color:#8a8a84;
+      border-color:#d5d5d0;
+    }
+    html[data-theme="dark"] .mini-btn.primary:disabled{
+      background:#2a2a27;
+      color:#777770;
+      border-color:#44443f;
+    }
     html[data-theme="dark"] .mini-btn:hover{border-color:#66665f}
     .calendar-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
     .calendar-month{font-size:14px;font-weight:800;text-align:center;flex:1}
@@ -663,6 +684,7 @@ const calendarGrid = document.getElementById("calendarGrid");
 const calendarStatus = document.getElementById("calendarStatus");
 
 const MIN_CALENDAR_MONTH = 2026 * 12 + 8; // September 2026
+const HISTORICAL_ATTENDANCE_DATE = "2026-09-01";
 let currentUser = null;
 let attendanceDates = new Set();
 let unsubscribeAttendance = null;
@@ -817,6 +839,28 @@ async function checkInToday(){
   }
 }
 
+async function ensureHistoricalAttendance(user){
+  const ref = doc(db, "users", user.uid, "attendance", HISTORICAL_ATTENDANCE_DATE);
+  try{
+    const existing = await getDoc(ref);
+    if(existing.exists()) return;
+    await setDoc(ref, {
+      date: HISTORICAL_ATTENDANCE_DATE,
+      timezone: currentTimeZone(),
+      checkedAt: serverTimestamp()
+    });
+  }catch(err){
+    // A simultaneous device may have created the same immutable record first.
+    try{
+      const after = await getDoc(ref);
+      if(!after.exists()) console.error(err);
+    }catch(e){
+      console.error(err);
+      console.error(e);
+    }
+  }
+}
+
 function startAttendanceSync(user){
   if(unsubscribeAttendance){ unsubscribeAttendance(); unsubscribeAttendance = null; }
   attendanceDates = new Set();
@@ -958,6 +1002,7 @@ onAuthStateChanged(auth, async user => {
     authGate.classList.add("hidden");
     dashboardView.classList.remove("hidden");
     startAttendanceSync(user);
+    await ensureHistoricalAttendance(user);
     return;
   }
 
