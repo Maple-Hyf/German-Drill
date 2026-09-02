@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script>document.documentElement.style.visibility = "hidden";</script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#f4f4f1" />
@@ -612,6 +613,7 @@ function setMode(next){
   updateReloadButton();
   if(mode==="table"){ renderTable(); }
   else { ensureFillRound(); renderFill(); }
+  window.GermanDrillCloudSave?.();
 }
 
 /* ---------- Table Drill ---------- */
@@ -666,6 +668,7 @@ function tableSnapshot(){
 }
 function saveTable(){
   try{ localStorage.setItem(TABLE_STATE_KEY,JSON.stringify(tableSnapshot())); }catch(e){}
+  window.GermanDrillCloudSave?.();
 }
 
 let initialTableState=loadTableState();
@@ -848,7 +851,10 @@ let fillState=loadFillState();
 let genderOpen=false, englishOpen=false;
 let fillUndoSkipState=null;
 
-function saveFill(){ localStorage.setItem(STATE_KEY,JSON.stringify(fillState)); }
+function saveFill(){
+  localStorage.setItem(STATE_KEY,JSON.stringify(fillState));
+  window.GermanDrillCloudSave?.();
+}
 function updateFillUndoSkipButtons(){
   const available=!!fillUndoSkipState;
   $("fillUndoSkipBtn").disabled=!available;
@@ -1221,6 +1227,43 @@ function startNewRound(){
   saveFill(); renderFill();
 }
 
+function captureDefiniteArticlesCloudState(){
+  return {
+    version:1,
+    mode,
+    table:tableSnapshot(),
+    fill:JSON.parse(JSON.stringify(fillState))
+  };
+}
+
+function restoreDefiniteArticlesCloudState(raw){
+  if(!raw || raw.version!==1) return false;
+  const table=normalizeTableState(raw.table);
+  let fill=null;
+  try{ fill=normalizeFillState(JSON.parse(JSON.stringify(raw.fill))); }catch(e){ fill=null; }
+  if(!table || !fill) return false;
+
+  clearTableUndoSkip();
+  clearFillUndoSkip();
+  tableOrder=[...table.order];
+  tablePos=table.pos;
+  tableRound=table.round;
+  tableChecked=table.checked;
+  tableSelected=table.selected;
+  fillState=fill;
+  genderOpen=false;
+  englishOpen=false;
+  saveTable();
+  saveFill();
+  setMode(raw.mode==="fill"?"fill":"table");
+  return true;
+}
+
+window.GermanDrillTrainerCloud={
+  capture:captureDefiniteArticlesCloudState,
+  restore:restoreDefiniteArticlesCloudState
+};
+
 /* ---------- Events ---------- */
 $("tableModeBtn").addEventListener("click",()=>setMode("table"));
 $("fillModeBtn").addEventListener("click",()=>setMode("fill"));
@@ -1267,6 +1310,60 @@ if(!tableOrder.length){
 }
 const savedMode=localStorage.getItem(MODE_KEY);
 setMode(savedMode==="fill"?"fill":"table");
+</script>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-app.js";
+import { getAuth, onAuthStateChanged, signOut, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-auth.js";
+import { getFirestore, doc, getDoc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyD72gOohLLXe4wmqiXXK3dX-3uRBCL2DhU",
+  authDomain: "german-drill.firebaseapp.com",
+  projectId: "german-drill",
+  storageBucket: "german-drill.firebasestorage.app",
+  messagingSenderId: "251965473675",
+  appId: "1:251965473675:web:f1313534036a0cf157658e"
+};
+const ALLOWED_UID="elW0hqe8hoXcePYOd9ySthjv3d23";
+const TRAINER_ID="definite-articles";
+const app=initializeApp(firebaseConfig);
+const auth=getAuth(app);
+const db=getFirestore(app);
+let cloudReady=false;
+let saveChain=Promise.resolve();
+function revealTrainer(){ document.documentElement.style.visibility=""; }
+async function pushTrainerState(){
+  if(!cloudReady || !auth.currentUser || auth.currentUser.uid!==ALLOWED_UID) return;
+  const state=window.GermanDrillTrainerCloud?.capture?.();
+  if(!state) return;
+  try{
+    await setDoc(doc(db,"users",ALLOWED_UID,"trainerStates",TRAINER_ID),{state,updatedAt:serverTimestamp()},{merge:true});
+  }catch(error){ console.warn("Trainer cloud save failed:",error); }
+}
+window.GermanDrillCloudSave=function(){
+  if(!cloudReady)return;
+  saveChain=saveChain.then(pushTrainerState,pushTrainerState);
+};
+setPersistence(auth,browserLocalPersistence).catch(()=>{});
+onAuthStateChanged(auth,async user=>{
+  if(!user || user.uid!==ALLOWED_UID){
+    if(user) await signOut(auth).catch(()=>{});
+    location.replace("./index.html");
+    return;
+  }
+  const ref=doc(db,"users",ALLOWED_UID,"trainerStates",TRAINER_ID);
+  try{
+    const snapshot=await getDoc(ref);
+    if(snapshot.exists()) window.GermanDrillTrainerCloud?.restore?.(snapshot.data().state);
+    cloudReady=true;
+    if(!snapshot.exists()) window.GermanDrillCloudSave();
+  }catch(error){
+    console.warn("Trainer cloud load failed; using this device's current state:",error);
+    cloudReady=true;
+  }
+  revealTrainer();
+});
 </script>
 
 <script>

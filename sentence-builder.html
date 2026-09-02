@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en"><head>
+<script>document.documentElement.style.visibility = "hidden";</script>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#f4f4f1"><meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="German Drill"><link rel="manifest" href="./manifest.webmanifest">
@@ -343,7 +344,7 @@ function matchingSentences(){return SENTENCES.filter(s=>selectedSentenceTypes.ha
 function renderFilterGroup(container,data,selected,kind){container.innerHTML="";for(const [k,m] of Object.entries(data)){const b=document.createElement("button");b.type="button";b.className="filter"+(selected.has(k)?" active":"");b.innerHTML=`<div class="name">${m.label}</div><div class="desc">${m.desc}</div>`;b.onclick=()=>{selected.has(k)?selected.delete(k):selected.add(k);save();renderSetup()};container.appendChild(b)}}
 function renderSetup(){renderFilterGroup(sentenceTypeFiltersEl,SENTENCE_TYPES,selectedSentenceTypes,"sentenceType");renderFilterGroup(grammarFiltersEl,GRAMMARS,selectedGrammars,"grammar");document.querySelectorAll(".pool-btn").forEach(b=>b.classList.toggle("active",+b.dataset.size===poolSize));const n=matchingSentences().length;if(!selectedSentenceTypes.size)setupStatus.textContent="Choose at least one sentence type.";else if(!selectedGrammars.size)setupStatus.textContent="Choose at least one grammar filter.";else setupStatus.textContent=`${n} sentences match · pool ${poolSize}`}
 function makePool(){return shuffle(matchingSentences()).slice(0,poolSize)}
-function startRound(){clearUndoSkipState();if(!selectedSentenceTypes.size||!selectedGrammars.size||!matchingSentences().length){renderSetup();return}save();pool=makePool();planned=pool.length;cursor=0;stats={correct:0,wrong:0,skipped:0,notNow:0,removed:0};setup.classList.add("hidden");round.classList.add("hidden");exercise.classList.remove("hidden");loadQ();updateSessionButtons()}
+function startRound(){clearUndoSkipState();if(!selectedSentenceTypes.size||!selectedGrammars.size||!matchingSentences().length){renderSetup();return}save();pool=makePool();planned=pool.length;cursor=0;stats={correct:0,wrong:0,skipped:0,notNow:0,removed:0};setup.classList.add("hidden");round.classList.add("hidden");exercise.classList.remove("hidden");loadQ();updateSessionButtons();window.GermanDrillCloudSave?.()}
 function scramble(chunks){let o=shuffle(chunks.map((text,i)=>({text,i}))),t=0;while(o.every((x,i)=>x.i===i)&&t++<10)o=shuffle(o);if(o.every((x,i)=>x.i===i)&&o.length>1)[o[0],o[1]]=[o[1],o[0]];return o}
 function loadQ(){if(cursor>=pool.length){finish();return}current=pool[cursor];answer=[];bank=scramble(current.chunks);checked=false;reorderMode=false;reorderSelected=null;translationRevealed=false;catEl.textContent=`${SENTENCE_TYPES[current.sentenceType].label} · ${GRAMMARS[current.grammar].label}`;progress.textContent=`Question ${cursor+1} · ${pool.length-cursor-1} remaining`;bar.style.width=`${planned?(cursor/planned)*100:0}%`;result.className="result";result.textContent="Build the sentence, then Check.";translationBlock.classList.add("hidden");translationBlock.classList.remove("revealed");translationText.textContent="Tap to reveal";checkBtn.classList.remove("hidden");nextBtn.classList.add("hidden");$("skipPair").classList.remove("hidden");skipBtn.classList.remove("hidden");notNowBtn.classList.remove("hidden");renderChunks();updateUndoSkipButtons()}
 function handleReorderTap(item){
@@ -518,6 +519,7 @@ function check(){
   skipBtn.classList.add("hidden");
   notNowBtn.classList.add("hidden");
   renderChunks();
+  window.GermanDrillCloudSave?.();
 }
 
 translationBlock.addEventListener("click",()=>{
@@ -526,7 +528,7 @@ translationBlock.addEventListener("click",()=>{
   translationBlock.classList.add("revealed");
   translationText.textContent=current.translation || "Translation unavailable.";
 });
-function next(){clearUndoSkipState();cursor++;loadQ()}
+function next(){clearUndoSkipState();cursor++;loadQ();window.GermanDrillCloudSave?.()}
 function skip(){
   if(checked)return;
   const snapshot=captureSession();
@@ -535,6 +537,7 @@ function skip(){
   loadQ();
   undoSkipState=snapshot;
   updateUndoSkipButtons();
+  window.GermanDrillCloudSave?.();
 }
 function undoSkip(){
   const saved=undoSkipState;
@@ -550,8 +553,9 @@ function undoSkip(){
   restoreQuestionView(saved.question||{});
   updateUndoSkipButtons();
   updateSessionButtons();
+  window.GermanDrillCloudSave?.();
 }
-function notNow(){if(checked)return;clearUndoSkipState();stats.notNow++;const t=current.template,before=pool.length;pool=pool.filter((x,i)=>i<=cursor||x.template!==t);stats.removed+=before-pool.length;cursor++;loadQ()}
+function notNow(){if(checked)return;clearUndoSkipState();stats.notNow++;const t=current.template,before=pool.length;pool=pool.filter((x,i)=>i<=cursor||x.template!==t);stats.removed+=before-pool.length;cursor++;loadQ();window.GermanDrillCloudSave?.()}
 
 function resetSession(){
   if(screenState()==="setup")return;
@@ -638,10 +642,91 @@ function reloadLastSession(){
 
   renderSetup();
   updateSessionButtons();
+  window.GermanDrillCloudSave?.();
 }
 
 function finish(){exercise.classList.add("hidden");round.classList.remove("hidden");$("stats").innerHTML=`<span>✓ ${stats.correct} correct</span><span>${stats.wrong} checked wrong</span><span>${stats.skipped} skipped</span><span>${stats.notNow} not now</span>`;updateUndoSkipButtons();updateSessionButtons()}
-function change(){clearUndoSkipState();exercise.classList.add("hidden");round.classList.add("hidden");setup.classList.remove("hidden");renderSetup();updateSessionButtons()}
+function change(){clearUndoSkipState();exercise.classList.add("hidden");round.classList.add("hidden");setup.classList.remove("hidden");renderSetup();updateSessionButtons();window.GermanDrillCloudSave?.()}
+function captureSentenceBuilderCloudState(){
+  const active=captureSession();
+  if(active) return active;
+  return {
+    version:1,
+    screen:"setup",
+    sentenceTypes:[...selectedSentenceTypes],
+    grammars:[...selectedGrammars],
+    poolSize
+  };
+}
+function restoreSentenceBuilderCloudState(raw){
+  if(!raw||raw.version!==1)return false;
+  if(raw.screen==="setup"){
+    const sentenceTypes=Array.isArray(raw.sentenceTypes)?raw.sentenceTypes.filter(k=>SENTENCE_TYPES[k]):[];
+    const grammars=Array.isArray(raw.grammars)?raw.grammars.filter(k=>GRAMMARS[k]):[];
+    if(!sentenceTypes.length||!grammars.length)return false;
+    selectedSentenceTypes=new Set(sentenceTypes);
+    selectedGrammars=new Set(grammars);
+    poolSize=[10,20,30].includes(raw.poolSize)?raw.poolSize:20;
+    save();
+    exercise.classList.add("hidden");
+    round.classList.add("hidden");
+    setup.classList.remove("hidden");
+    renderSetup();
+    updateSessionButtons();
+    return true;
+  }
+  const saved=normalizeSessionBackup(raw);
+  if(!saved)return false;
+  clearUndoSkipState();
+  selectedSentenceTypes=new Set(saved.sentenceTypes);
+  selectedGrammars=new Set(saved.grammars);
+  poolSize=saved.poolSize;
+  save();
+  pool=saved.poolIds.map(id=>BY_ID[id]).filter(Boolean);
+  planned=saved.planned;
+  cursor=saved.cursor;
+  stats={...saved.stats};
+  setup.classList.add("hidden");
+  exercise.classList.add("hidden");
+  round.classList.add("hidden");
+  if(saved.screen==="round"||cursor>=pool.length){
+    round.classList.remove("hidden");
+    $("stats").innerHTML=`<span>✓ ${stats.correct} correct</span><span>${stats.wrong} checked wrong</span><span>${stats.skipped} skipped</span><span>${stats.notNow} not now</span>`;
+  }else{
+    exercise.classList.remove("hidden");
+    restoreQuestionView(saved.question||{});
+  }
+  renderSetup();
+  updateSessionButtons();
+  return true;
+}
+window.GermanDrillTrainerCloud={capture:captureSentenceBuilderCloudState,restore:restoreSentenceBuilderCloudState};
 load();renderSetup();document.querySelectorAll(".pool-btn").forEach(b=>b.onclick=()=>{poolSize=+b.dataset.size;save();renderSetup()});$("start").onclick=startRound;checkBtn.onclick=check;nextBtn.onclick=next;skipBtn.onclick=skip;$("undoSkip").onclick=undoSkip;$("roundUndoSkip").onclick=undoSkip;notNowBtn.onclick=notNow;$("changeFilters").onclick=change;$("again").onclick=startRound;$("change").onclick=change;$("reloadSessionBtn").onclick=reloadLastSession;$("resetSessionBtn").onclick=resetSession;updateSessionButtons();
 if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js",{scope:"./"}).then(r=>r.update()).catch(()=>{}));
-</script></body></html>
+</script>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-app.js";
+import { getAuth, onAuthStateChanged, signOut, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-auth.js";
+import { getFirestore, doc, getDoc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore.js";
+const firebaseConfig={apiKey:"AIzaSyD72gOohLLXe4wmqiXXK3dX-3uRBCL2DhU",authDomain:"german-drill.firebaseapp.com",projectId:"german-drill",storageBucket:"german-drill.firebasestorage.app",messagingSenderId:"251965473675",appId:"1:251965473675:web:f1313534036a0cf157658e"};
+const ALLOWED_UID="elW0hqe8hoXcePYOd9ySthjv3d23",TRAINER_ID="sentence-builder";
+const app=initializeApp(firebaseConfig),auth=getAuth(app),db=getFirestore(app);
+let cloudReady=false,saveChain=Promise.resolve();
+function revealTrainer(){document.documentElement.style.visibility="";}
+async function pushTrainerState(){
+  if(!cloudReady||!auth.currentUser||auth.currentUser.uid!==ALLOWED_UID)return;
+  const state=window.GermanDrillTrainerCloud?.capture?.();if(!state)return;
+  try{await setDoc(doc(db,"users",ALLOWED_UID,"trainerStates",TRAINER_ID),{state,updatedAt:serverTimestamp()},{merge:true});}
+  catch(error){console.warn("Trainer cloud save failed:",error);}
+}
+window.GermanDrillCloudSave=function(){if(!cloudReady)return;saveChain=saveChain.then(pushTrainerState,pushTrainerState);};
+setPersistence(auth,browserLocalPersistence).catch(()=>{});
+onAuthStateChanged(auth,async user=>{
+  if(!user||user.uid!==ALLOWED_UID){if(user)await signOut(auth).catch(()=>{});location.replace("./index.html");return;}
+  const ref=doc(db,"users",ALLOWED_UID,"trainerStates",TRAINER_ID);
+  try{const snapshot=await getDoc(ref);if(snapshot.exists())window.GermanDrillTrainerCloud?.restore?.(snapshot.data().state);cloudReady=true;if(!snapshot.exists())window.GermanDrillCloudSave();}
+  catch(error){console.warn("Trainer cloud load failed; using this device's current state:",error);cloudReady=true;}
+  revealTrainer();
+});
+</script>
+</body></html>
