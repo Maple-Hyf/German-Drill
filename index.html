@@ -38,8 +38,9 @@
       return mode;
     }
     function updateButton(){
-      const btn = document.getElementById("themeToggle");
-      if(btn) btn.textContent = LABELS[readMode()];
+      document.querySelectorAll("[data-theme-toggle]").forEach(btn => {
+        btn.textContent = LABELS[readMode()];
+      });
     }
     function apply(mode, persist){
       const resolved = resolvedTheme(mode);
@@ -75,8 +76,9 @@
 
     document.addEventListener("DOMContentLoaded", () => {
       updateButton();
-      const btn = document.getElementById("themeToggle");
-      if(btn) btn.addEventListener("click", cycle);
+      document.querySelectorAll("[data-theme-toggle]").forEach(btn => {
+        btn.addEventListener("click", cycle);
+      });
     });
 
     window.GermanDrillTheme = { apply, cycle, readMode };
@@ -230,11 +232,92 @@
     html[data-theme="dark"] .coming{opacity:.48}
     html[data-theme="dark"] .footer{color:#878780}
 
+    .hidden{display:none!important}
+    .auth-gate{
+      min-height:100vh;
+      display:grid;
+      place-items:center;
+      padding:20px;
+    }
+    .auth-card{
+      width:min(520px,100%);
+      background:var(--card);
+      border:1px solid var(--border);
+      border-radius:20px;
+      padding:28px;
+      box-shadow:var(--shadow);
+    }
+    .auth-theme-row{
+      display:flex;
+      justify-content:flex-end;
+      align-items:center;
+      margin-bottom:8px;
+    }
+    .auth-theme-row .theme-toggle{
+      min-height:30px;
+      border:0;
+      background:transparent;
+      padding:3px 0;
+    }
+    .auth-card h1{
+      font-size:28px;
+      margin:0 0 8px;
+      letter-spacing:-.5px;
+    }
+    .auth-card p{
+      margin:0 0 18px;
+      color:var(--muted);
+      font-size:14px;
+      line-height:1.55;
+    }
+    .auth-btn{
+      min-height:42px;
+      border:0;
+      border-radius:10px;
+      padding:9px 14px;
+      background:var(--text);
+      color:var(--bg);
+      font:inherit;
+      font-weight:750;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      line-height:1.15;
+      cursor:pointer;
+    }
+    .auth-btn:disabled{opacity:.42;cursor:not-allowed}
+    .auth-msg{
+      margin-top:14px;
+      padding:11px 12px;
+      border:1px solid var(--border);
+      border-radius:10px;
+      background:#fafaf8;
+      font-size:12px;
+      line-height:1.45;
+      color:var(--muted);
+    }
+    .auth-msg.bad{color:#9d3434}
+    html[data-theme="dark"] .auth-msg{background:#2a2a27}
+    html[data-theme="dark"] .auth-msg.bad{color:#ef9292}
+
 </style>
 </head>
 <body>
-  <main class="wrap">
-    <div class="dashboard-top"><div class="eyebrow">German Drill</div><button type="button" class="theme-toggle" id="themeToggle">◐ System</button></div>
+  <section id="authGate" class="auth-gate">
+    <div class="auth-card">
+      <div class="auth-theme-row">
+        <button type="button" class="theme-toggle" data-theme-toggle>◐ System</button>
+      </div>
+      <div class="eyebrow">German Drill</div>
+      <h1>Sign in to continue.</h1>
+      <p>Your Google account keeps this personal learning space tied to you.</p>
+      <button id="signInBtn" class="auth-btn" type="button">Sign in with Google</button>
+      <div id="authMsg" class="auth-msg">Checking account…</div>
+    </div>
+  </section>
+
+  <main class="wrap hidden" id="dashboardView">
+    <div class="dashboard-top"><div class="eyebrow">German Drill</div><button type="button" class="theme-toggle" data-theme-toggle>◐ System</button></div>
     <h1>Choose a drill</h1>
     <div class="sub">Quick practice. No tracking. No streaks. Just drill.</div>
 
@@ -309,6 +392,62 @@
 
     <div class="footer">Personal German drill tools</div>
   </main>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-app.js";
+import {
+  getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged,
+  setPersistence, browserLocalPersistence
+} from "https://www.gstatic.com/firebasejs/12.18.0/firebase-auth.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyD72gOohLLXe4wmqiXXK3dX-3uRBCL2DhU",
+  authDomain: "german-drill.firebaseapp.com",
+  projectId: "german-drill",
+  storageBucket: "german-drill.firebasestorage.app",
+  messagingSenderId: "251965473675",
+  appId: "1:251965473675:web:f1313534036a0cf157658e"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+await setPersistence(auth, browserLocalPersistence);
+const provider = new GoogleAuthProvider();
+
+const authGate = document.getElementById("authGate");
+const dashboardView = document.getElementById("dashboardView");
+const signInBtn = document.getElementById("signInBtn");
+const authMsg = document.getElementById("authMsg");
+
+function setAuthMessage(message, isError = false){
+  authMsg.textContent = message;
+  authMsg.classList.toggle("bad", isError);
+}
+
+signInBtn.addEventListener("click", async () => {
+  signInBtn.disabled = true;
+  setAuthMessage("Signing in…");
+  try{
+    await signInWithPopup(auth, provider);
+  }catch(err){
+    console.error(err);
+    setAuthMessage((err.code || "auth/error") + ": " + err.message, true);
+  }finally{
+    signInBtn.disabled = false;
+  }
+});
+
+onAuthStateChanged(auth, user => {
+  if(user){
+    authGate.classList.add("hidden");
+    dashboardView.classList.remove("hidden");
+    return;
+  }
+  dashboardView.classList.add("hidden");
+  authGate.classList.remove("hidden");
+  setAuthMessage("Not signed in.");
+});
+</script>
 
 <script>
 if ("serviceWorker" in navigator) {
