@@ -335,14 +335,14 @@
       color:#9fcca8;
     }
     #calendarBtn.is-active{
-      background:#dcecdf;
-      border-color:#8fb99a;
-      color:#2f6539;
+      background:#d4e8d7;
+      border-color:#79aa85;
+      color:#245f31;
     }
     html[data-theme="dark"] #calendarBtn.is-active{
-      background:#1f3926;
-      border-color:#4f7959;
-      color:#a8d7b1;
+      background:#23492d;
+      border-color:#5d9168;
+      color:#b7e2c0;
     }
     .dash-popover{
       position:absolute;
@@ -385,14 +385,16 @@
     .account-signout{
       border:0;
       background:transparent;
-      color:var(--muted);
+      color:#a34b4b;
       font:inherit;
       font-size:12px;
       font-weight:760;
       padding:5px 0;
       cursor:pointer;
     }
-    .account-signout:hover{color:var(--text)}
+    .account-signout:hover{color:#7f3030}
+    html[data-theme="dark"] .account-signout{color:#e79292}
+    html[data-theme="dark"] .account-signout:hover{color:#f4b1b1}
     .signout-confirm-title{font-size:14px;font-weight:780}
     .signout-confirm-copy{margin-top:5px;color:var(--muted);font-size:12px;line-height:1.45}
     .signout-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:13px}
@@ -410,17 +412,28 @@
     }
     .mini-btn:hover{border-color:#9c9c96}
     .mini-btn:disabled{opacity:.42;cursor:not-allowed}
-    .mini-btn.primary{background:var(--text);color:var(--bg);border-color:var(--text)}
+    .mini-btn.primary{
+      background:#a94747;
+      color:#fffafa;
+      border-color:#a94747;
+    }
+    .mini-btn.primary:hover{border-color:#8f3838;background:#8f3838}
     .mini-btn.primary:disabled{
       opacity:1;
-      background:#f1f1ee;
-      color:#8a8a84;
-      border-color:#d5d5d0;
+      background:#f5eaea;
+      color:#a47b7b;
+      border-color:#e3caca;
     }
+    html[data-theme="dark"] .mini-btn.primary{
+      background:#8f4848;
+      color:#fff3f3;
+      border-color:#a45a5a;
+    }
+    html[data-theme="dark"] .mini-btn.primary:hover{border-color:#b86c6c;background:#9c5050}
     html[data-theme="dark"] .mini-btn.primary:disabled{
-      background:#2a2a27;
-      color:#777770;
-      border-color:#44443f;
+      background:#3a2b2b;
+      color:#a97f7f;
+      border-color:#5a4141;
     }
     html[data-theme="dark"] .mini-btn:hover{border-color:#66665f}
     .calendar-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
@@ -460,15 +473,15 @@
     .calendar-day.blank{background:transparent}
     .calendar-day.future{color:var(--muted);opacity:.42}
     .calendar-day.checked{
-      background:#e8f3e9;
-      border-color:#c3d9c6;
-      color:#315d37;
+      background:#d9eadc;
+      border-color:#8eb899;
+      color:#285e33;
       opacity:1;
     }
     html[data-theme="dark"] .calendar-day.checked{
-      background:#24382a;
-      border-color:#3f5d47;
-      color:#a8d4b1;
+      background:#284730;
+      border-color:#527d5d;
+      color:#b0ddb9;
     }
     .calendar-day.today{box-shadow:inset 0 0 0 1px #8a8a84}
     html[data-theme="dark"] .calendar-day.today{box-shadow:inset 0 0 0 1px #85857e}
