@@ -396,7 +396,7 @@
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-app.js";
 import {
-  getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged,
+  getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged,
   setPersistence, browserLocalPersistence
 } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-auth.js";
 
@@ -413,6 +413,7 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 await setPersistence(auth, browserLocalPersistence);
 const provider = new GoogleAuthProvider();
+const ALLOWED_UID = "elW0hqe8hoXcePYOd9ySthjv3d23";
 
 const authGate = document.getElementById("authGate");
 const dashboardView = document.getElementById("dashboardView");
@@ -437,15 +438,29 @@ signInBtn.addEventListener("click", async () => {
   }
 });
 
-onAuthStateChanged(auth, user => {
-  if(user){
+onAuthStateChanged(auth, async user => {
+  if(user && user.uid === ALLOWED_UID){
     authGate.classList.add("hidden");
     dashboardView.classList.remove("hidden");
     return;
   }
+
   dashboardView.classList.add("hidden");
   authGate.classList.remove("hidden");
-  setAuthMessage("Not signed in.");
+
+  if(user){
+    setAuthMessage("This Google account is not authorized.", true);
+    try{
+      await signOut(auth);
+    }catch(err){
+      console.error(err);
+    }
+    return;
+  }
+
+  if(!authMsg.classList.contains("bad")){
+    setAuthMessage("Not signed in.");
+  }
 });
 </script>
 
