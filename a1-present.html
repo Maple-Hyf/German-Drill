@@ -296,6 +296,9 @@
       font-size:10.5px;
       font-weight:700;
     }
+    .focus-block + .focus-block{
+      margin-top:11px;
+    }
     .clear-stars-btn{
       padding:7px 9px;
       border:1px solid #e0c0c0;
@@ -330,6 +333,18 @@
     .star-feedback.show{
       opacity:1;
       transform:translateY(0);
+    }
+    .mistake-feedback{
+      min-height:16px;
+      margin:-2px 0 10px;
+      color:var(--muted);
+      font-size:11px;
+      font-weight:750;
+      line-height:1.4;
+    }
+    .mistake-feedback:empty{
+      min-height:0;
+      margin:0;
     }
 
     .card{
@@ -904,11 +919,20 @@
 
       <div class="filter-group">
         <div class="filter-label">Focus</div>
-        <div class="filter-chips">
-          <button type="button" class="filter-chip" id="starredFilterBtn">★ Starred</button>
-          <button type="button" class="clear-stars-btn" id="clearStarsBtn" disabled>Clear all</button>
+        <div class="focus-block">
+          <div class="filter-chips">
+            <button type="button" class="filter-chip" id="starredFilterBtn">★ Starred</button>
+            <button type="button" class="clear-stars-btn" id="clearStarsBtn" disabled>Clear all</button>
+          </div>
+          <div class="star-total" id="starTotalText">0 starred total</div>
         </div>
-        <div class="star-total" id="starTotalText">0 starred total</div>
+        <div class="focus-block">
+          <div class="filter-chips">
+            <button type="button" class="filter-chip" id="mistakesFilterBtn">✕ Mistakes</button>
+            <button type="button" class="clear-stars-btn" id="clearMistakesBtn" disabled>Clear all</button>
+          </div>
+          <div class="star-total" id="mistakeTotalText">0 mistakes total</div>
+        </div>
       </div>
 
       <div class="filter-actions">
@@ -949,6 +973,7 @@
           <button type="button" class="star-btn hidden" id="starBtn" aria-label="Star this verb" title="Star this verb">☆</button>
         </div>
       </div>
+      <div class="mistake-feedback" id="mistakeFeedback" aria-live="polite"></div>
       <div class="table" id="testTable"></div>
 
       <div class="char-helper">
@@ -978,7 +1003,7 @@
     </div>
   </div>
 
-  <div class="footer">100 A1 verbs · filterable by priority + conjugation type + starred focus · random endless repeat · ä ö ü ß helper</div>
+  <div class="footer">100 A1 verbs · filterable by priority + conjugation type + starred + mistakes focus · random endless repeat · ä ö ü ß helper</div>
 </div>
 
 <div class="modal-backdrop hidden" id="clearStarsModal" role="dialog" aria-modal="true" aria-labelledby="clearStarsTitle">
@@ -988,6 +1013,17 @@
     <div class="confirm-actions">
       <button type="button" class="modal-cancel" id="cancelClearStarsBtn">Cancel</button>
       <button type="button" class="modal-clear" id="confirmClearStarsBtn" disabled>Clear in 5s</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop hidden" id="clearMistakesModal" role="dialog" aria-modal="true" aria-labelledby="clearMistakesTitle">
+  <div class="confirm-modal">
+    <h2 id="clearMistakesTitle">Clear all mistake verbs?</h2>
+    <p id="clearMistakesMessage"></p>
+    <div class="confirm-actions">
+      <button type="button" class="modal-cancel" id="cancelClearMistakesBtn">Cancel</button>
+      <button type="button" class="modal-clear" id="confirmClearMistakesBtn" disabled>Clear in 5s</button>
     </div>
   </div>
 </div>
@@ -1100,9 +1136,11 @@ const pronouns = ["ich","du","er / sie / es","wir","ihr","sie / Sie"];
 
 const FILTER_STORAGE_KEY = "german-drill-a1-filter-v1";
 const STAR_STORAGE_KEY = "german-drill-a1-starred-v1";
+const MISTAKE_STORAGE_KEY = "german-drill-a1-mistakes-v1";
 const SESSION_RESET_BACKUP_KEY = "german-drill-a1-session-reset-backup-v1";
 const GRAMMAR_TAG_DELAY_MS = 5000;
 const CLEAR_STARS_DELAY_SECONDS = 5;
+const CLEAR_MISTAKES_DELAY_SECONDS = 5;
 
 const filterTypes = {
   "regular": {
@@ -1144,7 +1182,10 @@ let draftPriorities = new Set(ALL_PRIORITIES);
 let draftTypes = new Set(ALL_TYPES);
 let selectedStarredFocus = false;
 let draftStarredFocus = false;
+let selectedMistakesFocus = false;
+let draftMistakesFocus = false;
 let starredVerbs = new Set();
+let mistakeVerbs = new Set();
 
 let order = [];
 let pos = 0;
@@ -1157,6 +1198,8 @@ let grammarTagTimer = null;
 let starFeedbackTimer = null;
 let clearStarsCountdownTimer = null;
 let clearStarsCountdownValue = CLEAR_STARS_DELAY_SECONDS;
+let clearMistakesCountdownTimer = null;
+let clearMistakesCountdownValue = CLEAR_MISTAKES_DELAY_SECONDS;
 let undoSkipState = null;
 
 const $ = id => document.getElementById(id);
@@ -1179,6 +1222,20 @@ function saveStarredVerbs(){
   localStorage.setItem(STAR_STORAGE_KEY, JSON.stringify([...starredVerbs]));
 }
 
+function loadMistakeVerbs(){
+  try{
+    const saved = JSON.parse(localStorage.getItem(MISTAKE_STORAGE_KEY) || "[]");
+    const validNames = new Set(verbs.map(item=>item.v));
+    mistakeVerbs = new Set(Array.isArray(saved) ? saved.filter(v=>validNames.has(v)) : []);
+  }catch{
+    mistakeVerbs = new Set();
+  }
+}
+
+function saveMistakeVerbs(){
+  localStorage.setItem(MISTAKE_STORAGE_KEY, JSON.stringify([...mistakeVerbs]));
+}
+
 function isStarred(item = current()){
   return !!item && starredVerbs.has(item.v);
 }
@@ -1199,6 +1256,17 @@ function renderStarManagement(){
   $("clearStarsBtn").disabled = count === 0;
 }
 
+function renderMistakeManagement(){
+  const count = mistakeVerbs.size;
+  $("mistakeTotalText").textContent = `${count} mistakes total`;
+  $("clearMistakesBtn").disabled = count === 0;
+}
+
+function setMistakeFeedback(message = ""){
+  const el = $("mistakeFeedback");
+  if(el) el.textContent = message;
+}
+
 function showStarFeedback(message){
   const el = $("starFeedback");
   if(!el) return;
@@ -1216,12 +1284,13 @@ function showStarFeedback(message){
   }, 1800);
 }
 
-function eligibleIndices(priorities = selectedPriorities, types = selectedTypes){
+function eligibleIndices(priorities = selectedPriorities, types = selectedTypes, mistakesFocus = selectedMistakesFocus){
   return verbs
     .map((item,i)=>({item,i}))
     .filter(({item}) =>
       priorities.has(item.level) &&
-      types.has(typeKeyFor(item))
+      types.has(typeKeyFor(item)) &&
+      (!mistakesFocus || mistakeVerbs.has(item.v))
     )
     .map(({i})=>i);
 }
@@ -1240,19 +1309,22 @@ function loadFilterSettings(){
       if(priorities.length) selectedPriorities = new Set(priorities);
       if(types.length) selectedTypes = new Set(types);
       selectedStarredFocus = !!saved.starredFocus;
+      selectedMistakesFocus = !!saved.mistakesFocus;
     }
   }catch{}
 
   draftPriorities = new Set(selectedPriorities);
   draftTypes = new Set(selectedTypes);
   draftStarredFocus = selectedStarredFocus;
+  draftMistakesFocus = selectedMistakesFocus;
 }
 
 function saveFilterSettings(){
   localStorage.setItem(FILTER_STORAGE_KEY, JSON.stringify({
     priorities:[...selectedPriorities],
     types:[...selectedTypes],
-    starredFocus:selectedStarredFocus
+    starredFocus:selectedStarredFocus,
+    mistakesFocus:selectedMistakesFocus
   }));
 }
 
@@ -1272,7 +1344,10 @@ function filterSummaryText(){
     typeText = `${selectedTypes.size} types`;
   }
 
-  const focusText = selectedStarredFocus ? " · ★ Starred first" : "";
+  const focusParts = [];
+  if(selectedStarredFocus) focusParts.push("★ Starred first");
+  if(selectedMistakesFocus) focusParts.push("✕ Mistakes only");
+  const focusText = focusParts.length ? ` · ${focusParts.join(" · ")}` : "";
   return `${priorityText} · ${typeText}${focusText} · ${count} verb${count===1?"":"s"}`;
 }
 
@@ -1286,8 +1361,9 @@ function renderFilterUI(){
   });
 
   $("starredFilterBtn").classList.toggle("active", draftStarredFocus);
+  $("mistakesFilterBtn").classList.toggle("active", draftMistakesFocus);
 
-  const draftEligible = eligibleIndices(draftPriorities,draftTypes);
+  const draftEligible = eligibleIndices(draftPriorities,draftTypes,draftMistakesFocus);
   const draftCount = draftEligible.length;
   const draftStarCount = draftEligible.filter(i=>starredVerbs.has(verbs[i].v)).length;
   const status = $("filterStatus");
@@ -1301,19 +1377,28 @@ function renderFilterUI(){
     status.className = "filter-status error";
     $("applyFilterBtn").disabled = true;
   } else if(!draftCount){
-    status.textContent = "0 verbs match this combination.";
+    status.textContent = draftMistakesFocus
+      ? "0 mistakes match this filter."
+      : "0 verbs match this combination.";
     status.className = "filter-status error";
     $("applyFilterBtn").disabled = true;
   } else {
-    status.textContent = draftStarredFocus
-      ? `${draftCount} verb${draftCount===1?"":"s"} · ${draftStarCount} starred first`
-      : `${draftCount} verb${draftCount===1?"":"s"} in this filter`;
+    if(draftMistakesFocus && draftStarredFocus){
+      status.textContent = `${draftCount} mistake verb${draftCount===1?"":"s"} · ${draftStarCount} starred first`;
+    }else if(draftMistakesFocus){
+      status.textContent = `${draftCount} mistake verb${draftCount===1?"":"s"} in this filter`;
+    }else if(draftStarredFocus){
+      status.textContent = `${draftCount} verb${draftCount===1?"":"s"} · ${draftStarCount} starred first`;
+    }else{
+      status.textContent = `${draftCount} verb${draftCount===1?"":"s"} in this filter`;
+    }
     status.className = "filter-status";
     $("applyFilterBtn").disabled = false;
   }
 
   $("filterSummary").textContent = filterSummaryText();
   renderStarManagement();
+  renderMistakeManagement();
 }
 
 function shuffleArray(arr){
@@ -1373,6 +1458,7 @@ function captureSessionState(){
     selectedPriorities:[...selectedPriorities],
     selectedTypes:[...selectedTypes],
     selectedStarredFocus,
+    selectedMistakesFocus,
     order:[...order],
     pos,
     round,
@@ -1380,7 +1466,8 @@ function captureSessionState(){
     studyMeaningRevealed,
     studyAnswersRevealed,
     grammarVisible:!$("type").classList.contains("grammar-hidden"),
-    testValues
+    testValues,
+    mistakeFeedback:$("mistakeFeedback")?.textContent || ""
   };
 }
 
@@ -1416,6 +1503,7 @@ function normalizeSessionState(raw){
     selectedPriorities:priorities,
     selectedTypes:types,
     selectedStarredFocus:!!raw.selectedStarredFocus,
+    selectedMistakesFocus:!!raw.selectedMistakesFocus,
     order:[...raw.order],
     pos:safePos,
     round:safeRound,
@@ -1423,7 +1511,8 @@ function normalizeSessionState(raw){
     studyMeaningRevealed:!!raw.studyMeaningRevealed,
     studyAnswersRevealed:!!raw.studyAnswersRevealed,
     grammarVisible:!!raw.grammarVisible,
-    testValues
+    testValues,
+    mistakeFeedback:typeof raw.mistakeFeedback === "string" ? raw.mistakeFeedback : ""
   };
 }
 
@@ -1435,9 +1524,11 @@ function restoreCloudSessionState(raw){
   selectedPriorities = new Set(saved.selectedPriorities);
   selectedTypes = new Set(saved.selectedTypes);
   selectedStarredFocus = saved.selectedStarredFocus && starredVerbs.size > 0;
+  selectedMistakesFocus = saved.selectedMistakesFocus && mistakeVerbs.size > 0;
   draftPriorities = new Set(selectedPriorities);
   draftTypes = new Set(selectedTypes);
   draftStarredFocus = selectedStarredFocus;
+  draftMistakesFocus = selectedMistakesFocus;
   saveFilterSettings();
 
   order = [...saved.order];
@@ -1459,6 +1550,7 @@ function restoreCloudSessionState(raw){
     updateCheckState();
     if(saved.mode === "checked"){
       checkAnswers();
+      setMistakeFeedback(saved.mistakeFeedback);
     }else{
       const firstEmpty = inputs.find(input=>!input.value.trim());
       if(firstEmpty){ activeInput = firstEmpty; firstEmpty.focus(); }
@@ -1473,6 +1565,31 @@ function restoreCloudSessionState(raw){
 window.GermanDrillTrainerCloud = {
   capture(){ return normalizeSessionState(captureSessionState()); },
   restore: restoreCloudSessionState
+};
+
+window.GermanDrillFocusData = {
+  getLocal(){
+    return {
+      starredVerbs:[...starredVerbs],
+      mistakeVerbs:[...mistakeVerbs]
+    };
+  },
+  applyCloud(raw){
+    const validNames = new Set(verbs.map(item=>item.v));
+    const cloudStars = Array.isArray(raw?.starredVerbs) ? raw.starredVerbs.filter(v=>validNames.has(v)) : [];
+    const cloudMistakes = Array.isArray(raw?.mistakeVerbs) ? raw.mistakeVerbs.filter(v=>validNames.has(v)) : [];
+    starredVerbs = new Set(cloudStars);
+    mistakeVerbs = new Set(cloudMistakes);
+    saveStarredVerbs();
+    saveMistakeVerbs();
+    if(selectedStarredFocus && !starredVerbs.size) selectedStarredFocus = false;
+    if(selectedMistakesFocus && !mistakeVerbs.size) selectedMistakesFocus = false;
+    draftStarredFocus = selectedStarredFocus;
+    draftMistakesFocus = selectedMistakesFocus;
+    saveFilterSettings();
+    renderStarButton();
+    renderFilterUI();
+  }
 };
 
 function loadSessionResetBackup(){
@@ -1584,6 +1701,7 @@ function clearAllStarredVerbs(){
 
   starredVerbs.clear();
   saveStarredVerbs();
+  window.GermanDrillFocusCloudClear?.("starredVerbs");
 
   // Focus is automatically turned off, but the current practice order is not changed.
   selectedStarredFocus = false;
@@ -1596,8 +1714,63 @@ function clearAllStarredVerbs(){
   showStarFeedback("☆ Cleared · 0 total");
 }
 
+function stopClearMistakesCountdown(){
+  if(clearMistakesCountdownTimer){
+    clearInterval(clearMistakesCountdownTimer);
+    clearMistakesCountdownTimer = null;
+  }
+}
+
+function closeClearMistakesModal(){
+  stopClearMistakesCountdown();
+  $("clearMistakesModal").classList.add("hidden");
+}
+
+function openClearMistakesModal(){
+  const count = mistakeVerbs.size;
+  if(count === 0) return;
+
+  stopClearMistakesCountdown();
+  clearMistakesCountdownValue = CLEAR_MISTAKES_DELAY_SECONDS;
+
+  $("clearMistakesTitle").textContent = `Clear all ${count} mistake verbs?`;
+  $("clearMistakesMessage").textContent =
+    `This will remove ${count} verb${count===1?"":"s"} from Mistakes.`;
+  $("confirmClearMistakesBtn").disabled = true;
+  $("confirmClearMistakesBtn").textContent = `Clear in ${clearMistakesCountdownValue}s`;
+  $("clearMistakesModal").classList.remove("hidden");
+
+  clearMistakesCountdownTimer = setInterval(()=>{
+    clearMistakesCountdownValue -= 1;
+    if(clearMistakesCountdownValue <= 0){
+      stopClearMistakesCountdown();
+      $("confirmClearMistakesBtn").disabled = false;
+      $("confirmClearMistakesBtn").textContent = "Clear";
+      return;
+    }
+    $("confirmClearMistakesBtn").textContent = `Clear in ${clearMistakesCountdownValue}s`;
+  },1000);
+}
+
+function clearAllMistakeVerbs(){
+  if($("confirmClearMistakesBtn").disabled) return;
+
+  mistakeVerbs.clear();
+  saveMistakeVerbs();
+  window.GermanDrillFocusCloudClear?.("mistakeVerbs");
+
+  selectedMistakesFocus = false;
+  draftMistakesFocus = false;
+  saveFilterSettings();
+
+  closeClearMistakesModal();
+  renderFilterUI();
+  setMistakeFeedback("");
+}
+
 function renderStudy(){
   const item = current();
+  setMistakeFeedback("");
   studyMeaningRevealed = false;
   studyAnswersRevealed = false;
   hideGrammarTag();
@@ -1717,6 +1890,8 @@ function checkAnswers(){
   clearUndoSkipState();
   const item = current();
   const inputs = [...$("testTable").querySelectorAll("input")];
+  const wasMistake = mistakeVerbs.has(item.v);
+  let allCorrect = true;
 
   inputs.forEach((input,i)=>{
     input.disabled = true;
@@ -1728,6 +1903,7 @@ function checkAnswers(){
       result.className = "result ok";
       result.textContent = "✓ correct / richtig";
     } else {
+      allCorrect = false;
       input.classList.add("wrong");
       result.className = "result bad";
       result.innerHTML =
@@ -1735,6 +1911,30 @@ function checkAnswers(){
         `<span class="correction-answer">${item.f[i]}</span>`;
     }
   });
+
+  if(allCorrect){
+    if(wasMistake){
+      mistakeVerbs.delete(item.v);
+      saveMistakeVerbs();
+      window.GermanDrillFocusCloudMutate?.("mistakeVerbs", item.v, false);
+      if(mistakeVerbs.size === 0 && selectedMistakesFocus){
+        selectedMistakesFocus = false;
+        draftMistakesFocus = false;
+        saveFilterSettings();
+      }
+      setMistakeFeedback(`✓ Cleared from Mistakes · ${mistakeVerbs.size} remaining`);
+    }else{
+      setMistakeFeedback("");
+    }
+  }else{
+    if(!wasMistake){
+      mistakeVerbs.add(item.v);
+      saveMistakeVerbs();
+      window.GermanDrillFocusCloudMutate?.("mistakeVerbs", item.v, true);
+    }
+    setMistakeFeedback(`✕ Added to Mistakes · ${mistakeVerbs.size} total`);
+  }
+  renderFilterUI();
 
   $("checkBtn").classList.add("hidden");
   $("nextBtn").classList.remove("hidden");
@@ -1750,7 +1950,7 @@ function resetSession(){
   clearUndoSkipState();
   saveSessionResetBackup();
 
-  // Preserve the applied filter and all long-term starred data.
+  // Preserve the applied filter and all long-term starred/mistake data.
   order = shuffledIndices();
   pos = 0;
   round = 1;
@@ -1769,11 +1969,13 @@ function reloadLastSession(){
   selectedPriorities = new Set(saved.selectedPriorities);
   selectedTypes = new Set(saved.selectedTypes);
 
-  // Star data is long-term data and is intentionally NOT rolled back.
+  // Focus data is long-term data and is intentionally NOT rolled back.
   selectedStarredFocus = saved.selectedStarredFocus && starredVerbs.size > 0;
+  selectedMistakesFocus = saved.selectedMistakesFocus && mistakeVerbs.size > 0;
   draftPriorities = new Set(selectedPriorities);
   draftTypes = new Set(selectedTypes);
   draftStarredFocus = selectedStarredFocus;
+  draftMistakesFocus = selectedMistakesFocus;
   saveFilterSettings();
 
   order = [...saved.order];
@@ -1804,6 +2006,7 @@ function reloadLastSession(){
 
     if(saved.mode === "checked"){
       checkAnswers();
+      setMistakeFeedback(saved.mistakeFeedback);
     }else{
       const firstEmpty = inputs.find(input=>!input.value.trim());
       if(firstEmpty){
@@ -1931,12 +2134,13 @@ document.querySelectorAll("[data-type]").forEach(btn=>{
 
 $("applyFilterBtn").addEventListener("click", ()=>{
   clearUndoSkipState();
-  const next = eligibleIndices(draftPriorities,draftTypes);
+  const next = eligibleIndices(draftPriorities,draftTypes,draftMistakesFocus);
   if(!next.length) return;
 
   selectedPriorities = new Set(draftPriorities);
   selectedTypes = new Set(draftTypes);
   selectedStarredFocus = draftStarredFocus;
+  selectedMistakesFocus = draftMistakesFocus;
   saveFilterSettings();
 
   order = shuffledIndices();
@@ -1953,11 +2157,17 @@ $("resetFilterBtn").addEventListener("click", ()=>{
   draftPriorities = new Set(ALL_PRIORITIES);
   draftTypes = new Set(ALL_TYPES);
   draftStarredFocus = false;
+  draftMistakesFocus = false;
   renderFilterUI();
 });
 
 $("starredFilterBtn").addEventListener("click", ()=>{
   draftStarredFocus = !draftStarredFocus;
+  renderFilterUI();
+});
+
+$("mistakesFilterBtn").addEventListener("click", ()=>{
+  draftMistakesFocus = !draftMistakesFocus;
   renderFilterUI();
 });
 
@@ -1988,6 +2198,7 @@ $("starBtn").addEventListener("click", ()=>{
   }
 
   saveStarredVerbs();
+  window.GermanDrillFocusCloudMutate?.("starredVerbs", verb, starredVerbs.has(verb));
   renderStarButton();
   renderFilterUI();
   showStarFeedback(message);
@@ -1998,6 +2209,13 @@ $("cancelClearStarsBtn").addEventListener("click", closeClearStarsModal);
 $("confirmClearStarsBtn").addEventListener("click", clearAllStarredVerbs);
 $("clearStarsModal").addEventListener("click", e=>{
   if(e.target === $("clearStarsModal")) closeClearStarsModal();
+});
+
+$("clearMistakesBtn").addEventListener("click", openClearMistakesModal);
+$("cancelClearMistakesBtn").addEventListener("click", closeClearMistakesModal);
+$("confirmClearMistakesBtn").addEventListener("click", clearAllMistakeVerbs);
+$("clearMistakesModal").addEventListener("click", e=>{
+  if(e.target === $("clearMistakesModal")) closeClearMistakesModal();
 });
 
 $("reloadSessionBtn").addEventListener("click", reloadLastSession);
@@ -2049,10 +2267,15 @@ document.addEventListener("keydown",(e)=>{
     closeClearStarsModal();
     return;
   }
+  if(e.key === "Escape" && !$("clearMistakesModal").classList.contains("hidden")){
+    closeClearMistakesModal();
+    return;
+  }
 
   if(e.key !== "Enter") return;
 
   if(!$("clearStarsModal").classList.contains("hidden")) return;
+  if(!$("clearMistakesModal").classList.contains("hidden")) return;
   if(mode === "study"){
     startTest();
   } else if(mode === "test" && !$("checkBtn").disabled){
@@ -2063,6 +2286,7 @@ document.addEventListener("keydown",(e)=>{
 });
 
 loadStarredVerbs();
+loadMistakeVerbs();
 loadFilterSettings();
 renderFilterUI();
 order = shuffledIndices();
@@ -2073,7 +2297,7 @@ updateSessionReloadButton();
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-app.js";
 import { getAuth, onAuthStateChanged, signOut, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-auth.js";
-import { getFirestore, doc, getDoc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore.js";
+import { getFirestore, doc, getDoc, setDoc, serverTimestamp, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyD72gOohLLXe4wmqiXXK3dX-3uRBCL2DhU",
@@ -2085,11 +2309,15 @@ const firebaseConfig = {
 };
 const ALLOWED_UID = "elW0hqe8hoXcePYOd9ySthjv3d23";
 const TRAINER_ID = "a1-present";
+const FOCUS_TRAINER_ID = "a1-present-focus";
+const STAR_MIGRATION_KEY = "german-drill-a1-starred-cloud-migrated-v1";
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 let cloudReady = false;
+let focusCloudReady = false;
 let saveChain = Promise.resolve();
+let focusSaveChain = Promise.resolve();
 
 function revealTrainer(){ document.documentElement.style.visibility = ""; }
 async function pushTrainerState(){
@@ -2105,6 +2333,53 @@ window.GermanDrillCloudSave = function(){
   if(!cloudReady) return;
   saveChain = saveChain.then(pushTrainerState,pushTrainerState);
 };
+
+window.GermanDrillFocusCloudMutate = function(field, verb, add){
+  if(!focusCloudReady || !["starredVerbs","mistakeVerbs"].includes(field)) return;
+  const ref = doc(db,"users",ALLOWED_UID,"trainerStates",FOCUS_TRAINER_ID);
+  const value = add ? arrayUnion(verb) : arrayRemove(verb);
+  focusSaveChain = focusSaveChain.then(
+    ()=>setDoc(ref,{[field]:value,updatedAt:serverTimestamp()},{merge:true}),
+    ()=>setDoc(ref,{[field]:value,updatedAt:serverTimestamp()},{merge:true})
+  ).catch(error=>console.warn("Focus cloud save failed:",error));
+};
+
+window.GermanDrillFocusCloudClear = function(field){
+  if(!focusCloudReady || !["starredVerbs","mistakeVerbs"].includes(field)) return;
+  const ref = doc(db,"users",ALLOWED_UID,"trainerStates",FOCUS_TRAINER_ID);
+  focusSaveChain = focusSaveChain.then(
+    ()=>setDoc(ref,{[field]:[],updatedAt:serverTimestamp()},{merge:true}),
+    ()=>setDoc(ref,{[field]:[],updatedAt:serverTimestamp()},{merge:true})
+  ).catch(error=>console.warn("Focus cloud clear failed:",error));
+};
+
+async function loadFocusState(){
+  const ref = doc(db,"users",ALLOWED_UID,"trainerStates",FOCUS_TRAINER_ID);
+  const api = window.GermanDrillFocusData;
+  const local = api?.getLocal?.() || {starredVerbs:[],mistakeVerbs:[]};
+  const snapshot = await getDoc(ref);
+  const remote = snapshot.exists() ? snapshot.data() : {};
+  let cloudStars = Array.isArray(remote.starredVerbs) ? remote.starredVerbs : [];
+  let cloudMistakes = Array.isArray(remote.mistakeVerbs) ? remote.mistakeVerbs : [];
+  const migrated = localStorage.getItem(STAR_MIGRATION_KEY) === "1";
+
+  if(!snapshot.exists()){
+    cloudMistakes = [...new Set(local.mistakeVerbs)];
+  }
+  if(!snapshot.exists() || !migrated){
+    cloudStars = [...new Set([...cloudStars,...local.starredVerbs])];
+    await setDoc(ref,{
+      starredVerbs:cloudStars,
+      mistakeVerbs:cloudMistakes,
+      updatedAt:serverTimestamp()
+    },{merge:true});
+    localStorage.setItem(STAR_MIGRATION_KEY,"1");
+  }
+
+  api?.applyCloud?.({starredVerbs:cloudStars,mistakeVerbs:cloudMistakes});
+  focusCloudReady = true;
+}
+
 setPersistence(auth,browserLocalPersistence).catch(()=>{});
 onAuthStateChanged(auth,async user=>{
   if(!user || user.uid!==ALLOWED_UID){
@@ -2113,6 +2388,12 @@ onAuthStateChanged(auth,async user=>{
     return;
   }
   const ref=doc(db,"users",ALLOWED_UID,"trainerStates",TRAINER_ID);
+  try{
+    await loadFocusState();
+  }catch(error){
+    console.warn("Focus cloud load failed; using this device's current focus data:",error);
+    focusCloudReady=true;
+  }
   try{
     const snapshot=await getDoc(ref);
     if(snapshot.exists()) window.GermanDrillTrainerCloud?.restore?.(snapshot.data().state);
