@@ -967,10 +967,10 @@
   <div class="filter-shell">
     <div class="filter-summary-row">
       <div class="filter-summary" id="filterSummary"></div>
-      <button type="button" class="filter-toggle" id="filterToggle">Filter</button>
+      <button type="button" class="filter-toggle" id="filterToggle">Close</button>
     </div>
 
-    <div class="filter-panel hidden" id="filterPanel">
+    <div class="filter-panel" id="filterPanel">
       <div class="filter-group">
         <div class="filter-label">Priority</div>
         <div class="filter-chips" id="priorityFilters">
@@ -1368,7 +1368,7 @@ function skipCurrent(){
 }
 function undoSkip(){if(!undoSkipState)return;const s=normalizeSession(undoSkipState.session);undoSkipState=null;if(s){applySession(s);window.GermanDrillCloudSave?.();}else clearUndo();}
 function reshuffle(){clearUndo();order=shuffledIndices(order[pos]??null);pos=0;round=1;renderCurrent();window.GermanDrillCloudSave?.();}
-function resetSession(){clearUndo();saveBackup();order=shuffledIndices();pos=0;round=1;$("filterPanel").classList.add("hidden");$("filterToggle").textContent="Filter";renderCurrent();window.GermanDrillCloudSave?.();}
+function resetSession(){clearUndo();saveBackup();order=shuffledIndices();pos=0;round=1;renderCurrent();window.GermanDrillCloudSave?.();}
 function reloadLast(){clearUndo();const s=loadBackup();if(!s)return;applySession(s);window.GermanDrillCloudSave?.();}
 
 function stopTimer(which){if(which==="stars"&&clearStarsTimer){clearInterval(clearStarsTimer);clearStarsTimer=null;}if(which==="mistakes"&&clearMistakesTimer){clearInterval(clearMistakesTimer);clearMistakesTimer=null;}if(which==="familiar"&&clearFamiliarTimer){clearInterval(clearFamiliarTimer);clearFamiliarTimer=null;}}
@@ -1383,7 +1383,7 @@ document.querySelectorAll("[data-type]").forEach(b=>b.addEventListener("click",(
 $("starredFilterBtn").addEventListener("click",()=>{draftStarredFocus=!draftStarredFocus;renderFilterUI();});
 $("mistakesFilterBtn").addEventListener("click",()=>{draftMistakesFocus=!draftMistakesFocus;if(draftMistakesFocus)draftFamiliarFocus=false;renderFilterUI();});
 $("familiarFilterBtn").addEventListener("click",()=>{draftFamiliarFocus=!draftFamiliarFocus;if(draftFamiliarFocus)draftMistakesFocus=false;renderFilterUI();});
-$("applyFilterBtn").addEventListener("click",()=>{clearUndo();const next=eligibleIndices(draftPriorities,draftTypes,draftMistakesFocus,draftFamiliarFocus);if(!next.length)return;selectedPriorities=new Set(draftPriorities);selectedTypes=new Set(draftTypes);selectedStarredFocus=draftStarredFocus;selectedMistakesFocus=draftMistakesFocus;selectedFamiliarFocus=draftFamiliarFocus;saveFilterSettings();order=shuffledIndices();pos=0;round=1;$("filterPanel").classList.add("hidden");$("filterToggle").textContent="Filter";renderFilterUI();renderCurrent();window.GermanDrillCloudSave?.();});
+$("applyFilterBtn").addEventListener("click",()=>{clearUndo();const next=eligibleIndices(draftPriorities,draftTypes,draftMistakesFocus,draftFamiliarFocus);if(!next.length)return;selectedPriorities=new Set(draftPriorities);selectedTypes=new Set(draftTypes);selectedStarredFocus=draftStarredFocus;selectedMistakesFocus=draftMistakesFocus;selectedFamiliarFocus=draftFamiliarFocus;saveFilterSettings();order=shuffledIndices();pos=0;round=1;renderFilterUI();renderCurrent();window.GermanDrillCloudSave?.();});
 $("noneFilterBtn").addEventListener("click",()=>{draftPriorities=new Set();draftTypes=new Set();draftStarredFocus=false;draftMistakesFocus=false;draftFamiliarFocus=false;renderFilterUI();});
 $("resetFilterBtn").addEventListener("click",()=>{draftPriorities=new Set(ALL_PRIORITIES);draftTypes=new Set(ALL_TYPES);renderFilterUI();});
 
@@ -1391,7 +1391,7 @@ document.querySelectorAll(".article-btn").forEach(b=>b.addEventListener("click",
 $("pluralInput").addEventListener("focus",()=>{activeInput=$("pluralInput");});$("pluralInput").addEventListener("input",updateCheckState);
 $("pluralHintBtn").addEventListener("click",()=>{if(mode!=="answering")return;if(!hintVisible){hintUsed=true;hintVisible=true;$("pluralHintText").textContent=`Hint: ${current().hint}`;$("pluralHintText").classList.remove("hidden");$("pluralHintBtn").setAttribute("aria-expanded","true");}else{hintVisible=false;$("pluralHintText").classList.add("hidden");$("pluralHintBtn").setAttribute("aria-expanded","false");}window.GermanDrillCloudSave?.();});
 $("starBtn").addEventListener("click",()=>{if(mode!=="checked")return;const id=current().id;let message;if(starredNouns.has(id)){starredNouns.delete(id);message=`☆ Removed · ${starredNouns.size} total`;}else{starredNouns.add(id);message=`★ Starred · ${starredNouns.size} total`;}saveStars();window.GermanDrillFocusCloudMutate?.("starredNouns",id,starredNouns.has(id));renderStarButton();renderFilterUI();showStarFeedback(message);});
-$("familiarBtn").addEventListener("click",()=>{if(mode!=="checked")return;const id=current().id;let message;if(familiarNouns.has(id)){familiarNouns.delete(id);saveFamiliar();window.GermanDrillFocusCloudMutate?.("familiarNouns",id,false);message=`○ Familiar removed · ${familiarNouns.size} total`;}else{if(mistakeNouns.has(id)){mistakeNouns.delete(id);saveMistakes();window.GermanDrillFocusCloudMutate?.("mistakeNouns",id,false);if(mistakeNouns.size===0&&selectedMistakesFocus){selectedMistakesFocus=false;draftMistakesFocus=false;}}familiarNouns.add(id);saveFamiliar();window.GermanDrillFocusCloudMutate?.("familiarNouns",id,true);message=`✓ Familiar · ${familiarNouns.size} total`;}saveFilterSettings();renderFamiliarButton();renderFilterUI();showStarFeedback(message);});
+$("familiarBtn").addEventListener("click",()=>{if(mode!=="checked")return;const id=current().id;let message;if(familiarNouns.has(id)){familiarNouns.delete(id);saveFamiliar();window.GermanDrillFocusCloudMutate?.("familiarNouns",id,false);if(familiarNouns.size===0&&selectedFamiliarFocus){selectedFamiliarFocus=false;draftFamiliarFocus=false;}message=`○ Familiar removed · ${familiarNouns.size} total`;}else{if(mistakeNouns.has(id)){mistakeNouns.delete(id);saveMistakes();window.GermanDrillFocusCloudMutate?.("mistakeNouns",id,false);if(mistakeNouns.size===0&&selectedMistakesFocus){selectedMistakesFocus=false;draftMistakesFocus=false;}}familiarNouns.add(id);saveFamiliar();window.GermanDrillFocusCloudMutate?.("familiarNouns",id,true);message=`✓ Familiar · ${familiarNouns.size} total`;}saveFilterSettings();renderFamiliarButton();renderFilterUI();showStarFeedback(message);});
 $("checkBtn").addEventListener("click",checkAnswers);$("nextBtn").addEventListener("click",nextNoun);$("skipBtn").addEventListener("click",skipCurrent);$("undoSkipBtn").addEventListener("click",undoSkip);$("reshuffleBtn").addEventListener("click",reshuffle);$("resetSessionBtn").addEventListener("click",resetSession);$("reloadSessionBtn").addEventListener("click",reloadLast);
 $("clearStarsBtn").addEventListener("click",()=>openClear("stars"));$("cancelClearStarsBtn").addEventListener("click",()=>closeClear("stars"));$("confirmClearStarsBtn").addEventListener("click",()=>clearAll("stars"));$("clearStarsModal").addEventListener("click",e=>{if(e.target===$("clearStarsModal"))closeClear("stars");});
 $("clearMistakesBtn").addEventListener("click",()=>openClear("mistakes"));$("cancelClearMistakesBtn").addEventListener("click",()=>closeClear("mistakes"));$("confirmClearMistakesBtn").addEventListener("click",()=>clearAll("mistakes"));$("clearMistakesModal").addEventListener("click",e=>{if(e.target===$("clearMistakesModal"))closeClear("mistakes");});

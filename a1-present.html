@@ -914,10 +914,10 @@
   <div class="filter-shell">
     <div class="filter-summary-row">
       <div class="filter-summary" id="filterSummary"></div>
-      <button type="button" class="filter-toggle" id="filterToggle">Filter</button>
+      <button type="button" class="filter-toggle" id="filterToggle">Close</button>
     </div>
 
-    <div class="filter-panel hidden" id="filterPanel">
+    <div class="filter-panel" id="filterPanel">
       <div class="filter-group">
         <div class="filter-label">Priority</div>
         <div class="filter-chips" id="priorityFilters">
@@ -1628,8 +1628,6 @@ function restoreCloudSessionState(raw){
   order = [...saved.order];
   pos = saved.pos;
   round = saved.round;
-  $("filterPanel").classList.add("hidden");
-  $("filterToggle").textContent = "Filter";
 
   renderStudy();
   if(saved.mode === "study"){
@@ -2064,8 +2062,6 @@ function resetSession(){
   pos = 0;
   round = 1;
 
-  $("filterPanel").classList.add("hidden");
-  $("filterToggle").textContent = "Filter";
   renderStudy();
   window.GermanDrillCloudSave?.();
 }
@@ -2094,8 +2090,6 @@ function reloadLastSession(){
   pos = saved.pos;
   round = saved.round;
 
-  $("filterPanel").classList.add("hidden");
-  $("filterToggle").textContent = "Filter";
 
   // Build the current verb's Study/Test DOM first.
   renderStudy();
@@ -2258,8 +2252,6 @@ $("applyFilterBtn").addEventListener("click", ()=>{
   order = shuffledIndices();
   pos = 0;
   round = 1;
-  $("filterPanel").classList.add("hidden");
-  $("filterToggle").textContent = "Filter";
   renderFilterUI();
   renderStudy();
   window.GermanDrillCloudSave?.();
@@ -2311,7 +2303,7 @@ $("starBtn").addEventListener("click", ()=>{
 
 $("familiarBtn").addEventListener("click", ()=>{
   if(mode!=="checked")return; const verb=current().v; let message;
-  if(familiarVerbs.has(verb)){familiarVerbs.delete(verb);saveFamiliarVerbs();window.GermanDrillFocusCloudMutate?.("familiarVerbs",verb,false);message=`○ Familiar removed · ${familiarVerbs.size} total`;}
+  if(familiarVerbs.has(verb)){familiarVerbs.delete(verb);saveFamiliarVerbs();window.GermanDrillFocusCloudMutate?.("familiarVerbs",verb,false);if(familiarVerbs.size===0&&selectedFamiliarFocus){selectedFamiliarFocus=false;draftFamiliarFocus=false;}message=`○ Familiar removed · ${familiarVerbs.size} total`;}
   else{if(mistakeVerbs.has(verb)){mistakeVerbs.delete(verb);saveMistakeVerbs();window.GermanDrillFocusCloudMutate?.("mistakeVerbs",verb,false);if(mistakeVerbs.size===0&&selectedMistakesFocus){selectedMistakesFocus=false;draftMistakesFocus=false;}}
     familiarVerbs.add(verb);saveFamiliarVerbs();window.GermanDrillFocusCloudMutate?.("familiarVerbs",verb,true);message=`✓ Familiar · ${familiarVerbs.size} total`;}
   saveFilterSettings();renderFamiliarButton();renderFilterUI();showStarFeedback(message);
