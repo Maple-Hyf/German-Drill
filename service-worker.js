@@ -1,4 +1,4 @@
-const CACHE_NAME = "german-drill-pwa-v6-noun-forms";
+const CACHE_NAME = "german-drill-pwa-v7-filter-open-fix";
 const PRECACHE = [
   "./",
   "./index.html",

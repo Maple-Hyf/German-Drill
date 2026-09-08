@@ -2397,6 +2397,10 @@ loadMistakeVerbs();
 loadFamiliarVerbs();
 loadFilterSettings();
 renderFilterUI();
+// On each fresh trainer entry, show Filter once by default.
+// After this initial state, only the user's Filter/Close button controls it.
+$("filterPanel").classList.remove("hidden");
+$("filterToggle").textContent = "Close";
 order = shuffledIndices();
 renderStudy();
 updateSessionReloadButton();
