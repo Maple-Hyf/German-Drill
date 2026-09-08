@@ -1,11 +1,13 @@
-const CACHE_NAME = "german-drill-pwa-v5-theme";
+const CACHE_NAME = "german-drill-pwa-v6-noun-forms";
 const PRECACHE = [
   "./",
   "./index.html",
   "./a1-present.html",
-  "./definite-articles.html",
+  "./a1-noun-forms.html",
+  "./definite-article-trainer.html",
   "./sentence-builder.html",
   "./manifest.webmanifest",
+  "./favicon.png",
   "./icon-192.png",
   "./icon-512.png",
   "./apple-touch-icon.png"

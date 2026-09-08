@@ -1,0 +1,1401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script>document.documentElement.style.visibility = "hidden";</script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#f4f4f1" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="German Drill" />
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
+  <link rel="icon" type="image/png" sizes="64x64" href="./favicon.png" />
+  
+  <script>
+  (() => {
+    const KEY = "german-drill-theme-v1";
+    const MODES = ["system", "dark", "light"];
+    const LABELS = {
+      system: "◐ System",
+      dark: "☾ Dark",
+      light: "☀︎ Light"
+    };
+    const DARK_BG = "#171716";
+    const LIGHT_BG = "#f4f4f1";
+
+    function readMode(){
+      try{
+        const value = localStorage.getItem(KEY);
+        return MODES.includes(value) ? value : "system";
+      }catch(e){
+        return "system";
+      }
+    }
+    function resolvedTheme(mode){
+      if(mode === "system"){
+        return window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches
+          ? "dark" : "light";
+      }
+      return mode;
+    }
+    function updateButton(){
+      const btn = document.getElementById("themeToggle");
+      if(btn) btn.textContent = LABELS[readMode()];
+    }
+    function apply(mode, persist){
+      const resolved = resolvedTheme(mode);
+      document.documentElement.dataset.theme = resolved;
+      document.documentElement.dataset.themeMode = mode;
+      document.documentElement.style.colorScheme = resolved;
+
+      const meta = document.querySelector('meta[name="theme-color"]');
+      if(meta) meta.setAttribute("content", resolved === "dark" ? DARK_BG : LIGHT_BG);
+
+      if(persist){
+        try{ localStorage.setItem(KEY, mode); }catch(e){}
+      }
+      updateButton();
+    }
+    function cycle(){
+      const current = readMode();
+      const next = MODES[(MODES.indexOf(current) + 1) % MODES.length];
+      apply(next, true);
+    }
+
+    const initial = readMode();
+    apply(initial, false);
+
+    if(window.matchMedia){
+      const media = window.matchMedia("(prefers-color-scheme: dark)");
+      const onChange = () => {
+        if(readMode() === "system") apply("system", false);
+      };
+      if(media.addEventListener) media.addEventListener("change", onChange);
+      else if(media.addListener) media.addListener(onChange);
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      updateButton();
+      const btn = document.getElementById("themeToggle");
+      if(btn) btn.addEventListener("click", cycle);
+    });
+
+    window.GermanDrillTheme = { apply, cycle, readMode };
+  })();
+  </script>
+<title>A1 German Noun Forms Trainer</title>
+  <style>
+    :root{
+      --bg:#f4f4f1;
+      --card:#ffffff;
+      --text:#181818;
+      --muted:#6d6d68;
+      --border:#deded8;
+      --soft:#f7f7f4;
+      --ok:#eaf7ed;
+      --ok-border:#b9d9bf;
+      --bad:#fff0f0;
+      --bad-border:#e5b8b8;
+      --mask-bg:#deded8;
+      --mask-border:#d4d4ce;
+      --shadow:0 10px 34px rgba(0,0,0,.07);
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      background:var(--bg);
+      color:var(--text);
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,
+                  "Noto Sans","PingFang SC","Microsoft YaHei",sans-serif;
+    }
+    .back-link{
+      display:inline-block;
+      margin-bottom:14px;
+      color:var(--muted);
+      text-decoration:none;
+      font-size:13px;
+      font-weight:650;
+    }
+    .back-link:hover{text-decoration:underline}
+    .wrap{
+      width:min(780px,calc(100% - 28px));
+      margin:30px auto 60px;
+    }
+    .header{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-end;
+      gap:20px;
+      margin-bottom:16px;
+    }
+    h1{
+      margin:0 0 6px;
+      font-size:28px;
+      letter-spacing:-.4px;
+    }
+    .subtitle,.meta,.hint,.footer{
+      color:var(--muted);
+    }
+    .subtitle{font-size:14px}
+    .meta{
+      font-size:13px;
+      white-space:nowrap;
+      text-align:right;
+      line-height:1.55;
+    }
+    .verb-progress-mini{font-size:11px;color:#8a8a84;font-weight:650}
+    .header-side{
+      display:flex;
+      flex-direction:column;
+      align-items:flex-end;
+      gap:7px;
+    }
+    .session-tools{
+      display:flex;
+      align-items:center;
+      justify-content:flex-end;
+      gap:7px;
+    }
+    .session-tool{
+      min-height:30px;
+      padding:6px 9px;
+      border:1px solid var(--border);
+      border-radius:9px;
+      background:var(--card);
+      color:var(--muted);
+      font:inherit;
+      font-size:11px;
+      font-weight:800;
+      line-height:1;
+      box-shadow:none;
+    }
+    .session-tool:hover:not(:disabled){
+      border-color:#aaa9a2;
+      color:var(--text);
+    }
+    .session-tool.reset{
+      color:#a14c4c;
+      border-color:#e0c0c0;
+      background:#fffafa;
+    }
+    .session-tool.reset:hover:not(:disabled){
+      color:#873636;
+      border-color:#ce9999;
+      background:#fff4f4;
+    }
+    .bar{
+      height:6px;
+      background:#e1e1dc;
+      border-radius:999px;
+      overflow:hidden;
+      margin-bottom:16px;
+    }
+    .bar > div{
+      height:100%;
+      background:#1d1d1d;
+      width:0%;
+      transition:width .2s ease;
+    }
+
+    .filter-shell{
+      margin-bottom:14px;
+    }
+    .filter-summary-row{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+    }
+    .filter-summary{
+      color:var(--muted);
+      font-size:12px;
+      line-height:1.45;
+      min-width:0;
+    }
+    .filter-toggle{
+      flex:0 0 auto;
+      padding:7px 10px;
+      border:1px solid var(--border);
+      border-radius:9px;
+      background:#ecece7;
+      color:#333;
+      font-size:12px;
+      font-weight:800;
+    }
+    .filter-panel{
+      margin-top:10px;
+      padding:14px;
+      border:1px solid var(--border);
+      border-radius:14px;
+      background:#fafaf8;
+    }
+    .filter-group + .filter-group{
+      margin-top:14px;
+    }
+    .filter-label{
+      margin-bottom:7px;
+      color:#555;
+      font-size:11px;
+      font-weight:800;
+      letter-spacing:.02em;
+    }
+    .filter-chips{
+      display:flex;
+      flex-wrap:wrap;
+      gap:7px;
+    }
+    .filter-chip{
+      padding:7px 9px;
+      border:1px solid var(--border);
+      border-radius:999px;
+      background:#fff;
+      color:#555;
+      font-size:11px;
+      font-weight:750;
+    }
+    .filter-chip.active{
+      background:#222;
+      border-color:#222;
+      color:#fff;
+    }
+    .filter-actions{
+      display:flex;
+      align-items:center;
+      gap:9px;
+      flex-wrap:wrap;
+      margin-top:14px;
+    }
+    .apply-filter{
+      padding:9px 12px;
+      border-radius:10px;
+      background:#171717;
+      color:#fff;
+      font-size:12px;
+      font-weight:800;
+    }
+    .reset-filter{
+      padding:9px 12px;
+      border-radius:10px;
+      background:#ecece7;
+      color:#333;
+      font-size:12px;
+      font-weight:800;
+    }
+    .filter-status{
+      color:var(--muted);
+      font-size:11px;
+      line-height:1.4;
+    }
+    .filter-status.error{
+      color:#a33;
+      font-weight:700;
+    }
+    .star-total{
+      margin-top:7px;
+      color:var(--muted);
+      font-size:10.5px;
+      font-weight:700;
+    }
+    .focus-block + .focus-block{
+      margin-top:11px;
+    }
+    .clear-stars-btn{
+      padding:7px 9px;
+      border:1px solid #e0c0c0;
+      border-radius:999px;
+      background:#fffafa;
+      color:#9a4a4a;
+      font-size:11px;
+      font-weight:800;
+    }
+    .clear-stars-btn:hover:not(:disabled){
+      background:#fff3f3;
+      border-color:#ce9999;
+      color:#833737;
+    }
+    .star-action{
+      display:flex;
+      align-items:center;
+      justify-content:flex-end;
+      gap:9px;
+      min-width:40px;
+    }
+    .star-feedback{
+      color:var(--muted);
+      font-size:11px;
+      font-weight:750;
+      white-space:nowrap;
+      opacity:0;
+      transform:translateY(1px);
+      transition:opacity .16s ease,transform .16s ease;
+      pointer-events:none;
+    }
+    .star-feedback.show{
+      opacity:1;
+      transform:translateY(0);
+    }
+    .mistake-feedback{
+      min-height:16px;
+      margin:-2px 0 10px;
+      color:var(--muted);
+      font-size:11px;
+      font-weight:750;
+      line-height:1.4;
+    }
+    .mistake-feedback:empty{
+      min-height:0;
+      margin:0;
+    }
+
+    .card{
+      background:var(--card);
+      border:1px solid var(--border);
+      border-radius:20px;
+      box-shadow:var(--shadow);
+      padding:26px;
+    }
+    .topline{
+      display:flex;
+      justify-content:space-between;
+      gap:16px;
+      align-items:flex-start;
+    }
+    .verb{
+      font-size:36px;
+      line-height:1.1;
+      font-weight:780;
+      letter-spacing:-.7px;
+    }
+    .meaning{
+      margin-top:7px;
+      width:fit-content;
+      max-width:100%;
+      font-size:16px;
+      color:var(--muted);
+      border-radius:7px;
+      transition:background .12s ease,color .12s ease,border-color .12s ease;
+    }
+    .usage-note{
+      display:inline-block;
+      margin-top:8px;
+      max-width:100%;
+      padding:4px 8px;
+      border:1px solid var(--border);
+      border-radius:8px;
+      color:var(--muted);
+      font-size:12px;
+      line-height:1.3;
+      font-weight:650;
+      white-space:normal;
+      overflow-wrap:anywhere;
+    }
+    .meaning.study-toggle{
+      cursor:pointer;
+      user-select:none;
+      -webkit-user-select:none;
+    }
+    .meaning.study-toggle.masked{
+      color:transparent;
+      background:var(--mask-bg);
+      box-shadow:inset 0 0 0 1px var(--mask-border);
+      padding:2px 6px;
+    }
+    .tag-stack{
+      display:flex;
+      flex-direction:column;
+      align-items:flex-end;
+      gap:6px;
+      max-width:58%;
+      flex:0 1 auto;
+    }
+    .badge{
+      border:1px solid var(--border);
+      background:#fafaf8;
+      color:#555;
+      border-radius:14px;
+      padding:6px 10px;
+      font-size:12px;
+      line-height:1.35;
+      text-align:right;
+      white-space:nowrap;
+      max-width:100%;
+    }
+    .level-badge{
+      border:1px solid #e7e7e1;
+      background:#f7f7f4;
+      color:#85857f;
+      border-radius:999px;
+      padding:3px 7px;
+      font-size:10px;
+      font-weight:650;
+      letter-spacing:.02em;
+      white-space:nowrap;
+    }
+    .grammar-delayed{
+      transition:opacity .28s ease, transform .28s ease;
+      transform-origin:right top;
+    }
+    .grammar-delayed.grammar-hidden{
+      opacity:0;
+      visibility:hidden;
+      transform:translateY(-2px);
+      pointer-events:none;
+    }
+    .test-title-row{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      margin-top:22px;
+      margin-bottom:10px;
+    }
+    .test-title-row .mode-title{margin:0}
+    .star-btn{
+      width:40px;
+      min-width:40px;
+      height:40px;
+      padding:0;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      border:1px solid var(--border);
+      border-radius:11px;
+      background:var(--soft);
+      color:#777;
+      font-size:23px;
+      font-weight:800;
+      line-height:1;
+      box-shadow:none;
+    }
+    .star-btn:hover{
+      border-color:#c19b49;
+      color:#9b731e;
+      background:#fff8e5;
+    }
+    .star-btn.starred{
+      background:#fff3cf;
+      border-color:#d6a463;
+      color:#8c640b;
+    }
+    .mode-title{
+      margin-top:22px;
+      margin-bottom:10px;
+      font-size:14px;
+      font-weight:750;
+    }
+    .table{
+      display:grid;
+      gap:10px;
+    }
+    .row{
+      display:grid;
+      grid-template-columns:112px 1fr;
+      gap:12px;
+      align-items:start;
+    }
+    .pronoun{
+      padding-top:12px;
+      font-weight:700;
+    }
+    .answer{
+      min-height:46px;
+      display:flex;
+      align-items:center;
+      padding:12px 14px;
+      border:1px solid var(--border);
+      border-radius:12px;
+      background:var(--soft);
+      font-size:17px;
+      transition:background .12s ease,color .12s ease,border-color .12s ease;
+    }
+    #studyTable.study-toggle{
+      cursor:pointer;
+      user-select:none;
+      -webkit-user-select:none;
+    }
+    #studyTable.answers-masked .answer{
+      color:transparent;
+      background:var(--mask-bg);
+      border-color:var(--mask-border);
+    }
+    .input-wrap{min-width:0}
+    input{
+      width:100%;
+      min-height:46px;
+      padding:11px 13px;
+      font:inherit;
+      font-size:17px;
+      border:1px solid var(--border);
+      border-radius:12px;
+      background:#fff;
+      outline:none;
+    }
+    input:focus{
+      border-color:#8d8d88;
+      box-shadow:0 0 0 3px rgba(0,0,0,.05);
+    }
+    input.correct{
+      background:var(--ok);
+      border-color:var(--ok-border);
+    }
+    input.wrong{
+      background:var(--bad);
+      border-color:var(--bad-border);
+    }
+    .result{
+      margin-top:5px;
+      font-size:13px;
+      min-height:18px;
+    }
+    .result.ok{color:#2c6f3a}
+    .result.bad{color:#8b3a2f}
+    .correction-label{
+      display:block;
+      margin-bottom:5px;
+      color:#8b5a52;
+      font-size:11px;
+      font-weight:700;
+    }
+    .correction-answer{
+      display:inline-block;
+      padding:5px 9px;
+      border:1px solid #d6a463;
+      border-radius:8px;
+      background:#fff3cf;
+      color:#3d2700;
+      font-size:17px;
+      font-weight:900;
+      letter-spacing:.01em;
+      line-height:1.2;
+    }
+    .controls{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-top:24px;
+    }
+    button{
+      appearance:none;
+      border:none;
+      border-radius:12px;
+      padding:12px 16px;
+      font-size:15px;
+      font-weight:750;
+      cursor:pointer;
+    }
+    .primary{
+      background:#171717;
+      color:#fff;
+    }
+    .secondary{
+      background:#ecece7;
+      color:#222;
+    }
+    .skip{
+      background:#fff3cf;
+      color:#6f4300;
+      border:2px solid #d69a24;
+      font-weight:850;
+      box-shadow:0 0 0 2px rgba(214,154,36,.10);
+    }
+    .skip:hover{
+      background:#ffe9a8;
+    }
+    .skip-pair{
+      display:flex;
+      align-items:stretch;
+      gap:10px;
+    }
+    .undo-skip{
+      width:46px;
+      min-width:46px;
+      padding:0;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      background:#fffaf0;
+      color:#8a6208;
+      border:2px solid #d69a24;
+      box-shadow:0 0 0 2px rgba(214,154,36,.06);
+    }
+    .undo-skip:hover:not(:disabled){
+      background:#fff3cf;
+    }
+    .undo-skip svg{
+      width:20px;
+      height:20px;
+      display:block;
+    }
+    button:disabled{
+      opacity:.38;
+      cursor:not-allowed;
+    }
+    .hint{
+      margin-top:16px;
+      font-size:13px;
+      line-height:1.55;
+    }
+
+    .char-helper{
+      margin-top:16px;
+      padding-top:14px;
+      border-top:1px solid var(--border);
+    }
+    .char-helper-label{
+      color:var(--muted);
+      font-size:12px;
+      font-weight:700;
+      margin-bottom:8px;
+    }
+    .char-buttons{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+    }
+    .char-btn{
+      min-width:46px;
+      min-height:42px;
+      padding:8px 13px;
+      background:#f1f1ed;
+      color:#222;
+      border:1px solid var(--border);
+      font-size:18px;
+      line-height:1;
+    }
+    .char-btn:focus{
+      outline:2px solid #999;
+      outline-offset:2px;
+    }
+    .modal-backdrop{
+      position:fixed;
+      inset:0;
+      z-index:1000;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:20px;
+      background:rgba(0,0,0,.38);
+    }
+    .confirm-modal{
+      width:min(420px,100%);
+      padding:20px;
+      border:1px solid var(--border);
+      border-radius:18px;
+      background:var(--card);
+      box-shadow:0 22px 60px rgba(0,0,0,.22);
+    }
+    .confirm-modal h2{
+      margin:0 0 7px;
+      font-size:20px;
+      letter-spacing:-.2px;
+    }
+    .confirm-modal p{
+      margin:0;
+      color:var(--muted);
+      font-size:13px;
+      line-height:1.55;
+    }
+    .confirm-actions{
+      display:flex;
+      justify-content:flex-end;
+      gap:9px;
+      margin-top:18px;
+    }
+    .modal-cancel{
+      background:#ecece7;
+      color:#333;
+    }
+    .modal-clear{
+      min-width:112px;
+      background:#a53f3f;
+      color:#fff;
+    }
+    .modal-clear:disabled{
+      background:#d9b7b7;
+      color:#fff;
+      opacity:1;
+    }
+    .hidden{display:none!important}
+    .footer{
+      margin-top:17px;
+      text-align:center;
+      font-size:12px;
+    }
+    @media(max-width:620px){
+      .wrap{margin-top:18px}
+      .header{align-items:flex-start;flex-direction:column;gap:8px}
+      .header-side{width:100%;align-items:stretch}
+      .session-tools{justify-content:flex-end}
+      .meta{text-align:left}
+      .card{padding:20px}
+      .row{grid-template-columns:86px 1fr}
+      .verb{font-size:31px}
+      .tag-stack{max-width:52%}
+      .badge{
+        white-space:normal;
+        border-radius:12px;
+      }
+      .badge .tag-part{display:block}
+      .badge .tag-sep{display:none}
+      .filter-summary-row{align-items:flex-start}
+      .filter-panel{padding:12px}
+      .filter-chip{font-size:10.5px}
+    }
+  
+
+    .page-nav{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      margin-bottom:14px;
+    }
+    .page-nav .back-link,.page-nav .back{margin-bottom:0}
+    .theme-toggle{
+      flex:0 0 auto;
+      min-height:34px;
+      padding:7px 10px;
+      border:1px solid var(--border);
+      border-radius:10px;
+      background:var(--card);
+      color:var(--muted);
+      box-shadow:none;
+      font:inherit;
+      font-size:12px;
+      font-weight:800;
+      line-height:1;
+      cursor:pointer;
+      white-space:nowrap;
+    }
+    .theme-toggle:hover{border-color:#9c9c96;color:var(--text)}
+    html[data-theme="dark"] .theme-toggle:hover{border-color:#66665f}
+
+    html[data-theme="dark"]{
+      --bg:#171716;--card:#232321;--text:#f1f0ea;--muted:#aaa9a2;--border:#3b3b37;
+      --soft:#2a2a27;--ok:#183522;--ok-border:#39724a;--bad:#3a2020;--bad-border:#7b4545;
+      --mask-bg:#3a3a36;--mask-border:#41413c;
+      --shadow:0 12px 34px rgba(0,0,0,.28);
+    }
+    html[data-theme="dark"] .bar{background:#32322f}
+    html[data-theme="dark"] .bar > div{background:#d5d4ce}
+    html[data-theme="dark"] .filter-toggle,
+    html[data-theme="dark"] .reset-filter,
+    html[data-theme="dark"] .secondary{background:#30302d;color:#e1e0da}
+    html[data-theme="dark"] .filter-panel,
+    html[data-theme="dark"] .badge{background:#292927}
+    html[data-theme="dark"] .filter-label{color:#c3c2bb}
+    html[data-theme="dark"] .verb-progress-mini{color:#aaa9a2}
+    html[data-theme="dark"] .filter-chip{background:#232321;color:#c8c7c0}
+    html[data-theme="dark"] .filter-chip.active,
+    html[data-theme="dark"] .apply-filter,
+    html[data-theme="dark"] .primary{
+      background:#ecebe5;color:#181818;border-color:#ecebe5
+    }
+    html[data-theme="dark"] .filter-status.error{color:#ef9696}
+    html[data-theme="dark"] .session-tool{
+      background:#292927;color:#aaa9a2;border-color:#45453f
+    }
+    html[data-theme="dark"] .session-tool:hover:not(:disabled){
+      border-color:#66665f;color:#f1f0ea
+    }
+    html[data-theme="dark"] .session-tool.reset{
+      background:#322323;color:#df9696;border-color:#684444
+    }
+    html[data-theme="dark"] .session-tool.reset:hover:not(:disabled){
+      background:#3b2727;color:#efaaaa;border-color:#855555
+    }
+    html[data-theme="dark"] .clear-stars-btn{
+      background:#322323;color:#df9696;border-color:#684444
+    }
+    html[data-theme="dark"] .clear-stars-btn:hover:not(:disabled){
+      background:#3b2727;color:#efaaaa;border-color:#855555
+    }
+    html[data-theme="dark"] .modal-cancel{
+      background:#30302d;color:#e1e0da
+    }
+    html[data-theme="dark"] .modal-clear{
+      background:#8c3b3b;color:#fff
+    }
+    html[data-theme="dark"] .modal-clear:disabled{
+      background:#533535;color:#a99b9b
+    }
+    html[data-theme="dark"] .level-badge{
+      border-color:#3b3b37;background:#292927;color:#96968f
+    }
+    html[data-theme="dark"] .star-btn{
+      background:#30302d;
+      border-color:#45453f;
+      color:#aaa9a2;
+    }
+    html[data-theme="dark"] .star-btn:hover{
+      background:#3a321d;
+      border-color:#8f702e;
+      color:#e8c86f;
+    }
+    html[data-theme="dark"] .star-btn.starred{
+      background:#3b3018;
+      border-color:#9b762d;
+      color:#f0ce80;
+    }
+    html[data-theme="dark"] input{background:#1d1d1b;color:var(--text)}
+    html[data-theme="dark"] input:focus{
+      border-color:#74746d;box-shadow:0 0 0 3px rgba(255,255,255,.06)
+    }
+    html[data-theme="dark"] input.correct{background:var(--ok);border-color:var(--ok-border)}
+    html[data-theme="dark"] input.wrong{background:var(--bad);border-color:var(--bad-border)}
+    html[data-theme="dark"] .result.ok{color:#8ed29d}
+    html[data-theme="dark"] .result.bad{color:#ee9b90}
+    html[data-theme="dark"] .correction-label{color:#d79a90}
+    html[data-theme="dark"] .correction-answer{
+      background:#3b3018;border-color:#9b762d;color:#f4d27a
+    }
+    html[data-theme="dark"] .skip{
+      background:#3b3018;color:#f0ce80;border-color:#a8791d;
+      box-shadow:0 0 0 2px rgba(168,121,29,.14)
+    }
+    html[data-theme="dark"] .skip:hover{background:#493a18}
+    html[data-theme="dark"] .undo-skip{
+      background:#2b281d;color:#d8b95f;border-color:#a8791d;box-shadow:none
+    }
+    html[data-theme="dark"] .undo-skip:hover:not(:disabled){background:#3b3018}
+    html[data-theme="dark"] .char-btn{
+      background:#30302d;color:#efeee8;border-color:#45453f
+    }
+    html[data-theme="dark"] .char-btn:focus{outline-color:#8e8e86}
+
+
+    /* A1 Noun Forms Trainer */
+    .noun{font-size:36px;font-weight:850;letter-spacing:-.7px;line-height:1.05}
+    .noun-progress-mini{font-size:11px;color:#8a8a84;font-weight:650}
+    .noun-topline{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:18px}
+    .noun-task{border-top:1px solid var(--border);padding:16px 0}
+    .noun-task:first-of-type{border-top:0;padding-top:4px}
+    .task-label{font-size:12px;color:var(--muted);font-weight:800;margin-bottom:9px}
+    .article-answer-row{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+    .article-options{display:flex;gap:8px;flex-wrap:wrap}
+    .article-btn{min-width:58px;padding:10px 13px;border:1px solid var(--border);border-radius:10px;background:var(--soft);color:var(--text);font:inherit;font-size:15px;font-weight:800;cursor:pointer}
+    .article-btn:hover:not(:disabled){border-color:#aaa9a2;background:#f0f0ec}
+    .article-btn.selected{background:#1d1d1d;color:#fff;border-color:#1d1d1d}
+    .article-btn.correct{background:var(--ok);border-color:var(--ok-border);color:#2f6f3c}
+    .article-btn.wrong{background:var(--bad);border-color:var(--bad-border);color:#a23f3f}
+    .article-btn.answer-correct{box-shadow:inset 0 0 0 2px #89bd94}
+    .noun-inline{font-size:20px;font-weight:800;letter-spacing:-.2px}
+    .genitive-display{display:inline-flex;align-items:center;min-height:44px;padding:10px 13px;border:1px solid var(--border);border-radius:10px;background:var(--soft);font-size:18px;font-weight:800}
+    .plural-row{display:flex;align-items:center;gap:9px;min-width:0}
+    .plural-prefix{font-size:18px;font-weight:800;flex:0 0 auto}
+    .plural-input{min-width:0;flex:1;width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:#fff;color:var(--text);font:inherit;font-size:17px;font-weight:700;outline:none}
+    .plural-input:focus{border-color:#74746d;box-shadow:0 0 0 3px rgba(0,0,0,.06)}
+    .plural-input.correct{background:var(--ok);border-color:var(--ok-border)}
+    .plural-input.wrong{background:var(--bad);border-color:var(--bad-border)}
+    .plural-correction{margin-top:8px;font-size:12px;color:#a23f3f;font-weight:750}
+    .plural-correction strong{display:inline-block;margin-left:5px;padding:3px 7px;border-radius:7px;background:#fff6d9;border:1px solid #ead28a;color:#715715}
+    .hint-line{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-top:10px}
+    .hint-btn{padding:7px 10px;border:1px dashed #b8b8b1;border-radius:9px;background:var(--soft);color:var(--muted);font:inherit;font-size:11px;font-weight:800;cursor:pointer}
+    .hint-btn:hover:not(:disabled){border-color:#8e8e87;color:var(--text)}
+    .hint-text{font-size:12px;color:var(--muted);font-weight:750}
+    .result-panel{margin-top:15px;padding:13px;border:1px solid var(--border);border-radius:12px;background:var(--soft)}
+    .result-forms{display:grid;gap:7px;font-size:13px}
+    .result-form{display:flex;justify-content:space-between;gap:14px;align-items:baseline}
+    .result-form span{color:var(--muted);font-size:11px;font-weight:750}
+    .result-form strong{text-align:right}
+    .type-result{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)}
+    .noun-type-chip{display:inline-flex;align-items:center;padding:5px 8px;border:1px solid #c9c9c3;border-radius:8px;background:#fff;color:#66665f;font-size:10px;font-weight:800;line-height:1.25}
+    .answer-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:2px}
+    .answer-feedback{font-size:12px;font-weight:800;color:var(--muted)}
+    .answer-feedback.ok{color:#317340}.answer-feedback.bad{color:#a64a43}
+    .mistake-feedback{min-height:18px;font-size:11px;font-weight:750;color:#8a6c22;margin:4px 0 0}
+    .char-helper{margin-top:12px}.char-helper-label{font-size:10px;color:var(--muted);font-weight:750;margin-bottom:6px}.char-buttons{display:flex;gap:6px;flex-wrap:wrap}.char-btn{min-width:34px;padding:6px 8px;border:1px solid var(--border);border-radius:8px;background:var(--soft);color:var(--text);font:inherit;font-size:13px;font-weight:800;cursor:pointer}.char-btn:focus{outline:2px solid #8e8e86;outline-offset:1px}
+    @media(max-width:620px){.noun{font-size:31px}.noun-topline{gap:12px}.article-btn{min-width:54px;padding:10px 12px}.result-form{align-items:flex-start}.result-form strong{max-width:58%}}
+    html[data-theme="dark"] .noun-progress-mini{color:#aaa9a2}
+    html[data-theme="dark"] .article-btn{background:#30302d;color:#efeee8;border-color:#45453f}
+    html[data-theme="dark"] .article-btn:hover:not(:disabled){background:#383835;border-color:#66665f}
+    html[data-theme="dark"] .article-btn.selected{background:#e8e7df;color:#1d1d1b;border-color:#e8e7df}
+    html[data-theme="dark"] .article-btn.correct{background:var(--ok);border-color:var(--ok-border);color:#9ed9aa}
+    html[data-theme="dark"] .article-btn.wrong{background:var(--bad);border-color:var(--bad-border);color:#ef9b91}
+    html[data-theme="dark"] .genitive-display,html[data-theme="dark"] .result-panel{background:#262624}
+    html[data-theme="dark"] .plural-input{background:#1d1d1b;color:var(--text)}
+    html[data-theme="dark"] .plural-input:focus{border-color:#74746d;box-shadow:0 0 0 3px rgba(255,255,255,.06)}
+    html[data-theme="dark"] .plural-input.correct{background:var(--ok);border-color:var(--ok-border)}
+    html[data-theme="dark"] .plural-input.wrong{background:var(--bad);border-color:var(--bad-border)}
+    html[data-theme="dark"] .plural-correction{color:#ef9b91}
+    html[data-theme="dark"] .plural-correction strong{background:#3b3018;border-color:#9b762d;color:#f4d27a}
+    html[data-theme="dark"] .hint-btn{background:#2a2a27;border-color:#55554f;color:#aaa9a2}
+    html[data-theme="dark"] .hint-btn:hover:not(:disabled){border-color:#77776f;color:#efeee8}
+    html[data-theme="dark"] .noun-type-chip{background:#292927;border-color:#45453f;color:#aaa9a2}
+    html[data-theme="dark"] .char-btn{background:#30302d;color:#efeee8;border-color:#45453f}
+
+</style>
+</head>
+
+<body>
+<div class="wrap">
+  <div class="page-nav">
+    <a class="back-link" href="index.html">← Back to Dashboard</a>
+    <button type="button" class="theme-toggle" id="themeToggle">◐ System</button>
+  </div>
+
+  <div class="header">
+    <div>
+      <h1>A1 Noun Forms Trainer</h1>
+      <div class="subtitle">150 A1 nouns · article + Genitiv singular + Nominativ plural</div>
+    </div>
+    <div class="header-side">
+      <div class="session-tools">
+        <button type="button" class="session-tool" id="reloadSessionBtn" disabled>↶ Reload Last</button>
+        <button type="button" class="session-tool reset" id="resetSessionBtn">Reset</button>
+      </div>
+      <div class="meta">
+        <div id="roundText"></div>
+        <div id="progressText" class="noun-progress-mini"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="bar"><div id="barFill"></div></div>
+
+  <div class="filter-shell">
+    <div class="filter-summary-row">
+      <div class="filter-summary" id="filterSummary"></div>
+      <button type="button" class="filter-toggle" id="filterToggle">Filter</button>
+    </div>
+
+    <div class="filter-panel hidden" id="filterPanel">
+      <div class="filter-group">
+        <div class="filter-label">Priority</div>
+        <div class="filter-chips" id="priorityFilters">
+          <button type="button" class="filter-chip" data-priority="Core A1">Core A1</button>
+          <button type="button" class="filter-chip" data-priority="Extended A1">Extended A1</button>
+        </div>
+      </div>
+
+      <div class="filter-group">
+        <div class="filter-label">Type / Typ</div>
+        <div class="filter-chips" id="typeFilters">
+          <button type="button" class="filter-chip" data-type="en">-(e)n plural</button>
+          <button type="button" class="filter-chip" data-type="e">-e plural</button>
+          <button type="button" class="filter-chip" data-type="er">-er plural</button>
+          <button type="button" class="filter-chip" data-type="s">-s plural</button>
+          <button type="button" class="filter-chip" data-type="zero">Zero ending</button>
+          <button type="button" class="filter-chip" data-type="umlaut">Umlaut</button>
+          <button type="button" class="filter-chip" data-type="ndecl">N-Deklination</button>
+        </div>
+      </div>
+
+      <div class="filter-group">
+        <div class="filter-label">Focus</div>
+        <div class="focus-block">
+          <div class="filter-chips">
+            <button type="button" class="filter-chip" id="starredFilterBtn">★ Starred</button>
+            <button type="button" class="clear-stars-btn" id="clearStarsBtn" disabled>Clear all</button>
+          </div>
+          <div class="star-total" id="starTotalText">0 starred total</div>
+        </div>
+        <div class="focus-block">
+          <div class="filter-chips">
+            <button type="button" class="filter-chip" id="mistakesFilterBtn">✕ Mistakes</button>
+            <button type="button" class="clear-stars-btn" id="clearMistakesBtn" disabled>Clear all</button>
+          </div>
+          <div class="star-total" id="mistakeTotalText">0 mistakes total</div>
+        </div>
+      </div>
+
+      <div class="filter-actions">
+        <button type="button" class="apply-filter" id="applyFilterBtn">Apply filter</button>
+        <button type="button" class="reset-filter" id="resetFilterBtn">All 150</button>
+        <span class="filter-status" id="filterStatus"></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="noun-topline">
+      <div>
+        <div class="noun" id="nounText"></div>
+        <div class="meaning" id="meaningText"></div>
+      </div>
+      <div class="tag-stack">
+        <div class="level-badge" id="levelBadge"></div>
+      </div>
+    </div>
+
+    <div class="noun-task">
+      <div class="task-label">Singular · choose the article / Artikel wählen</div>
+      <div class="article-answer-row">
+        <div class="article-options" id="articleOptions">
+          <button type="button" class="article-btn" data-article="der">der</button>
+          <button type="button" class="article-btn" data-article="die">die</button>
+          <button type="button" class="article-btn" data-article="das">das</button>
+        </div>
+        <span class="noun-inline" id="singularNoun"></span>
+      </div>
+    </div>
+
+    <div class="noun-task">
+      <div class="task-label">Genitiv Singular</div>
+      <div class="genitive-display" id="genitiveText"></div>
+    </div>
+
+    <div class="noun-task">
+      <div class="task-label">Nominativ Plural · type the full noun / vollständiges Nomen eingeben</div>
+      <div class="plural-row">
+        <span class="plural-prefix">die</span>
+        <input class="plural-input" id="pluralInput" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" inputmode="text" aria-label="Nominative plural noun" />
+      </div>
+      <div class="plural-correction hidden" id="pluralCorrection"></div>
+      <div class="hint-line">
+        <button type="button" class="hint-btn" id="pluralHintBtn">Hint</button>
+        <span class="hint-text hidden" id="pluralHintText"></span>
+      </div>
+      <div class="char-helper">
+        <div class="char-helper-label">German characters / Deutsche Sonderzeichen</div>
+        <div class="char-buttons" aria-label="German character helper">
+          <button type="button" class="char-btn" data-char="ä">ä</button>
+          <button type="button" class="char-btn" data-char="ö">ö</button>
+          <button type="button" class="char-btn" data-char="ü">ü</button>
+          <button type="button" class="char-btn" data-char="ß">ß</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="result-panel hidden" id="resultPanel">
+      <div class="answer-head">
+        <div class="answer-feedback" id="answerFeedback"></div>
+        <div class="star-action">
+          <span class="star-feedback" id="starFeedback" aria-live="polite"></span>
+          <button type="button" class="star-btn" id="starBtn" aria-label="Star this noun" title="Star this noun">☆</button>
+        </div>
+      </div>
+      <div class="mistake-feedback" id="mistakeFeedback" aria-live="polite"></div>
+      <div class="result-forms">
+        <div class="result-form"><span>Singular</span><strong id="resultSingular"></strong></div>
+        <div class="result-form"><span>Genitiv Singular</span><strong id="resultGenitive"></strong></div>
+        <div class="result-form"><span>Nominativ Plural</span><strong id="resultPlural"></strong></div>
+      </div>
+      <div class="type-result" id="typeResult"></div>
+    </div>
+
+    <div class="controls">
+      <button class="primary" id="checkBtn" disabled>Check / Prüfen</button>
+      <button class="primary hidden" id="nextBtn">Next / Weiter →</button>
+      <button class="secondary" id="reshuffleBtn">Reshuffle / Neu mischen</button>
+      <div class="skip-pair">
+        <button type="button" class="undo-skip" id="undoSkipBtn" aria-label="Undo Skip" title="Undo Skip" disabled><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 5v14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M19 6.2 10.8 12 19 17.8V6.2Z" fill="currentColor"/></svg></button>
+        <button class="skip" id="skipBtn">Skip / Überspringen →</button>
+      </div>
+    </div>
+
+    <div class="hint" id="pageHint">Choose <b>der / die / das</b>, type the full plural noun, then check both together. Genitiv Singular stays visible for repeated exposure.</div>
+  </div>
+
+  <div class="footer">150 A1 nouns · Core 100 + Extended 50 · article + Genitiv singular + plural · starred + mistakes focus</div>
+</div>
+
+<div class="modal-backdrop hidden" id="clearStarsModal" role="dialog" aria-modal="true" aria-labelledby="clearStarsTitle">
+  <div class="confirm-modal">
+    <h2 id="clearStarsTitle">Clear all starred nouns?</h2>
+    <p id="clearStarsMessage"></p>
+    <div class="confirm-actions">
+      <button type="button" class="modal-cancel" id="cancelClearStarsBtn">Cancel</button>
+      <button type="button" class="modal-clear" id="confirmClearStarsBtn" disabled>Clear in 5s</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop hidden" id="clearMistakesModal" role="dialog" aria-modal="true" aria-labelledby="clearMistakesTitle">
+  <div class="confirm-modal">
+    <h2 id="clearMistakesTitle">Clear all mistake nouns?</h2>
+    <p id="clearMistakesMessage"></p>
+    <div class="confirm-actions">
+      <button type="button" class="modal-cancel" id="cancelClearMistakesBtn">Cancel</button>
+      <button type="button" class="modal-clear" id="confirmClearMistakesBtn" disabled>Clear in 5s</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const nouns = [{"id":"der-mann","article":"der","n":"Mann","en":"man","gen":"des Mannes","plural":"Männer","hint":"Umlaut + -er","types":["er","umlaut"],"level":"Core A1"},{"id":"die-frau","article":"die","n":"Frau","en":"woman","gen":"der Frau","plural":"Frauen","hint":"-(e)n","types":["en"],"level":"Core A1"},{"id":"das-kind","article":"das","n":"Kind","en":"child","gen":"des Kindes","plural":"Kinder","hint":"-er","types":["er"],"level":"Core A1"},{"id":"der-junge","article":"der","n":"Junge","en":"boy","gen":"des Jungen","plural":"Jungen","hint":"-(e)n","types":["en","ndecl"],"level":"Core A1"},{"id":"das-mädchen","article":"das","n":"Mädchen","en":"girl","gen":"des Mädchens","plural":"Mädchen","hint":"no ending","types":["zero"],"level":"Core A1"},{"id":"der-vater","article":"der","n":"Vater","en":"father","gen":"des Vaters","plural":"Väter","hint":"Umlaut, no ending","types":["zero","umlaut"],"level":"Core A1"},{"id":"die-mutter","article":"die","n":"Mutter","en":"mother","gen":"der Mutter","plural":"Mütter","hint":"Umlaut, no ending","types":["zero","umlaut"],"level":"Core A1"},{"id":"der-bruder","article":"der","n":"Bruder","en":"brother","gen":"des Bruders","plural":"Brüder","hint":"Umlaut, no ending","types":["zero","umlaut"],"level":"Core A1"},{"id":"die-schwester","article":"die","n":"Schwester","en":"sister","gen":"der Schwester","plural":"Schwestern","hint":"-(e)n","types":["en"],"level":"Core A1"},{"id":"die-familie","article":"die","n":"Familie","en":"family","gen":"der Familie","plural":"Familien","hint":"-(e)n","types":["en"],"level":"Core A1"},{"id":"der-freund","article":"der","n":"Freund","en":"friend","gen":"des Freundes","plural":"Freunde","hint":"-e","types":["e"],"level":"Core A1"},{"id":"die-freundin","article":"die","n":"Freundin","en":"female friend","gen":"der Freundin","plural":"Freundinnen","hint":"-innen","types":["en"],"level":"Core A1"},{"id":"der-name","article":"der","n":"Name","en":"name","gen":"des Namens","plural":"Namen","hint":"-(e)n","types":["en"],"level":"Core A1"},{"id":"der-mensch","article":"der","n":"Mensch","en":"person / human","gen":"des Menschen","plural":"Menschen","hint":"-(e)n","types":["en","ndecl"],"level":"Core A1"},{"id":"der-student","article":"der","n":"Student","en":"student","gen":"des Studenten","plural":"Studenten","hint":"-(e)n","types":["en","ndecl"],"level":"Core A1"},{"id":"der-lehrer","article":"der","n":"Lehrer","en":"teacher","gen":"des Lehrers","plural":"Lehrer","hint":"no ending","types":["zero"],"level":"Core A1"},{"id":"die-lehrerin","article":"die","n":"Lehrerin","en":"female teacher","gen":"der Lehrerin","plural":"Lehrerinnen","hint":"-innen","types":["en"],"level":"Core A1"},{"id":"der-arzt","article":"der","n":"Arzt","en":"doctor","gen":"des Arztes","plural":"Ärzte","hint":"Umlaut + -e","types":["e","umlaut"],"level":"Core A1"},{"id":"die-ärztin","article":"die","n":"Ärztin","en":"female doctor","gen":"der Ärztin","plural":"Ärztinnen","hint":"-innen","types":["en"],"level":"Core A1"},{"id":"der-kunde","article":"der","n":"Kunde","en":"customer","gen":"des Kunden","plural":"Kunden","hint":"-(e)n","types":["en","ndecl"],"level":"Core A1"},{"id":"der-kollege","article":"der","n":"Kollege","en":"colleague","gen":"des Kollegen","plural":"Kollegen","hint":"-(e)n","types":["en","ndecl"],"level":"Core A1"},{"id":"der-chef","article":"der","n":"Chef","en":"boss","gen":"des Chefs","plural":"Chefs","hint":"-s","types":["s"],"level":"Core A1"},{"id":"der-nachbar","article":"der","n":"Nachbar","en":"neighbor","gen":"des Nachbarn","plural":"Nachbarn","hint":"-(e)n","types":["en"],"level":"Core A1"},{"id":"das-baby","article":"das","n":"Baby","en":"baby","gen":"des Babys","plural":"Babys","hint":"-s","types":["s"],"level":"Core A1"},{"id":"das-haus","article":"das","n":"Haus","en":"house","gen":"des Hauses","plural":"Häuser","hint":"Umlaut + -er","types":["er","umlaut"],"level":"Core A1"},{"id":"die-wohnung","article":"die","n":"Wohnung","en":"apartment","gen":"der Wohnung","plural":"Wohnungen","hint":"-(e)n","types":["en"],"level":"Core A1"},{"id":"das-zimmer","article":"das","n":"Zimmer","en":"room","gen":"des Zimmers","plural":"Zimmer","hint":"no ending","types":["zero"],"level":"Core A1"},{"id":"die-küche","article":"die","n":"Küche","en":"kitchen","gen":"der Küche","plural":"Küchen","hint":"-(e)n","types":["en"],"level":"Core A1"},{"id":"das-bad","article":"das","n":"Bad","en":"bathroom","gen":"des Bades","plural":"Bäder","hint":"Umlaut + -er","types":["er","umlaut"],"level":"Core A1"},{"id":"die-tür","article":"die","n":"Tür","en":"door","gen":"der Tür","plural":"Türen","hint":"-(e)n","types":["en"],"level":"Core A1"},{"id":"das-fenster","article":"das","n":"Fenster","en":"window","gen":"des Fensters","plural":"Fenster","hint":"no ending","types":["zero"],"level":"Core A1"},{"id":"der-tisch","article":"der","n":"Tisch","en":"table","gen":"des Tisches","plural":"Tische","hint":"-e","types":["e"],"level":"Core A1"},{"id":"der-stuhl","article":"der","n":"Stuhl","en":"chair","gen":"des Stuhls","plural":"Stühle","hint":"Umlaut + -e","types":["e","umlaut"],"level":"Core A1"},{"id":"das-bett","article":"das","n":"Bett","en":"bed","gen":"des Bettes","plural":"Betten","hint":"-(e)n","types":["en"],"level":"Core A1"},{"id":"der-schrank","article":"der","n":"Schrank","en":"wardrobe / cabinet","gen":"des Schranks","plural":"Schränke","hint":"Umlaut + -e","types":["e","umlaut"],"level":"Core A1"},{"id":"die-lampe","article":"die","n":"Lampe","en":"lamp","gen":"der Lampe","plural":"Lampen","hint":"-(e)n","types":["en"],"level":"Core A1"},{"id":"das-sofa","article":"das","n":"Sofa","en":"sofa","gen":"des Sofas","plural":"Sofas","hint":"-s","types":["s"],"level":"Core A1"},{"id":"der-garten","article":"der","n":"Garten","en":"garden","gen":"des Gartens","plural":"Gärten","hint":"Umlaut, no ending","types":["zero","umlaut"],"level":"Core A1"},{"id":"die-terrasse","article":"die","n":"Terrasse","en":"terrace","gen":"der Terrasse","plural":"Terrassen","hint":"-(e)n","types":["en"],"level":"Core A1"},{"id":"der-schlüssel","article":"der","n":"Schlüssel","en":"key","gen":"des Schlüssels","plural":"Schlüssel","hint":"no ending","types":["zero"],"level":"Core A1"},{"id":"die-schule","article":"die","n":"Schule","en":"school","gen":"der Schule","plural":"Schulen","hint":"-(e)n","types":["en"],"level":"Core A1"},{"id":"die-universität","article":"die","n":"Universität","en":"university","gen":"der Universität","plural":"Universitäten","hint":"-(e)n","types":["en"],"level":"Core A1"},{"id":"der-kurs","article":"der","n":"Kurs","en":"course","gen":"des Kurses","plural":"Kurse","hint":"-e","types":["e"],"level":"Core A1"},{"id":"die-klasse","article":"die","n":"Klasse","en":"class","gen":"der Klasse","plural":"Klassen","hint":"-(e)n","types":["en"],"level":"Core A1"},{"id":"das-buch","article":"das","n":"Buch","en":"book","gen":"des Buches","plural":"Bücher","hint":"Umlaut + -er","types":["er","umlaut"],"level":"Core A1"},{"id":"das-heft","article":"das","n":"Heft","en":"notebook","gen":"des Heftes","plural":"Hefte","hint":"-e","types":["e"],"level":"Core A1"},{"id":"die-seite","article":"die","n":"Seite","en":"page","gen":"der Seite","plural":"Seiten","hint":"-(e)n","types":["en"],"level":"Core A1"},{"id":"das-wort","article":"das","n":"Wort","en":"word","gen":"des Wortes","plural":"Wörter","hint":"Umlaut + -er","types":["er","umlaut"],"level":"Core A1"},{"id":"der-satz","article":"der","n":"Satz","en":"sentence","gen":"des Satzes","plural":"Sätze","hint":"Umlaut + -e","types":["e","umlaut"],"level":"Core A1"},{"id":"die-frage","article":"die","n":"Frage","en":"question","gen":"der Frage","plural":"Fragen","hint":"-(e)n","types":["en"],"level":"Core A1"},{"id":"die-antwort","article":"die","n":"Antwort","en":"answer","gen":"der Antwort","plural":"Antworten","hint":"-(e)n","types":["en"],"level":"Core A1"},{"id":"die-aufgabe","article":"die","n":"Aufgabe","en":"exercise / task","gen":"der Aufgabe","plural":"Aufgaben","hint":"-(e)n","types":["en"],"level":"Core A1"},{"id":"die-sprache","article":"die","n":"Sprache","en":"language","gen":"der Sprache","plural":"Sprachen","hint":"-(e)n","types":["en"],"level":"Core A1"},{"id":"die-arbeit","article":"die","n":"Arbeit","en":"work / job","gen":"der Arbeit","plural":"Arbeiten","hint":"-(e)n","types":["en"],"level":"Core A1"},{"id":"der-beruf","article":"der","n":"Beruf","en":"profession / job","gen":"des Berufs","plural":"Berufe","hint":"-e","types":["e"],"level":"Core A1"},{"id":"das-büro","article":"das","n":"Büro","en":"office","gen":"des Büros","plural":"Büros","hint":"-s","types":["s"],"level":"Core A1"},{"id":"die-firma","article":"die","n":"Firma","en":"company","gen":"der Firma","plural":"Firmen","hint":"-(e)n","types":["en"],"level":"Core A1"},{"id":"der-tag","article":"der","n":"Tag","en":"day","gen":"des Tages","plural":"Tage","hint":"-e","types":["e"],"level":"Core A1"},{"id":"die-woche","article":"die","n":"Woche","en":"week","gen":"der Woche","plural":"Wochen","hint":"-(e)n","types":["en"],"level":"Core A1"},{"id":"der-monat","article":"der","n":"Monat","en":"month","gen":"des Monats","plural":"Monate","hint":"-e","types":["e"],"level":"Core A1"},{"id":"das-jahr","article":"das","n":"Jahr","en":"year","gen":"des Jahres","plural":"Jahre","hint":"-e","types":["e"],"level":"Core A1"},{"id":"die-uhr","article":"die","n":"Uhr","en":"clock / watch","gen":"der Uhr","plural":"Uhren","hint":"-(e)n","types":["en"],"level":"Core A1"},{"id":"die-stunde","article":"die","n":"Stunde","en":"hour","gen":"der Stunde","plural":"Stunden","hint":"-(e)n","types":["en"],"level":"Core A1"},{"id":"die-minute","article":"die","n":"Minute","en":"minute","gen":"der Minute","plural":"Minuten","hint":"-(e)n","types":["en"],"level":"Core A1"},{"id":"der-morgen","article":"der","n":"Morgen","en":"morning","gen":"des Morgens","plural":"Morgen","hint":"no ending","types":["zero"],"level":"Core A1"},{"id":"der-abend","article":"der","n":"Abend","en":"evening","gen":"des Abends","plural":"Abende","hint":"-e","types":["e"],"level":"Core A1"},{"id":"die-nacht","article":"die","n":"Nacht","en":"night","gen":"der Nacht","plural":"Nächte","hint":"Umlaut + -e","types":["e","umlaut"],"level":"Core A1"},{"id":"das-wochenende","article":"das","n":"Wochenende","en":"weekend","gen":"des Wochenendes","plural":"Wochenenden","hint":"-(e)n","types":["en"],"level":"Core A1"},{"id":"der-geburtstag","article":"der","n":"Geburtstag","en":"birthday","gen":"des Geburtstags","plural":"Geburtstage","hint":"-e","types":["e"],"level":"Core A1"},{"id":"die-stadt","article":"die","n":"Stadt","en":"city","gen":"der Stadt","plural":"Städte","hint":"Umlaut + -e","types":["e","umlaut"],"level":"Core A1"},{"id":"das-land","article":"das","n":"Land","en":"country","gen":"des Landes","plural":"Länder","hint":"Umlaut + -er","types":["er","umlaut"],"level":"Core A1"},{"id":"die-straße","article":"die","n":"Straße","en":"street","gen":"der Straße","plural":"Straßen","hint":"-(e)n","types":["en"],"level":"Core A1"},{"id":"der-platz","article":"der","n":"Platz","en":"square / place","gen":"des Platzes","plural":"Plätze","hint":"Umlaut + -e","types":["e","umlaut"],"level":"Core A1"},{"id":"der-bahnhof","article":"der","n":"Bahnhof","en":"train station","gen":"des Bahnhofs","plural":"Bahnhöfe","hint":"Umlaut + -e","types":["e","umlaut"],"level":"Core A1"},{"id":"der-flughafen","article":"der","n":"Flughafen","en":"airport","gen":"des Flughafens","plural":"Flughäfen","hint":"Umlaut, no ending","types":["zero","umlaut"],"level":"Core A1"},{"id":"das-hotel","article":"das","n":"Hotel","en":"hotel","gen":"des Hotels","plural":"Hotels","hint":"-s","types":["s"],"level":"Core A1"},{"id":"das-restaurant","article":"das","n":"Restaurant","en":"restaurant","gen":"des Restaurants","plural":"Restaurants","hint":"-s","types":["s"],"level":"Core A1"},{"id":"das-café","article":"das","n":"Café","en":"café","gen":"des Cafés","plural":"Cafés","hint":"-s","types":["s"],"level":"Core A1"},{"id":"das-geschäft","article":"das","n":"Geschäft","en":"shop / business","gen":"des Geschäfts","plural":"Geschäfte","hint":"-e","types":["e"],"level":"Core A1"},{"id":"der-supermarkt","article":"der","n":"Supermarkt","en":"supermarket","gen":"des Supermarkts","plural":"Supermärkte","hint":"Umlaut + -e","types":["e","umlaut"],"level":"Core A1"},{"id":"der-markt","article":"der","n":"Markt","en":"market","gen":"des Marktes","plural":"Märkte","hint":"Umlaut + -e","types":["e","umlaut"],"level":"Core A1"},{"id":"die-bank","article":"die","n":"Bank","en":"bank","gen":"der Bank","plural":"Banken","hint":"-(e)n","types":["en"],"level":"Core A1"},{"id":"das-auto","article":"das","n":"Auto","en":"car","gen":"des Autos","plural":"Autos","hint":"-s","types":["s"],"level":"Core A1"},{"id":"der-bus","article":"der","n":"Bus","en":"bus","gen":"des Busses","plural":"Busse","hint":"-e","types":["e"],"level":"Core A1"},{"id":"der-zug","article":"der","n":"Zug","en":"train","gen":"des Zuges","plural":"Züge","hint":"Umlaut + -e","types":["e","umlaut"],"level":"Core A1"},{"id":"das-fahrrad","article":"das","n":"Fahrrad","en":"bicycle","gen":"des Fahrrads","plural":"Fahrräder","hint":"Umlaut + -er","types":["er","umlaut"],"level":"Core A1"},{"id":"das-ticket","article":"das","n":"Ticket","en":"ticket","gen":"des Tickets","plural":"Tickets","hint":"-s","types":["s"],"level":"Core A1"},{"id":"die-reise","article":"die","n":"Reise","en":"trip / journey","gen":"der Reise","plural":"Reisen","hint":"-(e)n","types":["en"],"level":"Core A1"},{"id":"der-apfel","article":"der","n":"Apfel","en":"apple","gen":"des Apfels","plural":"Äpfel","hint":"Umlaut, no ending","types":["zero","umlaut"],"level":"Core A1"},{"id":"die-banane","article":"die","n":"Banane","en":"banana","gen":"der Banane","plural":"Bananen","hint":"-(e)n","types":["en"],"level":"Core A1"},{"id":"die-orange","article":"die","n":"Orange","en":"orange","gen":"der Orange","plural":"Orangen","hint":"-(e)n","types":["en"],"level":"Core A1"},{"id":"die-kartoffel","article":"die","n":"Kartoffel","en":"potato","gen":"der Kartoffel","plural":"Kartoffeln","hint":"-(e)n","types":["en"],"level":"Core A1"},{"id":"die-tomate","article":"die","n":"Tomate","en":"tomato","gen":"der Tomate","plural":"Tomaten","hint":"-(e)n","types":["en"],"level":"Core A1"},{"id":"das-ei","article":"das","n":"Ei","en":"egg","gen":"des Eies","plural":"Eier","hint":"-er","types":["er"],"level":"Core A1"},{"id":"der-kuchen","article":"der","n":"Kuchen","en":"cake","gen":"des Kuchens","plural":"Kuchen","hint":"no ending","types":["zero"],"level":"Core A1"},{"id":"das-getränk","article":"das","n":"Getränk","en":"drink / beverage","gen":"des Getränks","plural":"Getränke","hint":"-e","types":["e"],"level":"Core A1"},{"id":"die-flasche","article":"die","n":"Flasche","en":"bottle","gen":"der Flasche","plural":"Flaschen","hint":"-(e)n","types":["en"],"level":"Core A1"},{"id":"die-tasse","article":"die","n":"Tasse","en":"cup","gen":"der Tasse","plural":"Tassen","hint":"-(e)n","types":["en"],"level":"Core A1"},{"id":"das-glas","article":"das","n":"Glas","en":"glass","gen":"des Glases","plural":"Gläser","hint":"Umlaut + -er","types":["er","umlaut"],"level":"Core A1"},{"id":"der-teller","article":"der","n":"Teller","en":"plate","gen":"des Tellers","plural":"Teller","hint":"no ending","types":["zero"],"level":"Core A1"},{"id":"das-messer","article":"das","n":"Messer","en":"knife","gen":"des Messers","plural":"Messer","hint":"no ending","types":["zero"],"level":"Extended A1"},{"id":"die-gabel","article":"die","n":"Gabel","en":"fork","gen":"der Gabel","plural":"Gabeln","hint":"-(e)n","types":["en"],"level":"Extended A1"},{"id":"der-löffel","article":"der","n":"Löffel","en":"spoon","gen":"des Löffels","plural":"Löffel","hint":"no ending","types":["zero"],"level":"Extended A1"},{"id":"der-topf","article":"der","n":"Topf","en":"pot","gen":"des Topfes","plural":"Töpfe","hint":"Umlaut + -e","types":["e","umlaut"],"level":"Extended A1"},{"id":"die-pfanne","article":"die","n":"Pfanne","en":"pan","gen":"der Pfanne","plural":"Pfannen","hint":"-(e)n","types":["en"],"level":"Extended A1"},{"id":"der-kühlschrank","article":"der","n":"Kühlschrank","en":"refrigerator","gen":"des Kühlschranks","plural":"Kühlschränke","hint":"Umlaut + -e","types":["e","umlaut"],"level":"Extended A1"},{"id":"die-waschmaschine","article":"die","n":"Waschmaschine","en":"washing machine","gen":"der Waschmaschine","plural":"Waschmaschinen","hint":"-(e)n","types":["en"],"level":"Extended A1"},{"id":"der-computer","article":"der","n":"Computer","en":"computer","gen":"des Computers","plural":"Computer","hint":"no ending","types":["zero"],"level":"Extended A1"},{"id":"das-handy","article":"das","n":"Handy","en":"mobile phone","gen":"des Handys","plural":"Handys","hint":"-s","types":["s"],"level":"Extended A1"},{"id":"das-telefon","article":"das","n":"Telefon","en":"telephone","gen":"des Telefons","plural":"Telefone","hint":"-e","types":["e"],"level":"Extended A1"},{"id":"das-foto","article":"das","n":"Foto","en":"photo","gen":"des Fotos","plural":"Fotos","hint":"-s","types":["s"],"level":"Extended A1"},{"id":"das-bild","article":"das","n":"Bild","en":"picture","gen":"des Bildes","plural":"Bilder","hint":"-er","types":["er"],"level":"Extended A1"},{"id":"der-brief","article":"der","n":"Brief","en":"letter","gen":"des Briefes","plural":"Briefe","hint":"-e","types":["e"],"level":"Extended A1"},{"id":"die-e-mail","article":"die","n":"E-Mail","en":"email","gen":"der E-Mail","plural":"E-Mails","hint":"-s","types":["s"],"level":"Extended A1"},{"id":"die-zeitung","article":"die","n":"Zeitung","en":"newspaper","gen":"der Zeitung","plural":"Zeitungen","hint":"-(e)n","types":["en"],"level":"Extended A1"},{"id":"die-karte","article":"die","n":"Karte","en":"card / map","gen":"der Karte","plural":"Karten","hint":"-(e)n","types":["en"],"level":"Extended A1"},{"id":"der-plan","article":"der","n":"Plan","en":"plan","gen":"des Plans","plural":"Pläne","hint":"Umlaut + -e","types":["e","umlaut"],"level":"Extended A1"},{"id":"der-termin","article":"der","n":"Termin","en":"appointment","gen":"des Termins","plural":"Termine","hint":"-e","types":["e"],"level":"Extended A1"},{"id":"die-pause","article":"die","n":"Pause","en":"break","gen":"der Pause","plural":"Pausen","hint":"-(e)n","types":["en"],"level":"Extended A1"},{"id":"das-problem","article":"das","n":"Problem","en":"problem","gen":"des Problems","plural":"Probleme","hint":"-e","types":["e"],"level":"Extended A1"},{"id":"die-idee","article":"die","n":"Idee","en":"idea","gen":"der Idee","plural":"Ideen","hint":"-(e)n","types":["en"],"level":"Extended A1"},{"id":"das-beispiel","article":"das","n":"Beispiel","en":"example","gen":"des Beispiels","plural":"Beispiele","hint":"-e","types":["e"],"level":"Extended A1"},{"id":"die-nummer","article":"die","n":"Nummer","en":"number","gen":"der Nummer","plural":"Nummern","hint":"-(e)n","types":["en"],"level":"Extended A1"},{"id":"die-adresse","article":"die","n":"Adresse","en":"address","gen":"der Adresse","plural":"Adressen","hint":"-(e)n","types":["en"],"level":"Extended A1"},{"id":"der-preis","article":"der","n":"Preis","en":"price","gen":"des Preises","plural":"Preise","hint":"-e","types":["e"],"level":"Extended A1"},{"id":"der-euro","article":"der","n":"Euro","en":"euro","gen":"des Euros","plural":"Euros","hint":"-s","types":["s"],"level":"Extended A1"},{"id":"die-rechnung","article":"die","n":"Rechnung","en":"bill / invoice","gen":"der Rechnung","plural":"Rechnungen","hint":"-(e)n","types":["en"],"level":"Extended A1"},{"id":"der-verkäufer","article":"der","n":"Verkäufer","en":"salesperson","gen":"des Verkäufers","plural":"Verkäufer","hint":"no ending","types":["zero"],"level":"Extended A1"},{"id":"die-verkäuferin","article":"die","n":"Verkäuferin","en":"saleswoman","gen":"der Verkäuferin","plural":"Verkäuferinnen","hint":"-innen","types":["en"],"level":"Extended A1"},{"id":"der-polizist","article":"der","n":"Polizist","en":"police officer","gen":"des Polizisten","plural":"Polizisten","hint":"-(e)n","types":["en","ndecl"],"level":"Extended A1"},{"id":"der-tourist","article":"der","n":"Tourist","en":"tourist","gen":"des Touristen","plural":"Touristen","hint":"-(e)n","types":["en","ndecl"],"level":"Extended A1"},{"id":"der-gast","article":"der","n":"Gast","en":"guest","gen":"des Gastes","plural":"Gäste","hint":"Umlaut + -e","types":["e","umlaut"],"level":"Extended A1"},{"id":"der-hund","article":"der","n":"Hund","en":"dog","gen":"des Hundes","plural":"Hunde","hint":"-e","types":["e"],"level":"Extended A1"},{"id":"die-katze","article":"die","n":"Katze","en":"cat","gen":"der Katze","plural":"Katzen","hint":"-(e)n","types":["en"],"level":"Extended A1"},{"id":"der-vogel","article":"der","n":"Vogel","en":"bird","gen":"des Vogels","plural":"Vögel","hint":"Umlaut, no ending","types":["zero","umlaut"],"level":"Extended A1"},{"id":"das-tier","article":"das","n":"Tier","en":"animal","gen":"des Tieres","plural":"Tiere","hint":"-e","types":["e"],"level":"Extended A1"},{"id":"der-kopf","article":"der","n":"Kopf","en":"head","gen":"des Kopfes","plural":"Köpfe","hint":"Umlaut + -e","types":["e","umlaut"],"level":"Extended A1"},{"id":"die-hand","article":"die","n":"Hand","en":"hand","gen":"der Hand","plural":"Hände","hint":"Umlaut + -e","types":["e","umlaut"],"level":"Extended A1"},{"id":"das-auge","article":"das","n":"Auge","en":"eye","gen":"des Auges","plural":"Augen","hint":"-(e)n","types":["en"],"level":"Extended A1"},{"id":"das-ohr","article":"das","n":"Ohr","en":"ear","gen":"des Ohres","plural":"Ohren","hint":"-(e)n","types":["en"],"level":"Extended A1"},{"id":"der-zahn","article":"der","n":"Zahn","en":"tooth","gen":"des Zahnes","plural":"Zähne","hint":"Umlaut + -e","types":["e","umlaut"],"level":"Extended A1"},{"id":"der-fuß","article":"der","n":"Fuß","en":"foot","gen":"des Fußes","plural":"Füße","hint":"Umlaut + -e","types":["e","umlaut"],"level":"Extended A1"},{"id":"die-jacke","article":"die","n":"Jacke","en":"jacket","gen":"der Jacke","plural":"Jacken","hint":"-(e)n","types":["en"],"level":"Extended A1"},{"id":"die-hose","article":"die","n":"Hose","en":"trousers","gen":"der Hose","plural":"Hosen","hint":"-(e)n","types":["en"],"level":"Extended A1"},{"id":"der-schuh","article":"der","n":"Schuh","en":"shoe","gen":"des Schuhs","plural":"Schuhe","hint":"-e","types":["e"],"level":"Extended A1"},{"id":"das-kleid","article":"das","n":"Kleid","en":"dress","gen":"des Kleides","plural":"Kleider","hint":"-er","types":["er"],"level":"Extended A1"},{"id":"das-hemd","article":"das","n":"Hemd","en":"shirt","gen":"des Hemdes","plural":"Hemden","hint":"-(e)n","types":["en"],"level":"Extended A1"},{"id":"die-tasche","article":"die","n":"Tasche","en":"bag","gen":"der Tasche","plural":"Taschen","hint":"-(e)n","types":["en"],"level":"Extended A1"},{"id":"der-pullover","article":"der","n":"Pullover","en":"sweater","gen":"des Pullovers","plural":"Pullover","hint":"no ending","types":["zero"],"level":"Extended A1"},{"id":"die-brille","article":"die","n":"Brille","en":"glasses","gen":"der Brille","plural":"Brillen","hint":"-(e)n","types":["en"],"level":"Extended A1"}];
+
+const ALL_PRIORITIES=["Core A1","Extended A1"];
+const ALL_TYPES=["en","e","er","s","zero","umlaut","ndecl"];
+const TYPE_LABELS={
+  en:"-(e)n plural / Plural auf -(e)n",
+  e:"-e plural / Plural auf -e",
+  er:"-er plural / Plural auf -er",
+  s:"-s plural / Plural auf -s",
+  zero:"Zero ending / ohne Endung",
+  umlaut:"Umlaut",
+  ndecl:"N-Deklination"
+};
+const FILTER_STORAGE_KEY="german-drill-a1-noun-filter-v1";
+const STAR_STORAGE_KEY="german-drill-a1-noun-starred-v1";
+const MISTAKE_STORAGE_KEY="german-drill-a1-noun-mistakes-v1";
+const SESSION_RESET_BACKUP_KEY="german-drill-a1-noun-reset-backup-v1";
+const CLEAR_DELAY_SECONDS=5;
+
+let selectedPriorities=new Set(ALL_PRIORITIES);
+let selectedTypes=new Set(ALL_TYPES);
+let draftPriorities=new Set(ALL_PRIORITIES);
+let draftTypes=new Set(ALL_TYPES);
+let selectedStarredFocus=false,draftStarredFocus=false;
+let selectedMistakesFocus=false,draftMistakesFocus=false;
+let starredNouns=new Set(),mistakeNouns=new Set();
+let order=[],pos=0,round=1;
+let selectedArticle="",hintUsed=false,mode="answering",lastResult=null,activeInput=null;
+let undoSkipState=null;
+let starFeedbackTimer=null;
+let clearStarsTimer=null,clearMistakesTimer=null;
+let clearStarsValue=CLEAR_DELAY_SECONDS,clearMistakesValue=CLEAR_DELAY_SECONDS;
+
+const $=id=>document.getElementById(id);
+function current(){return nouns[order[pos]];}
+function normalize(s){return String(s||"").trim().toLocaleLowerCase("de-DE").replace(/\s+/g," ");}
+
+function loadSet(key){
+  try{
+    const valid=new Set(nouns.map(x=>x.id));
+    const raw=JSON.parse(localStorage.getItem(key)||"[]");
+    return new Set(Array.isArray(raw)?raw.filter(x=>valid.has(x)):[]);
+  }catch{return new Set();}
+}
+function saveSet(key,set){try{localStorage.setItem(key,JSON.stringify([...set]));}catch{}}
+function loadFocus(){starredNouns=loadSet(STAR_STORAGE_KEY);mistakeNouns=loadSet(MISTAKE_STORAGE_KEY);}
+function saveStars(){saveSet(STAR_STORAGE_KEY,starredNouns);}
+function saveMistakes(){saveSet(MISTAKE_STORAGE_KEY,mistakeNouns);}
+
+function isStarred(item=current()){return !!item&&starredNouns.has(item.id);}
+function renderStarButton(){
+  const b=$("starBtn");if(!b)return;
+  const on=isStarred();b.textContent=on?"★":"☆";b.classList.toggle("starred",on);
+  b.setAttribute("aria-label",on?"Remove star from this noun":"Star this noun");b.title=on?"Remove star":"Star this noun";
+}
+function showStarFeedback(message){
+  const el=$("starFeedback");if(!el)return;
+  if(starFeedbackTimer)clearTimeout(starFeedbackTimer);
+  el.textContent=message;el.classList.add("show");
+  starFeedbackTimer=setTimeout(()=>{el.classList.remove("show");starFeedbackTimer=null;},1800);
+}
+function renderFocusManagement(){
+  $("starTotalText").textContent=`${starredNouns.size} starred total`;
+  $("mistakeTotalText").textContent=`${mistakeNouns.size} mistakes total`;
+  $("clearStarsBtn").disabled=starredNouns.size===0;
+  $("clearMistakesBtn").disabled=mistakeNouns.size===0;
+}
+
+function hasAnySelection(priorities,types,starred,mistakes){return priorities.size>0||types.size>0||starred||mistakes;}
+function eligibleIndices(priorities=selectedPriorities,types=selectedTypes,mistakes=selectedMistakesFocus){
+  const lp=priorities.size>0,lt=types.size>0;
+  return nouns.map((item,i)=>({item,i})).filter(({item})=>
+    (!lp||priorities.has(item.level))&&
+    (!lt||item.types.some(t=>types.has(t)))&&
+    (!mistakes||mistakeNouns.has(item.id))
+  ).map(({i})=>i);
+}
+function shuffleArray(arr){const out=[...arr];for(let i=out.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[out[i],out[j]]=[out[j],out[i]];}return out;}
+function shuffledIndices(previousLast=null){
+  const eligible=eligibleIndices();let arr;
+  if(selectedStarredFocus){
+    const stars=eligible.filter(i=>starredNouns.has(nouns[i].id));
+    const regular=eligible.filter(i=>!starredNouns.has(nouns[i].id));
+    arr=[...shuffleArray(stars),...shuffleArray(regular)];
+  }else arr=shuffleArray(eligible);
+  if(previousLast!==null&&arr.length>1&&arr[0]===previousLast){
+    let swap=1;
+    if(selectedStarredFocus&&starredNouns.has(nouns[arr[0]].id)){
+      const found=arr.findIndex((idx,i)=>i>0&&starredNouns.has(nouns[idx].id));if(found>0)swap=found;
+    }
+    [arr[0],arr[swap]]=[arr[swap],arr[0]];
+  }
+  return arr;
+}
+
+function loadFilterSettings(){
+  try{
+    const s=JSON.parse(localStorage.getItem(FILTER_STORAGE_KEY)||"null");
+    if(s){
+      if(Array.isArray(s.priorities))selectedPriorities=new Set(s.priorities.filter(x=>ALL_PRIORITIES.includes(x)));
+      if(Array.isArray(s.types))selectedTypes=new Set(s.types.filter(x=>ALL_TYPES.includes(x)));
+      selectedStarredFocus=!!s.starredFocus;selectedMistakesFocus=!!s.mistakesFocus;
+    }
+  }catch{}
+  draftPriorities=new Set(selectedPriorities);draftTypes=new Set(selectedTypes);
+  draftStarredFocus=selectedStarredFocus;draftMistakesFocus=selectedMistakesFocus;
+}
+function saveFilterSettings(){try{localStorage.setItem(FILTER_STORAGE_KEY,JSON.stringify({priorities:[...selectedPriorities],types:[...selectedTypes],starredFocus:selectedStarredFocus,mistakesFocus:selectedMistakesFocus}));}catch{}}
+function filterSummaryText(){
+  const count=eligibleIndices().length;
+  let p=selectedPriorities.size===0?"All priorities":selectedPriorities.size===2?"Core + Extended":[...selectedPriorities][0];
+  let t=selectedTypes.size===0||selectedTypes.size===ALL_TYPES.length?"All types":selectedTypes.size<=2?[...selectedTypes].map(k=>TYPE_LABELS[k].split(" / ")[0]).join(" + "):`${selectedTypes.size} types`;
+  const f=[];if(selectedStarredFocus)f.push("★ Starred first");if(selectedMistakesFocus)f.push("✕ Mistakes only");
+  return `${p} · ${t}${f.length?` · ${f.join(" · ")}`:""} · ${count} noun${count===1?"":"s"}`;
+}
+function renderFilterUI(){
+  document.querySelectorAll("[data-priority]").forEach(b=>b.classList.toggle("active",draftPriorities.has(b.dataset.priority)));
+  document.querySelectorAll("[data-type]").forEach(b=>b.classList.toggle("active",draftTypes.has(b.dataset.type)));
+  $("starredFilterBtn").classList.toggle("active",draftStarredFocus);$("mistakesFilterBtn").classList.toggle("active",draftMistakesFocus);
+  const eligible=eligibleIndices(draftPriorities,draftTypes,draftMistakesFocus),count=eligible.length;
+  const starCount=eligible.filter(i=>starredNouns.has(nouns[i].id)).length;
+  const status=$("filterStatus"),hasAny=hasAnySelection(draftPriorities,draftTypes,draftStarredFocus,draftMistakesFocus);
+  if(!hasAny){status.textContent="Select at least one filter.";status.className="filter-status error";$("applyFilterBtn").disabled=true;}
+  else if(!count){status.textContent=draftMistakesFocus?"0 mistakes match this filter.":"0 nouns match this combination.";status.className="filter-status error";$("applyFilterBtn").disabled=true;}
+  else{
+    if(draftMistakesFocus&&draftStarredFocus)status.textContent=`${count} mistake noun${count===1?"":"s"} · ${starCount} starred first`;
+    else if(draftMistakesFocus)status.textContent=`${count} mistake noun${count===1?"":"s"} in this filter`;
+    else if(draftStarredFocus)status.textContent=`${count} noun${count===1?"":"s"} · ${starCount} starred first`;
+    else status.textContent=`${count} noun${count===1?"":"s"} in this filter`;
+    status.className="filter-status";$("applyFilterBtn").disabled=false;
+  }
+  $("filterSummary").textContent=filterSummaryText();renderFocusManagement();
+}
+
+function clearUndo(){undoSkipState=null;$("undoSkipBtn").disabled=true;}
+function setUndo(state){undoSkipState=state;$("undoSkipBtn").disabled=!state;}
+function captureCurrentAnswer(){return {selectedArticle,pluralValue:$("pluralInput").value,hintUsed,mode,lastResult:lastResult?{...lastResult}:null};}
+function captureSessionState(){return {version:1,selectedPriorities:[...selectedPriorities],selectedTypes:[...selectedTypes],selectedStarredFocus,selectedMistakesFocus,order:[...order],pos,round,...captureCurrentAnswer()};}
+function normalizeSession(raw){
+  if(!raw||raw.version!==1)return null;
+  const ord=Array.isArray(raw.order)&&raw.order.length&&new Set(raw.order).size===raw.order.length&&raw.order.every(i=>Number.isInteger(i)&&i>=0&&i<nouns.length);if(!ord)return null;
+  return {version:1,selectedPriorities:Array.isArray(raw.selectedPriorities)?raw.selectedPriorities.filter(x=>ALL_PRIORITIES.includes(x)):[],selectedTypes:Array.isArray(raw.selectedTypes)?raw.selectedTypes.filter(x=>ALL_TYPES.includes(x)):[],selectedStarredFocus:!!raw.selectedStarredFocus,selectedMistakesFocus:!!raw.selectedMistakesFocus,order:[...raw.order],pos:Number.isInteger(raw.pos)&&raw.pos>=0&&raw.pos<raw.order.length?raw.pos:0,round:Number.isInteger(raw.round)&&raw.round>=1?raw.round:1,selectedArticle:["der","die","das"].includes(raw.selectedArticle)?raw.selectedArticle:"",pluralValue:typeof raw.pluralValue==="string"?raw.pluralValue:"",hintUsed:!!raw.hintUsed,mode:raw.mode==="checked"?"checked":"answering",lastResult:raw.lastResult&&typeof raw.lastResult==="object"?raw.lastResult:null};
+}
+function applySession(saved){
+  clearUndo();selectedPriorities=new Set(saved.selectedPriorities);selectedTypes=new Set(saved.selectedTypes);
+  selectedStarredFocus=saved.selectedStarredFocus&&starredNouns.size>0;selectedMistakesFocus=saved.selectedMistakesFocus&&mistakeNouns.size>0;
+  draftPriorities=new Set(selectedPriorities);draftTypes=new Set(selectedTypes);draftStarredFocus=selectedStarredFocus;draftMistakesFocus=selectedMistakesFocus;saveFilterSettings();
+  order=[...saved.order];pos=saved.pos;round=saved.round;renderCurrent();
+  selectedArticle=saved.selectedArticle;$("pluralInput").value=saved.pluralValue;hintUsed=saved.hintUsed;
+  if(hintUsed){$("pluralHintText").textContent=`Hint: ${current().hint}`;$("pluralHintText").classList.remove("hidden");}
+  renderArticleSelection();updateCheckState();
+  if(saved.mode==="checked"&&saved.lastResult){lastResult={...saved.lastResult};renderCheckedResult(lastResult);}
+  renderFilterUI();return true;
+}
+function loadBackup(){try{return normalizeSession(JSON.parse(localStorage.getItem(SESSION_RESET_BACKUP_KEY)||"null"));}catch{return null;}}
+function updateReload(){$("reloadSessionBtn").disabled=!loadBackup();}
+function saveBackup(){try{localStorage.setItem(SESSION_RESET_BACKUP_KEY,JSON.stringify(captureSessionState()));}catch{}updateReload();}
+window.GermanDrillTrainerCloud={capture(){return normalizeSession(captureSessionState());},restore(raw){const s=normalizeSession(raw);return s?applySession(s):false;}};
+window.GermanDrillFocusData={
+  getLocal(){return {starredNouns:[...starredNouns],mistakeNouns:[...mistakeNouns]};},
+  applyCloud(raw){
+    const valid=new Set(nouns.map(x=>x.id));starredNouns=new Set(Array.isArray(raw?.starredNouns)?raw.starredNouns.filter(x=>valid.has(x)):[]);mistakeNouns=new Set(Array.isArray(raw?.mistakeNouns)?raw.mistakeNouns.filter(x=>valid.has(x)):[]);saveStars();saveMistakes();
+    if(selectedStarredFocus&&!starredNouns.size)selectedStarredFocus=false;if(selectedMistakesFocus&&!mistakeNouns.size)selectedMistakesFocus=false;
+    draftStarredFocus=selectedStarredFocus;draftMistakesFocus=selectedMistakesFocus;saveFilterSettings();renderStarButton();renderFilterUI();
+  }
+};
+
+function renderArticleSelection(){
+  document.querySelectorAll(".article-btn").forEach(b=>{b.classList.toggle("selected",mode==="answering"&&b.dataset.article===selectedArticle);if(mode==="answering"){b.classList.remove("correct","wrong","answer-correct");b.disabled=false;}});
+}
+function renderCurrent(){
+  const item=current();selectedArticle="";hintUsed=false;mode="answering";lastResult=null;
+  $("nounText").textContent=item.n;$("meaningText").textContent=item.en;$("singularNoun").textContent=item.n;$("genitiveText").textContent=item.gen;$("levelBadge").textContent=item.level;$("levelBadge").title="Study priority used by this trainer; not an official Goethe category.";
+  $("roundText").textContent=`Round / Runde · ${round}`;$("progressText").textContent=`Noun / Nomen · ${pos+1} / ${order.length}`;$("barFill").style.width=`${((pos+1)/order.length)*100}%`;
+  $("pluralInput").value="";$("pluralInput").disabled=false;$("pluralInput").classList.remove("correct","wrong");$("pluralCorrection").classList.add("hidden");$("pluralCorrection").textContent="";
+  $("pluralHintText").classList.add("hidden");$("pluralHintText").textContent="";$("pluralHintBtn").disabled=false;
+  $("resultPanel").classList.add("hidden");$("mistakeFeedback").textContent="";$("answerFeedback").textContent="";$("typeResult").innerHTML="";
+  $("checkBtn").classList.remove("hidden");$("nextBtn").classList.add("hidden");$("skipBtn").classList.remove("hidden");$("checkBtn").disabled=true;renderArticleSelection();
+  activeInput=$("pluralInput");
+}
+function updateCheckState(){if(mode!=="answering"){ $("checkBtn").disabled=true;return;}$("checkBtn").disabled=!(selectedArticle&&$("pluralInput").value.trim());}
+function renderCheckedResult(result){
+  const item=current();mode="checked";
+  document.querySelectorAll(".article-btn").forEach(b=>{b.disabled=true;b.classList.remove("selected","correct","wrong","answer-correct");if(b.dataset.article===item.article)b.classList.add("correct","answer-correct");if(b.dataset.article===result.selectedArticle&&!result.articleCorrect)b.classList.add("wrong");});
+  const input=$("pluralInput");input.disabled=true;input.classList.toggle("correct",!!result.pluralCorrect);input.classList.toggle("wrong",!result.pluralCorrect);
+  if(!result.pluralCorrect){$("pluralCorrection").classList.remove("hidden");$("pluralCorrection").innerHTML=`✗ correct answer / richtige Antwort <strong>${item.plural}</strong>`;}
+  $("pluralHintBtn").disabled=true;
+  $("answerFeedback").textContent=result.articleCorrect&&result.pluralCorrect?(result.hintUsed?"✓ Correct with hint / richtig mit Hinweis":"✓ Correct / richtig"):"✗ Review the forms / Formen wiederholen";
+  $("answerFeedback").className=`answer-feedback ${result.articleCorrect&&result.pluralCorrect?"ok":"bad"}`;
+  $("mistakeFeedback").textContent=result.mistakeMessage||"";
+  $("resultSingular").textContent=`${item.article} ${item.n}`;$("resultGenitive").textContent=item.gen;$("resultPlural").textContent=`die ${item.plural}`;
+  $("typeResult").innerHTML="";item.types.forEach(t=>{const span=document.createElement("span");span.className="noun-type-chip";span.textContent=TYPE_LABELS[t];$("typeResult").appendChild(span);});
+  $("resultPanel").classList.remove("hidden");renderStarButton();$("checkBtn").classList.add("hidden");$("nextBtn").classList.remove("hidden");$("skipBtn").classList.add("hidden");
+}
+function checkAnswers(){
+  if(mode!=="answering"||$("checkBtn").disabled)return;clearUndo();
+  const item=current(),wasMistake=mistakeNouns.has(item.id);const articleCorrect=selectedArticle===item.article;const pluralCorrect=normalize($("pluralInput").value)===normalize(item.plural);const independent=articleCorrect&&pluralCorrect&&!hintUsed;let mistakeMessage="";
+  if(independent){
+    if(wasMistake){mistakeNouns.delete(item.id);saveMistakes();window.GermanDrillFocusCloudMutate?.("mistakeNouns",item.id,false);if(mistakeNouns.size===0&&selectedMistakesFocus){selectedMistakesFocus=false;draftMistakesFocus=false;saveFilterSettings();}mistakeMessage=`✓ Cleared from Mistakes · ${mistakeNouns.size} remaining`;}
+  }else{
+    if(!wasMistake){mistakeNouns.add(item.id);saveMistakes();window.GermanDrillFocusCloudMutate?.("mistakeNouns",item.id,true);mistakeMessage=`✕ Added to Mistakes · ${mistakeNouns.size} total`;}
+    else mistakeMessage=`✕ Kept in Mistakes · ${mistakeNouns.size} total`;
+  }
+  lastResult={selectedArticle,articleCorrect,pluralCorrect,hintUsed,mistakeMessage};renderCheckedResult(lastResult);renderFilterUI();window.GermanDrillCloudSave?.();
+}
+function nextNoun(){
+  clearUndo();const previous=order[pos];pos++;
+  if(pos>=order.length){round++;order=shuffledIndices(previous);pos=0;}
+  renderCurrent();window.GermanDrillCloudSave?.();
+}
+function skipCurrent(){
+  if(mode!=="answering")return;
+  const snap={session:captureSessionState()};
+  const previous=order[pos];pos++;
+  if(pos>=order.length){round++;order=shuffledIndices(previous);pos=0;}
+  renderCurrent();setUndo(snap);window.GermanDrillCloudSave?.();
+}
+function undoSkip(){if(!undoSkipState)return;const s=normalizeSession(undoSkipState.session);undoSkipState=null;if(s){applySession(s);window.GermanDrillCloudSave?.();}else clearUndo();}
+function reshuffle(){clearUndo();order=shuffledIndices(order[pos]??null);pos=0;round=1;renderCurrent();window.GermanDrillCloudSave?.();}
+function resetSession(){clearUndo();saveBackup();order=shuffledIndices();pos=0;round=1;$("filterPanel").classList.add("hidden");$("filterToggle").textContent="Filter";renderCurrent();window.GermanDrillCloudSave?.();}
+function reloadLast(){clearUndo();const s=loadBackup();if(!s)return;applySession(s);window.GermanDrillCloudSave?.();}
+
+function stopTimer(which){if(which==="stars"&&clearStarsTimer){clearInterval(clearStarsTimer);clearStarsTimer=null;}if(which==="mistakes"&&clearMistakesTimer){clearInterval(clearMistakesTimer);clearMistakesTimer=null;}}
+function closeClear(which){stopTimer(which);$(which==="stars"?"clearStarsModal":"clearMistakesModal").classList.add("hidden");}
+function openClear(which){
+  const set=which==="stars"?starredNouns:mistakeNouns,count=set.size;if(!count)return;stopTimer(which);
+  const isStars=which==="stars",title=$(isStars?"clearStarsTitle":"clearMistakesTitle"),msg=$(isStars?"clearStarsMessage":"clearMistakesMessage"),btn=$(isStars?"confirmClearStarsBtn":"confirmClearMistakesBtn");
+  title.textContent=`Clear all ${count} ${isStars?"starred":"mistake"} nouns?`;msg.textContent=isStars?`This will remove stars from ${count} noun${count===1?"":"s"}.`:`This will remove ${count} noun${count===1?"":"s"} from Mistakes.`;
+  let value=CLEAR_DELAY_SECONDS;btn.disabled=true;btn.textContent=`Clear in ${value}s`;$(isStars?"clearStarsModal":"clearMistakesModal").classList.remove("hidden");
+  const tick=()=>{value--;if(value<=0){stopTimer(which);btn.disabled=false;btn.textContent="Clear";}else btn.textContent=`Clear in ${value}s`;};
+  if(isStars)clearStarsTimer=setInterval(tick,1000);else clearMistakesTimer=setInterval(tick,1000);
+}
+function clearAll(which){
+  const isStars=which==="stars",btn=$(isStars?"confirmClearStarsBtn":"confirmClearMistakesBtn");if(btn.disabled)return;
+  if(isStars){starredNouns.clear();saveStars();window.GermanDrillFocusCloudClear?.("starredNouns");selectedStarredFocus=false;draftStarredFocus=false;showStarFeedback("☆ Cleared · 0 total");}
+  else{mistakeNouns.clear();saveMistakes();window.GermanDrillFocusCloudClear?.("mistakeNouns");selectedMistakesFocus=false;draftMistakesFocus=false;$("mistakeFeedback").textContent="";}
+  saveFilterSettings();closeClear(which);renderStarButton();renderFilterUI();
+}
+
+$("filterToggle").addEventListener("click",()=>{$("filterPanel").classList.toggle("hidden");$("filterToggle").textContent=$("filterPanel").classList.contains("hidden")?"Filter":"Close";renderFilterUI();});
+document.querySelectorAll("[data-priority]").forEach(b=>b.addEventListener("click",()=>{draftPriorities.has(b.dataset.priority)?draftPriorities.delete(b.dataset.priority):draftPriorities.add(b.dataset.priority);renderFilterUI();}));
+document.querySelectorAll("[data-type]").forEach(b=>b.addEventListener("click",()=>{draftTypes.has(b.dataset.type)?draftTypes.delete(b.dataset.type):draftTypes.add(b.dataset.type);renderFilterUI();}));
+$("starredFilterBtn").addEventListener("click",()=>{draftStarredFocus=!draftStarredFocus;renderFilterUI();});
+$("mistakesFilterBtn").addEventListener("click",()=>{draftMistakesFocus=!draftMistakesFocus;renderFilterUI();});
+$("applyFilterBtn").addEventListener("click",()=>{clearUndo();const next=eligibleIndices(draftPriorities,draftTypes,draftMistakesFocus);if(!next.length)return;selectedPriorities=new Set(draftPriorities);selectedTypes=new Set(draftTypes);selectedStarredFocus=draftStarredFocus;selectedMistakesFocus=draftMistakesFocus;saveFilterSettings();order=shuffledIndices();pos=0;round=1;$("filterPanel").classList.add("hidden");$("filterToggle").textContent="Filter";renderFilterUI();renderCurrent();window.GermanDrillCloudSave?.();});
+$("resetFilterBtn").addEventListener("click",()=>{draftPriorities=new Set(ALL_PRIORITIES);draftTypes=new Set(ALL_TYPES);draftStarredFocus=false;draftMistakesFocus=false;renderFilterUI();});
+
+document.querySelectorAll(".article-btn").forEach(b=>b.addEventListener("click",()=>{if(mode!=="answering")return;selectedArticle=b.dataset.article;renderArticleSelection();updateCheckState();}));
+$("pluralInput").addEventListener("focus",()=>{activeInput=$("pluralInput");});$("pluralInput").addEventListener("input",updateCheckState);
+$("pluralHintBtn").addEventListener("click",()=>{if(mode!=="answering")return;hintUsed=true;$("pluralHintText").textContent=`Hint: ${current().hint}`;$("pluralHintText").classList.remove("hidden");window.GermanDrillCloudSave?.();});
+$("starBtn").addEventListener("click",()=>{if(mode!=="checked")return;const id=current().id;let message;if(starredNouns.has(id)){starredNouns.delete(id);message=`☆ Removed · ${starredNouns.size} total`;}else{starredNouns.add(id);message=`★ Starred · ${starredNouns.size} total`;}saveStars();window.GermanDrillFocusCloudMutate?.("starredNouns",id,starredNouns.has(id));renderStarButton();renderFilterUI();showStarFeedback(message);});
+$("checkBtn").addEventListener("click",checkAnswers);$("nextBtn").addEventListener("click",nextNoun);$("skipBtn").addEventListener("click",skipCurrent);$("undoSkipBtn").addEventListener("click",undoSkip);$("reshuffleBtn").addEventListener("click",reshuffle);$("resetSessionBtn").addEventListener("click",resetSession);$("reloadSessionBtn").addEventListener("click",reloadLast);
+$("clearStarsBtn").addEventListener("click",()=>openClear("stars"));$("cancelClearStarsBtn").addEventListener("click",()=>closeClear("stars"));$("confirmClearStarsBtn").addEventListener("click",()=>clearAll("stars"));$("clearStarsModal").addEventListener("click",e=>{if(e.target===$("clearStarsModal"))closeClear("stars");});
+$("clearMistakesBtn").addEventListener("click",()=>openClear("mistakes"));$("cancelClearMistakesBtn").addEventListener("click",()=>closeClear("mistakes"));$("confirmClearMistakesBtn").addEventListener("click",()=>clearAll("mistakes"));$("clearMistakesModal").addEventListener("click",e=>{if(e.target===$("clearMistakesModal"))closeClear("mistakes");});
+
+document.querySelectorAll(".char-btn").forEach(b=>{b.addEventListener("mousedown",e=>e.preventDefault());b.addEventListener("click",()=>{if(mode!=="answering")return;const target=$("pluralInput");const ch=b.dataset.char,start=typeof target.selectionStart==="number"?target.selectionStart:target.value.length,end=typeof target.selectionEnd==="number"?target.selectionEnd:target.value.length;target.value=target.value.slice(0,start)+ch+target.value.slice(end);const caret=start+ch.length;target.focus();target.setSelectionRange(caret,caret);target.dispatchEvent(new Event("input",{bubbles:true}));});});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"){if(!$("clearStarsModal").classList.contains("hidden")){closeClear("stars");return;}if(!$("clearMistakesModal").classList.contains("hidden")){closeClear("mistakes");return;}}if(e.key!=="Enter")return;if(!$("clearStarsModal").classList.contains("hidden")||!$("clearMistakesModal").classList.contains("hidden"))return;if(mode==="answering"&&!$("checkBtn").disabled)checkAnswers();else if(mode==="checked")nextNoun();});
+
+loadFocus();loadFilterSettings();renderFilterUI();order=shuffledIndices();renderCurrent();updateReload();
+</script>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-app.js";
+import { getAuth, onAuthStateChanged, signOut, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-auth.js";
+import { getFirestore, doc, getDoc, setDoc, serverTimestamp, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore.js";
+const firebaseConfig={apiKey:"AIzaSyD72gOohLLXe4wmqiXXK3dX-3uRBCL2DhU",authDomain:"german-drill.firebaseapp.com",projectId:"german-drill",storageBucket:"german-drill.firebasestorage.app",messagingSenderId:"251965473675",appId:"1:251965473675:web:f1313534036a0cf157658e"};
+const ALLOWED_UID="elW0hqe8hoXcePYOd9ySthjv3d23";
+const TRAINER_ID="a1-noun-forms",FOCUS_TRAINER_ID="a1-noun-forms-focus";
+const app=initializeApp(firebaseConfig),auth=getAuth(app),db=getFirestore(app);
+let cloudReady=false,focusCloudReady=false,saveChain=Promise.resolve(),focusChain=Promise.resolve();
+function revealTrainer(){document.documentElement.style.visibility="";}
+async function pushTrainerState(){if(!cloudReady||!auth.currentUser||auth.currentUser.uid!==ALLOWED_UID)return;const state=window.GermanDrillTrainerCloud?.capture?.();if(!state)return;try{await setDoc(doc(db,"users",ALLOWED_UID,"trainerStates",TRAINER_ID),{state,updatedAt:serverTimestamp()},{merge:true});}catch(e){console.warn("Trainer cloud save failed:",e);}}
+window.GermanDrillCloudSave=()=>{if(cloudReady)saveChain=saveChain.then(pushTrainerState,pushTrainerState);};
+window.GermanDrillFocusCloudMutate=(field,id,add)=>{if(!focusCloudReady||!["starredNouns","mistakeNouns"].includes(field))return;const ref=doc(db,"users",ALLOWED_UID,"trainerStates",FOCUS_TRAINER_ID),value=add?arrayUnion(id):arrayRemove(id);focusChain=focusChain.then(()=>setDoc(ref,{[field]:value,updatedAt:serverTimestamp()},{merge:true}),()=>setDoc(ref,{[field]:value,updatedAt:serverTimestamp()},{merge:true})).catch(e=>console.warn("Focus cloud save failed:",e));};
+window.GermanDrillFocusCloudClear=field=>{if(!focusCloudReady||!["starredNouns","mistakeNouns"].includes(field))return;const ref=doc(db,"users",ALLOWED_UID,"trainerStates",FOCUS_TRAINER_ID);focusChain=focusChain.then(()=>setDoc(ref,{[field]:[],updatedAt:serverTimestamp()},{merge:true}),()=>setDoc(ref,{[field]:[],updatedAt:serverTimestamp()},{merge:true})).catch(e=>console.warn("Focus cloud clear failed:",e));};
+async function loadFocusState(){const ref=doc(db,"users",ALLOWED_UID,"trainerStates",FOCUS_TRAINER_ID),api=window.GermanDrillFocusData,local=api?.getLocal?.()||{starredNouns:[],mistakeNouns:[]},snap=await getDoc(ref);let remote=snap.exists()?snap.data():{};if(!snap.exists()){remote={starredNouns:[...new Set(local.starredNouns)],mistakeNouns:[...new Set(local.mistakeNouns)]};await setDoc(ref,{...remote,updatedAt:serverTimestamp()},{merge:true});}api?.applyCloud?.(remote);focusCloudReady=true;}
+setPersistence(auth,browserLocalPersistence).catch(()=>{});
+onAuthStateChanged(auth,async user=>{if(!user||user.uid!==ALLOWED_UID){if(user)await signOut(auth).catch(()=>{});location.replace("./index.html");return;}const ref=doc(db,"users",ALLOWED_UID,"trainerStates",TRAINER_ID);try{await loadFocusState();}catch(e){console.warn("Focus cloud load failed; using local focus data:",e);focusCloudReady=true;}try{const snap=await getDoc(ref);if(snap.exists())window.GermanDrillTrainerCloud?.restore?.(snap.data().state);cloudReady=true;if(!snap.exists())window.GermanDrillCloudSave();}catch(e){console.warn("Trainer cloud load failed; using local state:",e);cloudReady=true;}revealTrainer();});
+</script>
+
+<script>
+if("serviceWorker" in navigator){window.addEventListener("load",()=>{navigator.serviceWorker.register("./service-worker.js",{scope:"./"}).then(r=>r.update()).catch(e=>console.warn("Service worker registration failed:",e));});}
+</script>
+</body>
+</html>
