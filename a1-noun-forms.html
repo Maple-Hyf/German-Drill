@@ -478,6 +478,13 @@
       border-color:#d6a463;
       color:#8c640b;
     }
+    .familiar-btn{
+      width:40px;min-width:40px;height:40px;padding:0;display:inline-flex;align-items:center;justify-content:center;
+      border:1px solid var(--border);border-radius:11px;background:var(--soft);color:#777;box-shadow:none;
+    }
+    .familiar-btn svg{width:21px;height:21px;display:block}
+    .familiar-btn:hover{border-color:#8faf98;color:#557a60;background:#f2f8f3}
+    .familiar-btn.familiar{background:#e5f2e8;border-color:#8fb99a;color:#477353}
     .mode-title{
       margin-top:22px;
       margin-bottom:10px;
@@ -838,6 +845,9 @@
       border-color:#9b762d;
       color:#f0ce80;
     }
+    html[data-theme="dark"] .familiar-btn{background:#30302d;border-color:#45453f;color:#aaa9a2}
+    html[data-theme="dark"] .familiar-btn:hover{background:#26332a;border-color:#5f8068;color:#a8d4b2}
+    html[data-theme="dark"] .familiar-btn.familiar{background:#26372b;border-color:#62886d;color:#b7dfc0}
     html[data-theme="dark"] input{background:#1d1d1b;color:var(--text)}
     html[data-theme="dark"] input:focus{
       border-color:#74746d;box-shadow:0 0 0 3px rgba(255,255,255,.06)
@@ -998,10 +1008,18 @@
           </div>
           <div class="star-total" id="mistakeTotalText">0 mistakes total</div>
         </div>
+        <div class="focus-block">
+          <div class="filter-chips">
+            <button type="button" class="filter-chip" id="familiarFilterBtn">✓ Familiar</button>
+            <button type="button" class="clear-stars-btn" id="clearFamiliarBtn" disabled>Clear all</button>
+          </div>
+          <div class="star-total" id="familiarTotalText">0 familiar total</div>
+        </div>
       </div>
 
       <div class="filter-actions">
         <button type="button" class="apply-filter" id="applyFilterBtn">Apply filter</button>
+        <button type="button" class="reset-filter" id="noneFilterBtn">None</button>
         <button type="button" class="reset-filter" id="resetFilterBtn">All 150</button>
         <span class="filter-status" id="filterStatus"></span>
       </div>
@@ -1064,6 +1082,7 @@
         <div class="star-action">
           <span class="star-feedback" id="starFeedback" aria-live="polite"></span>
           <button type="button" class="star-btn" id="starBtn" aria-label="Star this noun" title="Star this noun">☆</button>
+          <button type="button" class="familiar-btn" id="familiarBtn" aria-label="Mark this noun as familiar" title="Mark as Familiar"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="m8.4 12.1 2.2 2.3 5-5.1" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
         </div>
       </div>
       <div class="mistake-feedback" id="mistakeFeedback" aria-live="polite"></div>
@@ -1088,7 +1107,7 @@
     <div class="hint" id="pageHint">Choose <b>der / die / das</b>, type the full plural noun, then check both together. Genitiv Singular stays visible for repeated exposure.</div>
   </div>
 
-  <div class="footer">150 A1 nouns · Core 100 + Extended 50 · article + Genitiv singular + plural · starred + mistakes focus</div>
+  <div class="footer">150 A1 nouns · Core 100 + Extended 50 · article + Genitiv singular + plural · starred + mistakes + familiar focus</div>
 </div>
 
 <div class="modal-backdrop hidden" id="clearStarsModal" role="dialog" aria-modal="true" aria-labelledby="clearStarsTitle">
@@ -1113,6 +1132,17 @@
   </div>
 </div>
 
+<div class="modal-backdrop hidden" id="clearFamiliarModal" role="dialog" aria-modal="true" aria-labelledby="clearFamiliarTitle">
+  <div class="confirm-modal">
+    <h2 id="clearFamiliarTitle">Clear all familiar nouns?</h2>
+    <p id="clearFamiliarMessage"></p>
+    <div class="confirm-actions">
+      <button type="button" class="modal-cancel" id="cancelClearFamiliarBtn">Cancel</button>
+      <button type="button" class="modal-clear" id="confirmClearFamiliarBtn" disabled>Clear in 5s</button>
+    </div>
+  </div>
+</div>
+
 <script>
 const nouns = [{"id":"der-mann","article":"der","n":"Mann","en":"man","gen":"des Mannes","plural":"Männer","hint":"Umlaut + -er","types":["er","umlaut"],"level":"Core A1"},{"id":"die-frau","article":"die","n":"Frau","en":"woman","gen":"der Frau","plural":"Frauen","hint":"-(e)n","types":["en"],"level":"Core A1"},{"id":"das-kind","article":"das","n":"Kind","en":"child","gen":"des Kindes","plural":"Kinder","hint":"-er","types":["er"],"level":"Core A1"},{"id":"der-junge","article":"der","n":"Junge","en":"boy","gen":"des Jungen","plural":"Jungen","hint":"-(e)n","types":["en","ndecl"],"level":"Core A1"},{"id":"das-mädchen","article":"das","n":"Mädchen","en":"girl","gen":"des Mädchens","plural":"Mädchen","hint":"no ending","types":["zero"],"level":"Core A1"},{"id":"der-vater","article":"der","n":"Vater","en":"father","gen":"des Vaters","plural":"Väter","hint":"Umlaut, no ending","types":["zero","umlaut"],"level":"Core A1"},{"id":"die-mutter","article":"die","n":"Mutter","en":"mother","gen":"der Mutter","plural":"Mütter","hint":"Umlaut, no ending","types":["zero","umlaut"],"level":"Core A1"},{"id":"der-bruder","article":"der","n":"Bruder","en":"brother","gen":"des Bruders","plural":"Brüder","hint":"Umlaut, no ending","types":["zero","umlaut"],"level":"Core A1"},{"id":"die-schwester","article":"die","n":"Schwester","en":"sister","gen":"der Schwester","plural":"Schwestern","hint":"-(e)n","types":["en"],"level":"Core A1"},{"id":"die-familie","article":"die","n":"Familie","en":"family","gen":"der Familie","plural":"Familien","hint":"-(e)n","types":["en"],"level":"Core A1"},{"id":"der-freund","article":"der","n":"Freund","en":"friend","gen":"des Freundes","plural":"Freunde","hint":"-e","types":["e"],"level":"Core A1"},{"id":"die-freundin","article":"die","n":"Freundin","en":"female friend","gen":"der Freundin","plural":"Freundinnen","hint":"-innen","types":["en"],"level":"Core A1"},{"id":"der-name","article":"der","n":"Name","en":"name","gen":"des Namens","plural":"Namen","hint":"-(e)n","types":["en"],"level":"Core A1"},{"id":"der-mensch","article":"der","n":"Mensch","en":"person / human","gen":"des Menschen","plural":"Menschen","hint":"-(e)n","types":["en","ndecl"],"level":"Core A1"},{"id":"der-student","article":"der","n":"Student","en":"student","gen":"des Studenten","plural":"Studenten","hint":"-(e)n","types":["en","ndecl"],"level":"Core A1"},{"id":"der-lehrer","article":"der","n":"Lehrer","en":"teacher","gen":"des Lehrers","plural":"Lehrer","hint":"no ending","types":["zero"],"level":"Core A1"},{"id":"die-lehrerin","article":"die","n":"Lehrerin","en":"female teacher","gen":"der Lehrerin","plural":"Lehrerinnen","hint":"-innen","types":["en"],"level":"Core A1"},{"id":"der-arzt","article":"der","n":"Arzt","en":"doctor","gen":"des Arztes","plural":"Ärzte","hint":"Umlaut + -e","types":["e","umlaut"],"level":"Core A1"},{"id":"die-ärztin","article":"die","n":"Ärztin","en":"female doctor","gen":"der Ärztin","plural":"Ärztinnen","hint":"-innen","types":["en"],"level":"Core A1"},{"id":"der-kunde","article":"der","n":"Kunde","en":"customer","gen":"des Kunden","plural":"Kunden","hint":"-(e)n","types":["en","ndecl"],"level":"Core A1"},{"id":"der-kollege","article":"der","n":"Kollege","en":"colleague","gen":"des Kollegen","plural":"Kollegen","hint":"-(e)n","types":["en","ndecl"],"level":"Core A1"},{"id":"der-chef","article":"der","n":"Chef","en":"boss","gen":"des Chefs","plural":"Chefs","hint":"-s","types":["s"],"level":"Core A1"},{"id":"der-nachbar","article":"der","n":"Nachbar","en":"neighbor","gen":"des Nachbarn","plural":"Nachbarn","hint":"-(e)n","types":["en"],"level":"Core A1"},{"id":"das-baby","article":"das","n":"Baby","en":"baby","gen":"des Babys","plural":"Babys","hint":"-s","types":["s"],"level":"Core A1"},{"id":"das-haus","article":"das","n":"Haus","en":"house","gen":"des Hauses","plural":"Häuser","hint":"Umlaut + -er","types":["er","umlaut"],"level":"Core A1"},{"id":"die-wohnung","article":"die","n":"Wohnung","en":"apartment","gen":"der Wohnung","plural":"Wohnungen","hint":"-(e)n","types":["en"],"level":"Core A1"},{"id":"das-zimmer","article":"das","n":"Zimmer","en":"room","gen":"des Zimmers","plural":"Zimmer","hint":"no ending","types":["zero"],"level":"Core A1"},{"id":"die-küche","article":"die","n":"Küche","en":"kitchen","gen":"der Küche","plural":"Küchen","hint":"-(e)n","types":["en"],"level":"Core A1"},{"id":"das-bad","article":"das","n":"Bad","en":"bathroom","gen":"des Bades","plural":"Bäder","hint":"Umlaut + -er","types":["er","umlaut"],"level":"Core A1"},{"id":"die-tür","article":"die","n":"Tür","en":"door","gen":"der Tür","plural":"Türen","hint":"-(e)n","types":["en"],"level":"Core A1"},{"id":"das-fenster","article":"das","n":"Fenster","en":"window","gen":"des Fensters","plural":"Fenster","hint":"no ending","types":["zero"],"level":"Core A1"},{"id":"der-tisch","article":"der","n":"Tisch","en":"table","gen":"des Tisches","plural":"Tische","hint":"-e","types":["e"],"level":"Core A1"},{"id":"der-stuhl","article":"der","n":"Stuhl","en":"chair","gen":"des Stuhls","plural":"Stühle","hint":"Umlaut + -e","types":["e","umlaut"],"level":"Core A1"},{"id":"das-bett","article":"das","n":"Bett","en":"bed","gen":"des Bettes","plural":"Betten","hint":"-(e)n","types":["en"],"level":"Core A1"},{"id":"der-schrank","article":"der","n":"Schrank","en":"wardrobe / cabinet","gen":"des Schranks","plural":"Schränke","hint":"Umlaut + -e","types":["e","umlaut"],"level":"Core A1"},{"id":"die-lampe","article":"die","n":"Lampe","en":"lamp","gen":"der Lampe","plural":"Lampen","hint":"-(e)n","types":["en"],"level":"Core A1"},{"id":"das-sofa","article":"das","n":"Sofa","en":"sofa","gen":"des Sofas","plural":"Sofas","hint":"-s","types":["s"],"level":"Core A1"},{"id":"der-garten","article":"der","n":"Garten","en":"garden","gen":"des Gartens","plural":"Gärten","hint":"Umlaut, no ending","types":["zero","umlaut"],"level":"Core A1"},{"id":"die-terrasse","article":"die","n":"Terrasse","en":"terrace","gen":"der Terrasse","plural":"Terrassen","hint":"-(e)n","types":["en"],"level":"Core A1"},{"id":"der-schlüssel","article":"der","n":"Schlüssel","en":"key","gen":"des Schlüssels","plural":"Schlüssel","hint":"no ending","types":["zero"],"level":"Core A1"},{"id":"die-schule","article":"die","n":"Schule","en":"school","gen":"der Schule","plural":"Schulen","hint":"-(e)n","types":["en"],"level":"Core A1"},{"id":"die-universität","article":"die","n":"Universität","en":"university","gen":"der Universität","plural":"Universitäten","hint":"-(e)n","types":["en"],"level":"Core A1"},{"id":"der-kurs","article":"der","n":"Kurs","en":"course","gen":"des Kurses","plural":"Kurse","hint":"-e","types":["e"],"level":"Core A1"},{"id":"die-klasse","article":"die","n":"Klasse","en":"class","gen":"der Klasse","plural":"Klassen","hint":"-(e)n","types":["en"],"level":"Core A1"},{"id":"das-buch","article":"das","n":"Buch","en":"book","gen":"des Buches","plural":"Bücher","hint":"Umlaut + -er","types":["er","umlaut"],"level":"Core A1"},{"id":"das-heft","article":"das","n":"Heft","en":"notebook","gen":"des Heftes","plural":"Hefte","hint":"-e","types":["e"],"level":"Core A1"},{"id":"die-seite","article":"die","n":"Seite","en":"page","gen":"der Seite","plural":"Seiten","hint":"-(e)n","types":["en"],"level":"Core A1"},{"id":"das-wort","article":"das","n":"Wort","en":"word","gen":"des Wortes","plural":"Wörter","hint":"Umlaut + -er","types":["er","umlaut"],"level":"Core A1"},{"id":"der-satz","article":"der","n":"Satz","en":"sentence","gen":"des Satzes","plural":"Sätze","hint":"Umlaut + -e","types":["e","umlaut"],"level":"Core A1"},{"id":"die-frage","article":"die","n":"Frage","en":"question","gen":"der Frage","plural":"Fragen","hint":"-(e)n","types":["en"],"level":"Core A1"},{"id":"die-antwort","article":"die","n":"Antwort","en":"answer","gen":"der Antwort","plural":"Antworten","hint":"-(e)n","types":["en"],"level":"Core A1"},{"id":"die-aufgabe","article":"die","n":"Aufgabe","en":"exercise / task","gen":"der Aufgabe","plural":"Aufgaben","hint":"-(e)n","types":["en"],"level":"Core A1"},{"id":"die-sprache","article":"die","n":"Sprache","en":"language","gen":"der Sprache","plural":"Sprachen","hint":"-(e)n","types":["en"],"level":"Core A1"},{"id":"die-arbeit","article":"die","n":"Arbeit","en":"work / job","gen":"der Arbeit","plural":"Arbeiten","hint":"-(e)n","types":["en"],"level":"Core A1"},{"id":"der-beruf","article":"der","n":"Beruf","en":"profession / job","gen":"des Berufs","plural":"Berufe","hint":"-e","types":["e"],"level":"Core A1"},{"id":"das-büro","article":"das","n":"Büro","en":"office","gen":"des Büros","plural":"Büros","hint":"-s","types":["s"],"level":"Core A1"},{"id":"die-firma","article":"die","n":"Firma","en":"company","gen":"der Firma","plural":"Firmen","hint":"-(e)n","types":["en"],"level":"Core A1"},{"id":"der-tag","article":"der","n":"Tag","en":"day","gen":"des Tages","plural":"Tage","hint":"-e","types":["e"],"level":"Core A1"},{"id":"die-woche","article":"die","n":"Woche","en":"week","gen":"der Woche","plural":"Wochen","hint":"-(e)n","types":["en"],"level":"Core A1"},{"id":"der-monat","article":"der","n":"Monat","en":"month","gen":"des Monats","plural":"Monate","hint":"-e","types":["e"],"level":"Core A1"},{"id":"das-jahr","article":"das","n":"Jahr","en":"year","gen":"des Jahres","plural":"Jahre","hint":"-e","types":["e"],"level":"Core A1"},{"id":"die-uhr","article":"die","n":"Uhr","en":"clock / watch","gen":"der Uhr","plural":"Uhren","hint":"-(e)n","types":["en"],"level":"Core A1"},{"id":"die-stunde","article":"die","n":"Stunde","en":"hour","gen":"der Stunde","plural":"Stunden","hint":"-(e)n","types":["en"],"level":"Core A1"},{"id":"die-minute","article":"die","n":"Minute","en":"minute","gen":"der Minute","plural":"Minuten","hint":"-(e)n","types":["en"],"level":"Core A1"},{"id":"der-morgen","article":"der","n":"Morgen","en":"morning","gen":"des Morgens","plural":"Morgen","hint":"no ending","types":["zero"],"level":"Core A1"},{"id":"der-abend","article":"der","n":"Abend","en":"evening","gen":"des Abends","plural":"Abende","hint":"-e","types":["e"],"level":"Core A1"},{"id":"die-nacht","article":"die","n":"Nacht","en":"night","gen":"der Nacht","plural":"Nächte","hint":"Umlaut + -e","types":["e","umlaut"],"level":"Core A1"},{"id":"das-wochenende","article":"das","n":"Wochenende","en":"weekend","gen":"des Wochenendes","plural":"Wochenenden","hint":"-(e)n","types":["en"],"level":"Core A1"},{"id":"der-geburtstag","article":"der","n":"Geburtstag","en":"birthday","gen":"des Geburtstags","plural":"Geburtstage","hint":"-e","types":["e"],"level":"Core A1"},{"id":"die-stadt","article":"die","n":"Stadt","en":"city","gen":"der Stadt","plural":"Städte","hint":"Umlaut + -e","types":["e","umlaut"],"level":"Core A1"},{"id":"das-land","article":"das","n":"Land","en":"country","gen":"des Landes","plural":"Länder","hint":"Umlaut + -er","types":["er","umlaut"],"level":"Core A1"},{"id":"die-straße","article":"die","n":"Straße","en":"street","gen":"der Straße","plural":"Straßen","hint":"-(e)n","types":["en"],"level":"Core A1"},{"id":"der-platz","article":"der","n":"Platz","en":"square / place","gen":"des Platzes","plural":"Plätze","hint":"Umlaut + -e","types":["e","umlaut"],"level":"Core A1"},{"id":"der-bahnhof","article":"der","n":"Bahnhof","en":"train station","gen":"des Bahnhofs","plural":"Bahnhöfe","hint":"Umlaut + -e","types":["e","umlaut"],"level":"Core A1"},{"id":"der-flughafen","article":"der","n":"Flughafen","en":"airport","gen":"des Flughafens","plural":"Flughäfen","hint":"Umlaut, no ending","types":["zero","umlaut"],"level":"Core A1"},{"id":"das-hotel","article":"das","n":"Hotel","en":"hotel","gen":"des Hotels","plural":"Hotels","hint":"-s","types":["s"],"level":"Core A1"},{"id":"das-restaurant","article":"das","n":"Restaurant","en":"restaurant","gen":"des Restaurants","plural":"Restaurants","hint":"-s","types":["s"],"level":"Core A1"},{"id":"das-café","article":"das","n":"Café","en":"café","gen":"des Cafés","plural":"Cafés","hint":"-s","types":["s"],"level":"Core A1"},{"id":"das-geschäft","article":"das","n":"Geschäft","en":"shop / business","gen":"des Geschäfts","plural":"Geschäfte","hint":"-e","types":["e"],"level":"Core A1"},{"id":"der-supermarkt","article":"der","n":"Supermarkt","en":"supermarket","gen":"des Supermarkts","plural":"Supermärkte","hint":"Umlaut + -e","types":["e","umlaut"],"level":"Core A1"},{"id":"der-markt","article":"der","n":"Markt","en":"market","gen":"des Marktes","plural":"Märkte","hint":"Umlaut + -e","types":["e","umlaut"],"level":"Core A1"},{"id":"die-bank","article":"die","n":"Bank","en":"bank","gen":"der Bank","plural":"Banken","hint":"-(e)n","types":["en"],"level":"Core A1"},{"id":"das-auto","article":"das","n":"Auto","en":"car","gen":"des Autos","plural":"Autos","hint":"-s","types":["s"],"level":"Core A1"},{"id":"der-bus","article":"der","n":"Bus","en":"bus","gen":"des Busses","plural":"Busse","hint":"-e","types":["e"],"level":"Core A1"},{"id":"der-zug","article":"der","n":"Zug","en":"train","gen":"des Zuges","plural":"Züge","hint":"Umlaut + -e","types":["e","umlaut"],"level":"Core A1"},{"id":"das-fahrrad","article":"das","n":"Fahrrad","en":"bicycle","gen":"des Fahrrads","plural":"Fahrräder","hint":"Umlaut + -er","types":["er","umlaut"],"level":"Core A1"},{"id":"das-ticket","article":"das","n":"Ticket","en":"ticket","gen":"des Tickets","plural":"Tickets","hint":"-s","types":["s"],"level":"Core A1"},{"id":"die-reise","article":"die","n":"Reise","en":"trip / journey","gen":"der Reise","plural":"Reisen","hint":"-(e)n","types":["en"],"level":"Core A1"},{"id":"der-apfel","article":"der","n":"Apfel","en":"apple","gen":"des Apfels","plural":"Äpfel","hint":"Umlaut, no ending","types":["zero","umlaut"],"level":"Core A1"},{"id":"die-banane","article":"die","n":"Banane","en":"banana","gen":"der Banane","plural":"Bananen","hint":"-(e)n","types":["en"],"level":"Core A1"},{"id":"die-orange","article":"die","n":"Orange","en":"orange","gen":"der Orange","plural":"Orangen","hint":"-(e)n","types":["en"],"level":"Core A1"},{"id":"die-kartoffel","article":"die","n":"Kartoffel","en":"potato","gen":"der Kartoffel","plural":"Kartoffeln","hint":"-(e)n","types":["en"],"level":"Core A1"},{"id":"die-tomate","article":"die","n":"Tomate","en":"tomato","gen":"der Tomate","plural":"Tomaten","hint":"-(e)n","types":["en"],"level":"Core A1"},{"id":"das-ei","article":"das","n":"Ei","en":"egg","gen":"des Eies","plural":"Eier","hint":"-er","types":["er"],"level":"Core A1"},{"id":"der-kuchen","article":"der","n":"Kuchen","en":"cake","gen":"des Kuchens","plural":"Kuchen","hint":"no ending","types":["zero"],"level":"Core A1"},{"id":"das-getränk","article":"das","n":"Getränk","en":"drink / beverage","gen":"des Getränks","plural":"Getränke","hint":"-e","types":["e"],"level":"Core A1"},{"id":"die-flasche","article":"die","n":"Flasche","en":"bottle","gen":"der Flasche","plural":"Flaschen","hint":"-(e)n","types":["en"],"level":"Core A1"},{"id":"die-tasse","article":"die","n":"Tasse","en":"cup","gen":"der Tasse","plural":"Tassen","hint":"-(e)n","types":["en"],"level":"Core A1"},{"id":"das-glas","article":"das","n":"Glas","en":"glass","gen":"des Glases","plural":"Gläser","hint":"Umlaut + -er","types":["er","umlaut"],"level":"Core A1"},{"id":"der-teller","article":"der","n":"Teller","en":"plate","gen":"des Tellers","plural":"Teller","hint":"no ending","types":["zero"],"level":"Core A1"},{"id":"das-messer","article":"das","n":"Messer","en":"knife","gen":"des Messers","plural":"Messer","hint":"no ending","types":["zero"],"level":"Extended A1"},{"id":"die-gabel","article":"die","n":"Gabel","en":"fork","gen":"der Gabel","plural":"Gabeln","hint":"-(e)n","types":["en"],"level":"Extended A1"},{"id":"der-löffel","article":"der","n":"Löffel","en":"spoon","gen":"des Löffels","plural":"Löffel","hint":"no ending","types":["zero"],"level":"Extended A1"},{"id":"der-topf","article":"der","n":"Topf","en":"pot","gen":"des Topfes","plural":"Töpfe","hint":"Umlaut + -e","types":["e","umlaut"],"level":"Extended A1"},{"id":"die-pfanne","article":"die","n":"Pfanne","en":"pan","gen":"der Pfanne","plural":"Pfannen","hint":"-(e)n","types":["en"],"level":"Extended A1"},{"id":"der-kühlschrank","article":"der","n":"Kühlschrank","en":"refrigerator","gen":"des Kühlschranks","plural":"Kühlschränke","hint":"Umlaut + -e","types":["e","umlaut"],"level":"Extended A1"},{"id":"die-waschmaschine","article":"die","n":"Waschmaschine","en":"washing machine","gen":"der Waschmaschine","plural":"Waschmaschinen","hint":"-(e)n","types":["en"],"level":"Extended A1"},{"id":"der-computer","article":"der","n":"Computer","en":"computer","gen":"des Computers","plural":"Computer","hint":"no ending","types":["zero"],"level":"Extended A1"},{"id":"das-handy","article":"das","n":"Handy","en":"mobile phone","gen":"des Handys","plural":"Handys","hint":"-s","types":["s"],"level":"Extended A1"},{"id":"das-telefon","article":"das","n":"Telefon","en":"telephone","gen":"des Telefons","plural":"Telefone","hint":"-e","types":["e"],"level":"Extended A1"},{"id":"das-foto","article":"das","n":"Foto","en":"photo","gen":"des Fotos","plural":"Fotos","hint":"-s","types":["s"],"level":"Extended A1"},{"id":"das-bild","article":"das","n":"Bild","en":"picture","gen":"des Bildes","plural":"Bilder","hint":"-er","types":["er"],"level":"Extended A1"},{"id":"der-brief","article":"der","n":"Brief","en":"letter","gen":"des Briefes","plural":"Briefe","hint":"-e","types":["e"],"level":"Extended A1"},{"id":"die-e-mail","article":"die","n":"E-Mail","en":"email","gen":"der E-Mail","plural":"E-Mails","hint":"-s","types":["s"],"level":"Extended A1"},{"id":"die-zeitung","article":"die","n":"Zeitung","en":"newspaper","gen":"der Zeitung","plural":"Zeitungen","hint":"-(e)n","types":["en"],"level":"Extended A1"},{"id":"die-karte","article":"die","n":"Karte","en":"card / map","gen":"der Karte","plural":"Karten","hint":"-(e)n","types":["en"],"level":"Extended A1"},{"id":"der-plan","article":"der","n":"Plan","en":"plan","gen":"des Plans","plural":"Pläne","hint":"Umlaut + -e","types":["e","umlaut"],"level":"Extended A1"},{"id":"der-termin","article":"der","n":"Termin","en":"appointment","gen":"des Termins","plural":"Termine","hint":"-e","types":["e"],"level":"Extended A1"},{"id":"die-pause","article":"die","n":"Pause","en":"break","gen":"der Pause","plural":"Pausen","hint":"-(e)n","types":["en"],"level":"Extended A1"},{"id":"das-problem","article":"das","n":"Problem","en":"problem","gen":"des Problems","plural":"Probleme","hint":"-e","types":["e"],"level":"Extended A1"},{"id":"die-idee","article":"die","n":"Idee","en":"idea","gen":"der Idee","plural":"Ideen","hint":"-(e)n","types":["en"],"level":"Extended A1"},{"id":"das-beispiel","article":"das","n":"Beispiel","en":"example","gen":"des Beispiels","plural":"Beispiele","hint":"-e","types":["e"],"level":"Extended A1"},{"id":"die-nummer","article":"die","n":"Nummer","en":"number","gen":"der Nummer","plural":"Nummern","hint":"-(e)n","types":["en"],"level":"Extended A1"},{"id":"die-adresse","article":"die","n":"Adresse","en":"address","gen":"der Adresse","plural":"Adressen","hint":"-(e)n","types":["en"],"level":"Extended A1"},{"id":"der-preis","article":"der","n":"Preis","en":"price","gen":"des Preises","plural":"Preise","hint":"-e","types":["e"],"level":"Extended A1"},{"id":"der-euro","article":"der","n":"Euro","en":"euro","gen":"des Euros","plural":"Euros","hint":"-s","types":["s"],"level":"Extended A1"},{"id":"die-rechnung","article":"die","n":"Rechnung","en":"bill / invoice","gen":"der Rechnung","plural":"Rechnungen","hint":"-(e)n","types":["en"],"level":"Extended A1"},{"id":"der-verkäufer","article":"der","n":"Verkäufer","en":"salesperson","gen":"des Verkäufers","plural":"Verkäufer","hint":"no ending","types":["zero"],"level":"Extended A1"},{"id":"die-verkäuferin","article":"die","n":"Verkäuferin","en":"saleswoman","gen":"der Verkäuferin","plural":"Verkäuferinnen","hint":"-innen","types":["en"],"level":"Extended A1"},{"id":"der-polizist","article":"der","n":"Polizist","en":"police officer","gen":"des Polizisten","plural":"Polizisten","hint":"-(e)n","types":["en","ndecl"],"level":"Extended A1"},{"id":"der-tourist","article":"der","n":"Tourist","en":"tourist","gen":"des Touristen","plural":"Touristen","hint":"-(e)n","types":["en","ndecl"],"level":"Extended A1"},{"id":"der-gast","article":"der","n":"Gast","en":"guest","gen":"des Gastes","plural":"Gäste","hint":"Umlaut + -e","types":["e","umlaut"],"level":"Extended A1"},{"id":"der-hund","article":"der","n":"Hund","en":"dog","gen":"des Hundes","plural":"Hunde","hint":"-e","types":["e"],"level":"Extended A1"},{"id":"die-katze","article":"die","n":"Katze","en":"cat","gen":"der Katze","plural":"Katzen","hint":"-(e)n","types":["en"],"level":"Extended A1"},{"id":"der-vogel","article":"der","n":"Vogel","en":"bird","gen":"des Vogels","plural":"Vögel","hint":"Umlaut, no ending","types":["zero","umlaut"],"level":"Extended A1"},{"id":"das-tier","article":"das","n":"Tier","en":"animal","gen":"des Tieres","plural":"Tiere","hint":"-e","types":["e"],"level":"Extended A1"},{"id":"der-kopf","article":"der","n":"Kopf","en":"head","gen":"des Kopfes","plural":"Köpfe","hint":"Umlaut + -e","types":["e","umlaut"],"level":"Extended A1"},{"id":"die-hand","article":"die","n":"Hand","en":"hand","gen":"der Hand","plural":"Hände","hint":"Umlaut + -e","types":["e","umlaut"],"level":"Extended A1"},{"id":"das-auge","article":"das","n":"Auge","en":"eye","gen":"des Auges","plural":"Augen","hint":"-(e)n","types":["en"],"level":"Extended A1"},{"id":"das-ohr","article":"das","n":"Ohr","en":"ear","gen":"des Ohres","plural":"Ohren","hint":"-(e)n","types":["en"],"level":"Extended A1"},{"id":"der-zahn","article":"der","n":"Zahn","en":"tooth","gen":"des Zahnes","plural":"Zähne","hint":"Umlaut + -e","types":["e","umlaut"],"level":"Extended A1"},{"id":"der-fuß","article":"der","n":"Fuß","en":"foot","gen":"des Fußes","plural":"Füße","hint":"Umlaut + -e","types":["e","umlaut"],"level":"Extended A1"},{"id":"die-jacke","article":"die","n":"Jacke","en":"jacket","gen":"der Jacke","plural":"Jacken","hint":"-(e)n","types":["en"],"level":"Extended A1"},{"id":"die-hose","article":"die","n":"Hose","en":"trousers","gen":"der Hose","plural":"Hosen","hint":"-(e)n","types":["en"],"level":"Extended A1"},{"id":"der-schuh","article":"der","n":"Schuh","en":"shoe","gen":"des Schuhs","plural":"Schuhe","hint":"-e","types":["e"],"level":"Extended A1"},{"id":"das-kleid","article":"das","n":"Kleid","en":"dress","gen":"des Kleides","plural":"Kleider","hint":"-er","types":["er"],"level":"Extended A1"},{"id":"das-hemd","article":"das","n":"Hemd","en":"shirt","gen":"des Hemdes","plural":"Hemden","hint":"-(e)n","types":["en"],"level":"Extended A1"},{"id":"die-tasche","article":"die","n":"Tasche","en":"bag","gen":"der Tasche","plural":"Taschen","hint":"-(e)n","types":["en"],"level":"Extended A1"},{"id":"der-pullover","article":"der","n":"Pullover","en":"sweater","gen":"des Pullovers","plural":"Pullover","hint":"no ending","types":["zero"],"level":"Extended A1"},{"id":"die-brille","article":"die","n":"Brille","en":"glasses","gen":"der Brille","plural":"Brillen","hint":"-(e)n","types":["en"],"level":"Extended A1"}];
 
@@ -1130,6 +1160,7 @@ const TYPE_LABELS={
 const FILTER_STORAGE_KEY="german-drill-a1-noun-filter-v1";
 const STAR_STORAGE_KEY="german-drill-a1-noun-starred-v1";
 const MISTAKE_STORAGE_KEY="german-drill-a1-noun-mistakes-v1";
+const FAMILIAR_STORAGE_KEY="german-drill-a1-noun-familiar-v1";
 const SESSION_RESET_BACKUP_KEY="german-drill-a1-noun-reset-backup-v1";
 const CLEAR_DELAY_SECONDS=5;
 
@@ -1139,13 +1170,14 @@ let draftPriorities=new Set(ALL_PRIORITIES);
 let draftTypes=new Set(ALL_TYPES);
 let selectedStarredFocus=false,draftStarredFocus=false;
 let selectedMistakesFocus=false,draftMistakesFocus=false;
-let starredNouns=new Set(),mistakeNouns=new Set();
+let selectedFamiliarFocus=false,draftFamiliarFocus=false;
+let starredNouns=new Set(),mistakeNouns=new Set(),familiarNouns=new Set();
 let order=[],pos=0,round=1;
-let selectedArticle="",hintUsed=false,mode="answering",lastResult=null,activeInput=null;
+let selectedArticle="",hintUsed=false,hintVisible=false,mode="answering",lastResult=null,activeInput=null;
 let undoSkipState=null;
 let starFeedbackTimer=null;
-let clearStarsTimer=null,clearMistakesTimer=null;
-let clearStarsValue=CLEAR_DELAY_SECONDS,clearMistakesValue=CLEAR_DELAY_SECONDS;
+let clearStarsTimer=null,clearMistakesTimer=null,clearFamiliarTimer=null;
+let clearStarsValue=CLEAR_DELAY_SECONDS,clearMistakesValue=CLEAR_DELAY_SECONDS,clearFamiliarValue=CLEAR_DELAY_SECONDS;
 
 const $=id=>document.getElementById(id);
 function current(){return nouns[order[pos]];}
@@ -1159,9 +1191,10 @@ function loadSet(key){
   }catch{return new Set();}
 }
 function saveSet(key,set){try{localStorage.setItem(key,JSON.stringify([...set]));}catch{}}
-function loadFocus(){starredNouns=loadSet(STAR_STORAGE_KEY);mistakeNouns=loadSet(MISTAKE_STORAGE_KEY);}
+function loadFocus(){starredNouns=loadSet(STAR_STORAGE_KEY);mistakeNouns=loadSet(MISTAKE_STORAGE_KEY);familiarNouns=loadSet(FAMILIAR_STORAGE_KEY);for(const id of mistakeNouns)familiarNouns.delete(id);saveSet(FAMILIAR_STORAGE_KEY,familiarNouns);}
 function saveStars(){saveSet(STAR_STORAGE_KEY,starredNouns);}
 function saveMistakes(){saveSet(MISTAKE_STORAGE_KEY,mistakeNouns);}
+function saveFamiliar(){saveSet(FAMILIAR_STORAGE_KEY,familiarNouns);}
 
 function isStarred(item=current()){return !!item&&starredNouns.has(item.id);}
 function renderStarButton(){
@@ -1169,6 +1202,8 @@ function renderStarButton(){
   const on=isStarred();b.textContent=on?"★":"☆";b.classList.toggle("starred",on);
   b.setAttribute("aria-label",on?"Remove star from this noun":"Star this noun");b.title=on?"Remove star":"Star this noun";
 }
+function isFamiliar(item=current()){return !!item&&familiarNouns.has(item.id);}
+function renderFamiliarButton(){const b=$("familiarBtn");if(!b)return;const on=isFamiliar();b.classList.toggle("familiar",on);b.setAttribute("aria-label",on?"Remove Familiar from this noun":"Mark this noun as familiar");b.title=on?"Remove Familiar":"Mark as Familiar";}
 function showStarFeedback(message){
   const el=$("starFeedback");if(!el)return;
   if(starFeedbackTimer)clearTimeout(starFeedbackTimer);
@@ -1178,18 +1213,16 @@ function showStarFeedback(message){
 function renderFocusManagement(){
   $("starTotalText").textContent=`${starredNouns.size} starred total`;
   $("mistakeTotalText").textContent=`${mistakeNouns.size} mistakes total`;
+  $("familiarTotalText").textContent=`${familiarNouns.size} familiar total`;
   $("clearStarsBtn").disabled=starredNouns.size===0;
   $("clearMistakesBtn").disabled=mistakeNouns.size===0;
+  $("clearFamiliarBtn").disabled=familiarNouns.size===0;
 }
 
-function hasAnySelection(priorities,types,starred,mistakes){return priorities.size>0||types.size>0||starred||mistakes;}
-function eligibleIndices(priorities=selectedPriorities,types=selectedTypes,mistakes=selectedMistakesFocus){
+function hasAnySelection(priorities,types,starred,mistakes,familiar){return priorities.size>0||types.size>0||starred||mistakes||familiar;}
+function eligibleIndices(priorities=selectedPriorities,types=selectedTypes,mistakes=selectedMistakesFocus,familiar=selectedFamiliarFocus){
   const lp=priorities.size>0,lt=types.size>0;
-  return nouns.map((item,i)=>({item,i})).filter(({item})=>
-    (!lp||priorities.has(item.level))&&
-    (!lt||item.types.some(t=>types.has(t)))&&
-    (!mistakes||mistakeNouns.has(item.id))
-  ).map(({i})=>i);
+  return nouns.map((item,i)=>({item,i})).filter(({item})=>{const fam=familiarNouns.has(item.id);return (!lp||priorities.has(item.level))&&(!lt||item.types.some(t=>types.has(t)))&&(!mistakes||mistakeNouns.has(item.id))&&(familiar?fam:!fam);}).map(({i})=>i);
 }
 function shuffleArray(arr){const out=[...arr];for(let i=out.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[out[i],out[j]]=[out[j],out[i]];}return out;}
 function shuffledIndices(previousLast=null){
@@ -1215,32 +1248,34 @@ function loadFilterSettings(){
     if(s){
       if(Array.isArray(s.priorities))selectedPriorities=new Set(s.priorities.filter(x=>ALL_PRIORITIES.includes(x)));
       if(Array.isArray(s.types))selectedTypes=new Set(s.types.filter(x=>ALL_TYPES.includes(x)));
-      selectedStarredFocus=!!s.starredFocus;selectedMistakesFocus=!!s.mistakesFocus;
+      selectedStarredFocus=!!s.starredFocus;selectedMistakesFocus=!!s.mistakesFocus;selectedFamiliarFocus=!!s.familiarFocus;if(selectedFamiliarFocus)selectedMistakesFocus=false;
     }
   }catch{}
   draftPriorities=new Set(selectedPriorities);draftTypes=new Set(selectedTypes);
-  draftStarredFocus=selectedStarredFocus;draftMistakesFocus=selectedMistakesFocus;
+  draftStarredFocus=selectedStarredFocus;draftMistakesFocus=selectedMistakesFocus;draftFamiliarFocus=selectedFamiliarFocus;
 }
-function saveFilterSettings(){try{localStorage.setItem(FILTER_STORAGE_KEY,JSON.stringify({priorities:[...selectedPriorities],types:[...selectedTypes],starredFocus:selectedStarredFocus,mistakesFocus:selectedMistakesFocus}));}catch{}}
+function saveFilterSettings(){try{localStorage.setItem(FILTER_STORAGE_KEY,JSON.stringify({priorities:[...selectedPriorities],types:[...selectedTypes],starredFocus:selectedStarredFocus,mistakesFocus:selectedMistakesFocus,familiarFocus:selectedFamiliarFocus}));}catch{}}
 function filterSummaryText(){
   const count=eligibleIndices().length;
   let p=selectedPriorities.size===0?"All priorities":selectedPriorities.size===2?"Core + Extended":[...selectedPriorities][0];
   let t=selectedTypes.size===0||selectedTypes.size===ALL_TYPES.length?"All types":selectedTypes.size<=2?[...selectedTypes].map(k=>TYPE_LABELS[k].split(" / ")[0]).join(" + "):`${selectedTypes.size} types`;
-  const f=[];if(selectedStarredFocus)f.push("★ Starred first");if(selectedMistakesFocus)f.push("✕ Mistakes only");
+  const f=[];if(selectedStarredFocus)f.push("★ Starred first");if(selectedMistakesFocus)f.push("✕ Mistakes only");if(selectedFamiliarFocus)f.push("✓ Familiar only");
   return `${p} · ${t}${f.length?` · ${f.join(" · ")}`:""} · ${count} noun${count===1?"":"s"}`;
 }
 function renderFilterUI(){
   document.querySelectorAll("[data-priority]").forEach(b=>b.classList.toggle("active",draftPriorities.has(b.dataset.priority)));
   document.querySelectorAll("[data-type]").forEach(b=>b.classList.toggle("active",draftTypes.has(b.dataset.type)));
-  $("starredFilterBtn").classList.toggle("active",draftStarredFocus);$("mistakesFilterBtn").classList.toggle("active",draftMistakesFocus);
-  const eligible=eligibleIndices(draftPriorities,draftTypes,draftMistakesFocus),count=eligible.length;
+  $("starredFilterBtn").classList.toggle("active",draftStarredFocus);$("mistakesFilterBtn").classList.toggle("active",draftMistakesFocus);$("familiarFilterBtn").classList.toggle("active",draftFamiliarFocus);
+  const eligible=eligibleIndices(draftPriorities,draftTypes,draftMistakesFocus,draftFamiliarFocus),count=eligible.length;
   const starCount=eligible.filter(i=>starredNouns.has(nouns[i].id)).length;
-  const status=$("filterStatus"),hasAny=hasAnySelection(draftPriorities,draftTypes,draftStarredFocus,draftMistakesFocus);
+  const status=$("filterStatus"),hasAny=hasAnySelection(draftPriorities,draftTypes,draftStarredFocus,draftMistakesFocus,draftFamiliarFocus);
   if(!hasAny){status.textContent="Select at least one filter.";status.className="filter-status error";$("applyFilterBtn").disabled=true;}
-  else if(!count){status.textContent=draftMistakesFocus?"0 mistakes match this filter.":"0 nouns match this combination.";status.className="filter-status error";$("applyFilterBtn").disabled=true;}
+  else if(!count){status.textContent=draftMistakesFocus?"0 mistakes match this filter.":draftFamiliarFocus?"0 familiar nouns match this filter.":"0 nouns match this combination.";status.className="filter-status error";$("applyFilterBtn").disabled=true;}
   else{
     if(draftMistakesFocus&&draftStarredFocus)status.textContent=`${count} mistake noun${count===1?"":"s"} · ${starCount} starred first`;
     else if(draftMistakesFocus)status.textContent=`${count} mistake noun${count===1?"":"s"} in this filter`;
+    else if(draftFamiliarFocus&&draftStarredFocus)status.textContent=`${count} familiar noun${count===1?"":"s"} · ${starCount} starred first`;
+    else if(draftFamiliarFocus)status.textContent=`${count} familiar noun${count===1?"":"s"} in this filter`;
     else if(draftStarredFocus)status.textContent=`${count} noun${count===1?"":"s"} · ${starCount} starred first`;
     else status.textContent=`${count} noun${count===1?"":"s"} in this filter`;
     status.className="filter-status";$("applyFilterBtn").disabled=false;
@@ -1250,20 +1285,20 @@ function renderFilterUI(){
 
 function clearUndo(){undoSkipState=null;$("undoSkipBtn").disabled=true;}
 function setUndo(state){undoSkipState=state;$("undoSkipBtn").disabled=!state;}
-function captureCurrentAnswer(){return {selectedArticle,pluralValue:$("pluralInput").value,hintUsed,mode,lastResult:lastResult?{...lastResult}:null};}
-function captureSessionState(){return {version:1,selectedPriorities:[...selectedPriorities],selectedTypes:[...selectedTypes],selectedStarredFocus,selectedMistakesFocus,order:[...order],pos,round,...captureCurrentAnswer()};}
+function captureCurrentAnswer(){return {selectedArticle,pluralValue:$("pluralInput").value,hintUsed,hintVisible,mode,lastResult:lastResult?{...lastResult}:null};}
+function captureSessionState(){return {version:1,selectedPriorities:[...selectedPriorities],selectedTypes:[...selectedTypes],selectedStarredFocus,selectedMistakesFocus,selectedFamiliarFocus,order:[...order],pos,round,...captureCurrentAnswer()};}
 function normalizeSession(raw){
   if(!raw||raw.version!==1)return null;
   const ord=Array.isArray(raw.order)&&raw.order.length&&new Set(raw.order).size===raw.order.length&&raw.order.every(i=>Number.isInteger(i)&&i>=0&&i<nouns.length);if(!ord)return null;
-  return {version:1,selectedPriorities:Array.isArray(raw.selectedPriorities)?raw.selectedPriorities.filter(x=>ALL_PRIORITIES.includes(x)):[],selectedTypes:Array.isArray(raw.selectedTypes)?raw.selectedTypes.filter(x=>ALL_TYPES.includes(x)):[],selectedStarredFocus:!!raw.selectedStarredFocus,selectedMistakesFocus:!!raw.selectedMistakesFocus,order:[...raw.order],pos:Number.isInteger(raw.pos)&&raw.pos>=0&&raw.pos<raw.order.length?raw.pos:0,round:Number.isInteger(raw.round)&&raw.round>=1?raw.round:1,selectedArticle:["der","die","das"].includes(raw.selectedArticle)?raw.selectedArticle:"",pluralValue:typeof raw.pluralValue==="string"?raw.pluralValue:"",hintUsed:!!raw.hintUsed,mode:raw.mode==="checked"?"checked":"answering",lastResult:raw.lastResult&&typeof raw.lastResult==="object"?raw.lastResult:null};
+  return {version:1,selectedPriorities:Array.isArray(raw.selectedPriorities)?raw.selectedPriorities.filter(x=>ALL_PRIORITIES.includes(x)):[],selectedTypes:Array.isArray(raw.selectedTypes)?raw.selectedTypes.filter(x=>ALL_TYPES.includes(x)):[],selectedStarredFocus:!!raw.selectedStarredFocus,selectedMistakesFocus:!!raw.selectedMistakesFocus,selectedFamiliarFocus:!!raw.selectedFamiliarFocus,order:[...raw.order],pos:Number.isInteger(raw.pos)&&raw.pos>=0&&raw.pos<raw.order.length?raw.pos:0,round:Number.isInteger(raw.round)&&raw.round>=1?raw.round:1,selectedArticle:["der","die","das"].includes(raw.selectedArticle)?raw.selectedArticle:"",pluralValue:typeof raw.pluralValue==="string"?raw.pluralValue:"",hintUsed:!!raw.hintUsed,hintVisible:!!raw.hintVisible,mode:raw.mode==="checked"?"checked":"answering",lastResult:raw.lastResult&&typeof raw.lastResult==="object"?raw.lastResult:null};
 }
 function applySession(saved){
   clearUndo();selectedPriorities=new Set(saved.selectedPriorities);selectedTypes=new Set(saved.selectedTypes);
-  selectedStarredFocus=saved.selectedStarredFocus&&starredNouns.size>0;selectedMistakesFocus=saved.selectedMistakesFocus&&mistakeNouns.size>0;
-  draftPriorities=new Set(selectedPriorities);draftTypes=new Set(selectedTypes);draftStarredFocus=selectedStarredFocus;draftMistakesFocus=selectedMistakesFocus;saveFilterSettings();
+  selectedStarredFocus=saved.selectedStarredFocus&&starredNouns.size>0;selectedMistakesFocus=saved.selectedMistakesFocus&&mistakeNouns.size>0;selectedFamiliarFocus=saved.selectedFamiliarFocus&&familiarNouns.size>0;if(selectedFamiliarFocus)selectedMistakesFocus=false;
+  draftPriorities=new Set(selectedPriorities);draftTypes=new Set(selectedTypes);draftStarredFocus=selectedStarredFocus;draftMistakesFocus=selectedMistakesFocus;draftFamiliarFocus=selectedFamiliarFocus;saveFilterSettings();
   order=[...saved.order];pos=saved.pos;round=saved.round;renderCurrent();
-  selectedArticle=saved.selectedArticle;$("pluralInput").value=saved.pluralValue;hintUsed=saved.hintUsed;
-  if(hintUsed){$("pluralHintText").textContent=`Hint: ${current().hint}`;$("pluralHintText").classList.remove("hidden");}
+  selectedArticle=saved.selectedArticle;$("pluralInput").value=saved.pluralValue;hintUsed=saved.hintUsed;hintVisible=saved.hintVisible;
+  if(hintVisible){$("pluralHintText").textContent=`Hint: ${current().hint}`;$("pluralHintText").classList.remove("hidden");$("pluralHintBtn").setAttribute("aria-expanded","true");}
   renderArticleSelection();updateCheckState();
   if(saved.mode==="checked"&&saved.lastResult){lastResult={...saved.lastResult};renderCheckedResult(lastResult);}
   renderFilterUI();return true;
@@ -1273,11 +1308,11 @@ function updateReload(){$("reloadSessionBtn").disabled=!loadBackup();}
 function saveBackup(){try{localStorage.setItem(SESSION_RESET_BACKUP_KEY,JSON.stringify(captureSessionState()));}catch{}updateReload();}
 window.GermanDrillTrainerCloud={capture(){return normalizeSession(captureSessionState());},restore(raw){const s=normalizeSession(raw);return s?applySession(s):false;}};
 window.GermanDrillFocusData={
-  getLocal(){return {starredNouns:[...starredNouns],mistakeNouns:[...mistakeNouns]};},
+  getLocal(){return {starredNouns:[...starredNouns],mistakeNouns:[...mistakeNouns],familiarNouns:[...familiarNouns]};},
   applyCloud(raw){
-    const valid=new Set(nouns.map(x=>x.id));starredNouns=new Set(Array.isArray(raw?.starredNouns)?raw.starredNouns.filter(x=>valid.has(x)):[]);mistakeNouns=new Set(Array.isArray(raw?.mistakeNouns)?raw.mistakeNouns.filter(x=>valid.has(x)):[]);saveStars();saveMistakes();
-    if(selectedStarredFocus&&!starredNouns.size)selectedStarredFocus=false;if(selectedMistakesFocus&&!mistakeNouns.size)selectedMistakesFocus=false;
-    draftStarredFocus=selectedStarredFocus;draftMistakesFocus=selectedMistakesFocus;saveFilterSettings();renderStarButton();renderFilterUI();
+    const valid=new Set(nouns.map(x=>x.id));starredNouns=new Set(Array.isArray(raw?.starredNouns)?raw.starredNouns.filter(x=>valid.has(x)):[]);mistakeNouns=new Set(Array.isArray(raw?.mistakeNouns)?raw.mistakeNouns.filter(x=>valid.has(x)):[]);const mistakes=new Set(mistakeNouns);familiarNouns=new Set(Array.isArray(raw?.familiarNouns)?raw.familiarNouns.filter(x=>valid.has(x)&&!mistakes.has(x)):[]);saveStars();saveMistakes();saveFamiliar();
+    if(selectedStarredFocus&&!starredNouns.size)selectedStarredFocus=false;if(selectedMistakesFocus&&!mistakeNouns.size)selectedMistakesFocus=false;if(selectedFamiliarFocus&&!familiarNouns.size)selectedFamiliarFocus=false;if(selectedFamiliarFocus)selectedMistakesFocus=false;
+    draftStarredFocus=selectedStarredFocus;draftMistakesFocus=selectedMistakesFocus;draftFamiliarFocus=selectedFamiliarFocus;saveFilterSettings();renderStarButton();renderFamiliarButton();renderFilterUI();
   }
 };
 
@@ -1285,11 +1320,11 @@ function renderArticleSelection(){
   document.querySelectorAll(".article-btn").forEach(b=>{b.classList.toggle("selected",mode==="answering"&&b.dataset.article===selectedArticle);if(mode==="answering"){b.classList.remove("correct","wrong","answer-correct");b.disabled=false;}});
 }
 function renderCurrent(){
-  const item=current();selectedArticle="";hintUsed=false;mode="answering";lastResult=null;
+  const item=current();selectedArticle="";hintUsed=false;hintVisible=false;mode="answering";lastResult=null;
   $("nounText").textContent=item.n;$("meaningText").textContent=item.en;$("singularNoun").textContent=item.n;$("genitiveText").textContent=item.gen;$("levelBadge").textContent=item.level;$("levelBadge").title="Study priority used by this trainer; not an official Goethe category.";
   $("roundText").textContent=`Round / Runde · ${round}`;$("progressText").textContent=`Noun / Nomen · ${pos+1} / ${order.length}`;$("barFill").style.width=`${((pos+1)/order.length)*100}%`;
   $("pluralInput").value="";$("pluralInput").disabled=false;$("pluralInput").classList.remove("correct","wrong");$("pluralCorrection").classList.add("hidden");$("pluralCorrection").textContent="";
-  $("pluralHintText").classList.add("hidden");$("pluralHintText").textContent="";$("pluralHintBtn").disabled=false;
+  $("pluralHintText").classList.add("hidden");$("pluralHintText").textContent="";$("pluralHintBtn").disabled=false;$("pluralHintBtn").setAttribute("aria-expanded","false");
   $("resultPanel").classList.add("hidden");$("mistakeFeedback").textContent="";$("answerFeedback").textContent="";$("typeResult").innerHTML="";
   $("checkBtn").classList.remove("hidden");$("nextBtn").classList.add("hidden");$("skipBtn").classList.remove("hidden");$("checkBtn").disabled=true;renderArticleSelection();
   activeInput=$("pluralInput");
@@ -1306,18 +1341,18 @@ function renderCheckedResult(result){
   $("mistakeFeedback").textContent=result.mistakeMessage||"";
   $("resultSingular").textContent=`${item.article} ${item.n}`;$("resultGenitive").textContent=item.gen;$("resultPlural").textContent=`die ${item.plural}`;
   $("typeResult").innerHTML="";item.types.forEach(t=>{const span=document.createElement("span");span.className="noun-type-chip";span.textContent=TYPE_LABELS[t];$("typeResult").appendChild(span);});
-  $("resultPanel").classList.remove("hidden");renderStarButton();$("checkBtn").classList.add("hidden");$("nextBtn").classList.remove("hidden");$("skipBtn").classList.add("hidden");
+  $("resultPanel").classList.remove("hidden");renderStarButton();renderFamiliarButton();$("checkBtn").classList.add("hidden");$("nextBtn").classList.remove("hidden");$("skipBtn").classList.add("hidden");
 }
 function checkAnswers(){
   if(mode!=="answering"||$("checkBtn").disabled)return;clearUndo();
-  const item=current(),wasMistake=mistakeNouns.has(item.id);const articleCorrect=selectedArticle===item.article;const pluralCorrect=normalize($("pluralInput").value)===normalize(item.plural);const independent=articleCorrect&&pluralCorrect&&!hintUsed;let mistakeMessage="";
+  const item=current(),wasMistake=mistakeNouns.has(item.id),wasFamiliar=familiarNouns.has(item.id);const articleCorrect=selectedArticle===item.article;const pluralCorrect=normalize($("pluralInput").value)===normalize(item.plural);const independent=articleCorrect&&pluralCorrect&&!hintUsed;let mistakeMessage="";
   if(independent){
     if(wasMistake){mistakeNouns.delete(item.id);saveMistakes();window.GermanDrillFocusCloudMutate?.("mistakeNouns",item.id,false);if(mistakeNouns.size===0&&selectedMistakesFocus){selectedMistakesFocus=false;draftMistakesFocus=false;saveFilterSettings();}mistakeMessage=`✓ Cleared from Mistakes · ${mistakeNouns.size} remaining`;}
   }else{
-    if(!wasMistake){mistakeNouns.add(item.id);saveMistakes();window.GermanDrillFocusCloudMutate?.("mistakeNouns",item.id,true);mistakeMessage=`✕ Added to Mistakes · ${mistakeNouns.size} total`;}
-    else mistakeMessage=`✕ Kept in Mistakes · ${mistakeNouns.size} total`;
+    if(wasFamiliar){familiarNouns.delete(item.id);saveFamiliar();window.GermanDrillFocusCloudMutate?.("familiarNouns",item.id,false);if(familiarNouns.size===0&&selectedFamiliarFocus){selectedFamiliarFocus=false;draftFamiliarFocus=false;saveFilterSettings();}}
+    if(!wasMistake){mistakeNouns.add(item.id);saveMistakes();window.GermanDrillFocusCloudMutate?.("mistakeNouns",item.id,true);mistakeMessage=`✕ Added to Mistakes · ${mistakeNouns.size} total`;}else mistakeMessage=`✕ Kept in Mistakes · ${mistakeNouns.size} total`;
   }
-  lastResult={selectedArticle,articleCorrect,pluralCorrect,hintUsed,mistakeMessage};renderCheckedResult(lastResult);renderFilterUI();window.GermanDrillCloudSave?.();
+  lastResult={selectedArticle,articleCorrect,pluralCorrect,hintUsed,mistakeMessage};renderCheckedResult(lastResult);renderFamiliarButton();renderFilterUI();window.GermanDrillCloudSave?.();
 }
 function nextNoun(){
   clearUndo();const previous=order[pos];pos++;
@@ -1336,41 +1371,34 @@ function reshuffle(){clearUndo();order=shuffledIndices(order[pos]??null);pos=0;r
 function resetSession(){clearUndo();saveBackup();order=shuffledIndices();pos=0;round=1;$("filterPanel").classList.add("hidden");$("filterToggle").textContent="Filter";renderCurrent();window.GermanDrillCloudSave?.();}
 function reloadLast(){clearUndo();const s=loadBackup();if(!s)return;applySession(s);window.GermanDrillCloudSave?.();}
 
-function stopTimer(which){if(which==="stars"&&clearStarsTimer){clearInterval(clearStarsTimer);clearStarsTimer=null;}if(which==="mistakes"&&clearMistakesTimer){clearInterval(clearMistakesTimer);clearMistakesTimer=null;}}
-function closeClear(which){stopTimer(which);$(which==="stars"?"clearStarsModal":"clearMistakesModal").classList.add("hidden");}
-function openClear(which){
-  const set=which==="stars"?starredNouns:mistakeNouns,count=set.size;if(!count)return;stopTimer(which);
-  const isStars=which==="stars",title=$(isStars?"clearStarsTitle":"clearMistakesTitle"),msg=$(isStars?"clearStarsMessage":"clearMistakesMessage"),btn=$(isStars?"confirmClearStarsBtn":"confirmClearMistakesBtn");
-  title.textContent=`Clear all ${count} ${isStars?"starred":"mistake"} nouns?`;msg.textContent=isStars?`This will remove stars from ${count} noun${count===1?"":"s"}.`:`This will remove ${count} noun${count===1?"":"s"} from Mistakes.`;
-  let value=CLEAR_DELAY_SECONDS;btn.disabled=true;btn.textContent=`Clear in ${value}s`;$(isStars?"clearStarsModal":"clearMistakesModal").classList.remove("hidden");
-  const tick=()=>{value--;if(value<=0){stopTimer(which);btn.disabled=false;btn.textContent="Clear";}else btn.textContent=`Clear in ${value}s`;};
-  if(isStars)clearStarsTimer=setInterval(tick,1000);else clearMistakesTimer=setInterval(tick,1000);
-}
-function clearAll(which){
-  const isStars=which==="stars",btn=$(isStars?"confirmClearStarsBtn":"confirmClearMistakesBtn");if(btn.disabled)return;
-  if(isStars){starredNouns.clear();saveStars();window.GermanDrillFocusCloudClear?.("starredNouns");selectedStarredFocus=false;draftStarredFocus=false;showStarFeedback("☆ Cleared · 0 total");}
-  else{mistakeNouns.clear();saveMistakes();window.GermanDrillFocusCloudClear?.("mistakeNouns");selectedMistakesFocus=false;draftMistakesFocus=false;$("mistakeFeedback").textContent="";}
-  saveFilterSettings();closeClear(which);renderStarButton();renderFilterUI();
-}
+function stopTimer(which){if(which==="stars"&&clearStarsTimer){clearInterval(clearStarsTimer);clearStarsTimer=null;}if(which==="mistakes"&&clearMistakesTimer){clearInterval(clearMistakesTimer);clearMistakesTimer=null;}if(which==="familiar"&&clearFamiliarTimer){clearInterval(clearFamiliarTimer);clearFamiliarTimer=null;}}
+function clearIds(which){return which==="stars"?{modal:"clearStarsModal",title:"clearStarsTitle",message:"clearStarsMessage",confirm:"confirmClearStarsBtn"}:which==="mistakes"?{modal:"clearMistakesModal",title:"clearMistakesTitle",message:"clearMistakesMessage",confirm:"confirmClearMistakesBtn"}:{modal:"clearFamiliarModal",title:"clearFamiliarTitle",message:"clearFamiliarMessage",confirm:"confirmClearFamiliarBtn"};}
+function closeClear(which){stopTimer(which);$(clearIds(which).modal).classList.add("hidden");}
+function openClear(which){const set=which==="stars"?starredNouns:which==="mistakes"?mistakeNouns:familiarNouns,count=set.size;if(!count)return;stopTimer(which);const ids=clearIds(which),title=$(ids.title),msg=$(ids.message),btn=$(ids.confirm),label=which==="stars"?"starred":which==="mistakes"?"mistake":"familiar";title.textContent=`Clear all ${count} ${label} nouns?`;msg.textContent=which==="stars"?`This will remove stars from ${count} noun${count===1?"":"s"}.`:which==="mistakes"?`This will remove ${count} noun${count===1?"":"s"} from Mistakes.`:`This will return ${count} noun${count===1?"":"s"} to normal practice.`;let value=CLEAR_DELAY_SECONDS;btn.disabled=true;btn.textContent=`Clear in ${value}s`;$(ids.modal).classList.remove("hidden");const tick=()=>{value--;if(value<=0){stopTimer(which);btn.disabled=false;btn.textContent="Clear";}else btn.textContent=`Clear in ${value}s`;};if(which==="stars")clearStarsTimer=setInterval(tick,1000);else if(which==="mistakes")clearMistakesTimer=setInterval(tick,1000);else clearFamiliarTimer=setInterval(tick,1000);}
+function clearAll(which){const btn=$(clearIds(which).confirm);if(btn.disabled)return;if(which==="stars"){starredNouns.clear();saveStars();window.GermanDrillFocusCloudClear?.("starredNouns");selectedStarredFocus=false;draftStarredFocus=false;showStarFeedback("☆ Cleared · 0 total");}else if(which==="mistakes"){mistakeNouns.clear();saveMistakes();window.GermanDrillFocusCloudClear?.("mistakeNouns");selectedMistakesFocus=false;draftMistakesFocus=false;$("mistakeFeedback").textContent="";}else{familiarNouns.clear();saveFamiliar();window.GermanDrillFocusCloudClear?.("familiarNouns");selectedFamiliarFocus=false;draftFamiliarFocus=false;}saveFilterSettings();closeClear(which);renderStarButton();renderFamiliarButton();renderFilterUI();}
 
 $("filterToggle").addEventListener("click",()=>{$("filterPanel").classList.toggle("hidden");$("filterToggle").textContent=$("filterPanel").classList.contains("hidden")?"Filter":"Close";renderFilterUI();});
 document.querySelectorAll("[data-priority]").forEach(b=>b.addEventListener("click",()=>{draftPriorities.has(b.dataset.priority)?draftPriorities.delete(b.dataset.priority):draftPriorities.add(b.dataset.priority);renderFilterUI();}));
 document.querySelectorAll("[data-type]").forEach(b=>b.addEventListener("click",()=>{draftTypes.has(b.dataset.type)?draftTypes.delete(b.dataset.type):draftTypes.add(b.dataset.type);renderFilterUI();}));
 $("starredFilterBtn").addEventListener("click",()=>{draftStarredFocus=!draftStarredFocus;renderFilterUI();});
-$("mistakesFilterBtn").addEventListener("click",()=>{draftMistakesFocus=!draftMistakesFocus;renderFilterUI();});
-$("applyFilterBtn").addEventListener("click",()=>{clearUndo();const next=eligibleIndices(draftPriorities,draftTypes,draftMistakesFocus);if(!next.length)return;selectedPriorities=new Set(draftPriorities);selectedTypes=new Set(draftTypes);selectedStarredFocus=draftStarredFocus;selectedMistakesFocus=draftMistakesFocus;saveFilterSettings();order=shuffledIndices();pos=0;round=1;$("filterPanel").classList.add("hidden");$("filterToggle").textContent="Filter";renderFilterUI();renderCurrent();window.GermanDrillCloudSave?.();});
-$("resetFilterBtn").addEventListener("click",()=>{draftPriorities=new Set(ALL_PRIORITIES);draftTypes=new Set(ALL_TYPES);draftStarredFocus=false;draftMistakesFocus=false;renderFilterUI();});
+$("mistakesFilterBtn").addEventListener("click",()=>{draftMistakesFocus=!draftMistakesFocus;if(draftMistakesFocus)draftFamiliarFocus=false;renderFilterUI();});
+$("familiarFilterBtn").addEventListener("click",()=>{draftFamiliarFocus=!draftFamiliarFocus;if(draftFamiliarFocus)draftMistakesFocus=false;renderFilterUI();});
+$("applyFilterBtn").addEventListener("click",()=>{clearUndo();const next=eligibleIndices(draftPriorities,draftTypes,draftMistakesFocus,draftFamiliarFocus);if(!next.length)return;selectedPriorities=new Set(draftPriorities);selectedTypes=new Set(draftTypes);selectedStarredFocus=draftStarredFocus;selectedMistakesFocus=draftMistakesFocus;selectedFamiliarFocus=draftFamiliarFocus;saveFilterSettings();order=shuffledIndices();pos=0;round=1;$("filterPanel").classList.add("hidden");$("filterToggle").textContent="Filter";renderFilterUI();renderCurrent();window.GermanDrillCloudSave?.();});
+$("noneFilterBtn").addEventListener("click",()=>{draftPriorities=new Set();draftTypes=new Set();draftStarredFocus=false;draftMistakesFocus=false;draftFamiliarFocus=false;renderFilterUI();});
+$("resetFilterBtn").addEventListener("click",()=>{draftPriorities=new Set(ALL_PRIORITIES);draftTypes=new Set(ALL_TYPES);renderFilterUI();});
 
 document.querySelectorAll(".article-btn").forEach(b=>b.addEventListener("click",()=>{if(mode!=="answering")return;selectedArticle=b.dataset.article;renderArticleSelection();updateCheckState();}));
 $("pluralInput").addEventListener("focus",()=>{activeInput=$("pluralInput");});$("pluralInput").addEventListener("input",updateCheckState);
-$("pluralHintBtn").addEventListener("click",()=>{if(mode!=="answering")return;hintUsed=true;$("pluralHintText").textContent=`Hint: ${current().hint}`;$("pluralHintText").classList.remove("hidden");window.GermanDrillCloudSave?.();});
+$("pluralHintBtn").addEventListener("click",()=>{if(mode!=="answering")return;if(!hintVisible){hintUsed=true;hintVisible=true;$("pluralHintText").textContent=`Hint: ${current().hint}`;$("pluralHintText").classList.remove("hidden");$("pluralHintBtn").setAttribute("aria-expanded","true");}else{hintVisible=false;$("pluralHintText").classList.add("hidden");$("pluralHintBtn").setAttribute("aria-expanded","false");}window.GermanDrillCloudSave?.();});
 $("starBtn").addEventListener("click",()=>{if(mode!=="checked")return;const id=current().id;let message;if(starredNouns.has(id)){starredNouns.delete(id);message=`☆ Removed · ${starredNouns.size} total`;}else{starredNouns.add(id);message=`★ Starred · ${starredNouns.size} total`;}saveStars();window.GermanDrillFocusCloudMutate?.("starredNouns",id,starredNouns.has(id));renderStarButton();renderFilterUI();showStarFeedback(message);});
+$("familiarBtn").addEventListener("click",()=>{if(mode!=="checked")return;const id=current().id;let message;if(familiarNouns.has(id)){familiarNouns.delete(id);saveFamiliar();window.GermanDrillFocusCloudMutate?.("familiarNouns",id,false);message=`○ Familiar removed · ${familiarNouns.size} total`;}else{if(mistakeNouns.has(id)){mistakeNouns.delete(id);saveMistakes();window.GermanDrillFocusCloudMutate?.("mistakeNouns",id,false);if(mistakeNouns.size===0&&selectedMistakesFocus){selectedMistakesFocus=false;draftMistakesFocus=false;}}familiarNouns.add(id);saveFamiliar();window.GermanDrillFocusCloudMutate?.("familiarNouns",id,true);message=`✓ Familiar · ${familiarNouns.size} total`;}saveFilterSettings();renderFamiliarButton();renderFilterUI();showStarFeedback(message);});
 $("checkBtn").addEventListener("click",checkAnswers);$("nextBtn").addEventListener("click",nextNoun);$("skipBtn").addEventListener("click",skipCurrent);$("undoSkipBtn").addEventListener("click",undoSkip);$("reshuffleBtn").addEventListener("click",reshuffle);$("resetSessionBtn").addEventListener("click",resetSession);$("reloadSessionBtn").addEventListener("click",reloadLast);
 $("clearStarsBtn").addEventListener("click",()=>openClear("stars"));$("cancelClearStarsBtn").addEventListener("click",()=>closeClear("stars"));$("confirmClearStarsBtn").addEventListener("click",()=>clearAll("stars"));$("clearStarsModal").addEventListener("click",e=>{if(e.target===$("clearStarsModal"))closeClear("stars");});
 $("clearMistakesBtn").addEventListener("click",()=>openClear("mistakes"));$("cancelClearMistakesBtn").addEventListener("click",()=>closeClear("mistakes"));$("confirmClearMistakesBtn").addEventListener("click",()=>clearAll("mistakes"));$("clearMistakesModal").addEventListener("click",e=>{if(e.target===$("clearMistakesModal"))closeClear("mistakes");});
+$("clearFamiliarBtn").addEventListener("click",()=>openClear("familiar"));$("cancelClearFamiliarBtn").addEventListener("click",()=>closeClear("familiar"));$("confirmClearFamiliarBtn").addEventListener("click",()=>clearAll("familiar"));$("clearFamiliarModal").addEventListener("click",e=>{if(e.target===$("clearFamiliarModal"))closeClear("familiar");});
 
 document.querySelectorAll(".char-btn").forEach(b=>{b.addEventListener("mousedown",e=>e.preventDefault());b.addEventListener("click",()=>{if(mode!=="answering")return;const target=$("pluralInput");const ch=b.dataset.char,start=typeof target.selectionStart==="number"?target.selectionStart:target.value.length,end=typeof target.selectionEnd==="number"?target.selectionEnd:target.value.length;target.value=target.value.slice(0,start)+ch+target.value.slice(end);const caret=start+ch.length;target.focus();target.setSelectionRange(caret,caret);target.dispatchEvent(new Event("input",{bubbles:true}));});});
-document.addEventListener("keydown",e=>{if(e.key==="Escape"){if(!$("clearStarsModal").classList.contains("hidden")){closeClear("stars");return;}if(!$("clearMistakesModal").classList.contains("hidden")){closeClear("mistakes");return;}}if(e.key!=="Enter")return;if(!$("clearStarsModal").classList.contains("hidden")||!$("clearMistakesModal").classList.contains("hidden"))return;if(mode==="answering"&&!$("checkBtn").disabled)checkAnswers();else if(mode==="checked")nextNoun();});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"){if(!$("clearStarsModal").classList.contains("hidden")){closeClear("stars");return;}if(!$("clearMistakesModal").classList.contains("hidden")){closeClear("mistakes");return;}if(!$("clearFamiliarModal").classList.contains("hidden")){closeClear("familiar");return;}}if(e.key!=="Enter")return;if(!$("clearStarsModal").classList.contains("hidden")||!$("clearMistakesModal").classList.contains("hidden")||!$("clearFamiliarModal").classList.contains("hidden"))return;if(mode==="answering"&&!$("checkBtn").disabled)checkAnswers();else if(mode==="checked")nextNoun();});
 
 loadFocus();loadFilterSettings();renderFilterUI();order=shuffledIndices();renderCurrent();updateReload();
 </script>
@@ -1387,9 +1415,9 @@ let cloudReady=false,focusCloudReady=false,saveChain=Promise.resolve(),focusChai
 function revealTrainer(){document.documentElement.style.visibility="";}
 async function pushTrainerState(){if(!cloudReady||!auth.currentUser||auth.currentUser.uid!==ALLOWED_UID)return;const state=window.GermanDrillTrainerCloud?.capture?.();if(!state)return;try{await setDoc(doc(db,"users",ALLOWED_UID,"trainerStates",TRAINER_ID),{state,updatedAt:serverTimestamp()},{merge:true});}catch(e){console.warn("Trainer cloud save failed:",e);}}
 window.GermanDrillCloudSave=()=>{if(cloudReady)saveChain=saveChain.then(pushTrainerState,pushTrainerState);};
-window.GermanDrillFocusCloudMutate=(field,id,add)=>{if(!focusCloudReady||!["starredNouns","mistakeNouns"].includes(field))return;const ref=doc(db,"users",ALLOWED_UID,"trainerStates",FOCUS_TRAINER_ID),value=add?arrayUnion(id):arrayRemove(id);focusChain=focusChain.then(()=>setDoc(ref,{[field]:value,updatedAt:serverTimestamp()},{merge:true}),()=>setDoc(ref,{[field]:value,updatedAt:serverTimestamp()},{merge:true})).catch(e=>console.warn("Focus cloud save failed:",e));};
-window.GermanDrillFocusCloudClear=field=>{if(!focusCloudReady||!["starredNouns","mistakeNouns"].includes(field))return;const ref=doc(db,"users",ALLOWED_UID,"trainerStates",FOCUS_TRAINER_ID);focusChain=focusChain.then(()=>setDoc(ref,{[field]:[],updatedAt:serverTimestamp()},{merge:true}),()=>setDoc(ref,{[field]:[],updatedAt:serverTimestamp()},{merge:true})).catch(e=>console.warn("Focus cloud clear failed:",e));};
-async function loadFocusState(){const ref=doc(db,"users",ALLOWED_UID,"trainerStates",FOCUS_TRAINER_ID),api=window.GermanDrillFocusData,local=api?.getLocal?.()||{starredNouns:[],mistakeNouns:[]},snap=await getDoc(ref);let remote=snap.exists()?snap.data():{};if(!snap.exists()){remote={starredNouns:[...new Set(local.starredNouns)],mistakeNouns:[...new Set(local.mistakeNouns)]};await setDoc(ref,{...remote,updatedAt:serverTimestamp()},{merge:true});}api?.applyCloud?.(remote);focusCloudReady=true;}
+window.GermanDrillFocusCloudMutate=(field,id,add)=>{if(!focusCloudReady||!["starredNouns","mistakeNouns","familiarNouns"].includes(field))return;const ref=doc(db,"users",ALLOWED_UID,"trainerStates",FOCUS_TRAINER_ID),value=add?arrayUnion(id):arrayRemove(id);focusChain=focusChain.then(()=>setDoc(ref,{[field]:value,updatedAt:serverTimestamp()},{merge:true}),()=>setDoc(ref,{[field]:value,updatedAt:serverTimestamp()},{merge:true})).catch(e=>console.warn("Focus cloud save failed:",e));};
+window.GermanDrillFocusCloudClear=field=>{if(!focusCloudReady||!["starredNouns","mistakeNouns","familiarNouns"].includes(field))return;const ref=doc(db,"users",ALLOWED_UID,"trainerStates",FOCUS_TRAINER_ID);focusChain=focusChain.then(()=>setDoc(ref,{[field]:[],updatedAt:serverTimestamp()},{merge:true}),()=>setDoc(ref,{[field]:[],updatedAt:serverTimestamp()},{merge:true})).catch(e=>console.warn("Focus cloud clear failed:",e));};
+async function loadFocusState(){const ref=doc(db,"users",ALLOWED_UID,"trainerStates",FOCUS_TRAINER_ID),api=window.GermanDrillFocusData,local=api?.getLocal?.()||{starredNouns:[],mistakeNouns:[],familiarNouns:[]},snap=await getDoc(ref);let remote=snap.exists()?snap.data():{};if(!snap.exists()){const mistakes=[...new Set(local.mistakeNouns)];remote={starredNouns:[...new Set(local.starredNouns)],mistakeNouns:mistakes,familiarNouns:[...new Set(local.familiarNouns)].filter(id=>!mistakes.includes(id))};await setDoc(ref,{...remote,updatedAt:serverTimestamp()},{merge:true});}const mistakes=new Set(Array.isArray(remote.mistakeNouns)?remote.mistakeNouns:[]),familiar=(Array.isArray(remote.familiarNouns)?remote.familiarNouns:[]).filter(id=>!mistakes.has(id));if(familiar.length!==(Array.isArray(remote.familiarNouns)?remote.familiarNouns.length:0))await setDoc(ref,{familiarNouns:familiar,updatedAt:serverTimestamp()},{merge:true});api?.applyCloud?.({...remote,familiarNouns:familiar});focusCloudReady=true;}
 setPersistence(auth,browserLocalPersistence).catch(()=>{});
 onAuthStateChanged(auth,async user=>{if(!user||user.uid!==ALLOWED_UID){if(user)await signOut(auth).catch(()=>{});location.replace("./index.html");return;}const ref=doc(db,"users",ALLOWED_UID,"trainerStates",TRAINER_ID);try{await loadFocusState();}catch(e){console.warn("Focus cloud load failed; using local focus data:",e);focusCloudReady=true;}try{const snap=await getDoc(ref);if(snap.exists())window.GermanDrillTrainerCloud?.restore?.(snap.data().state);cloudReady=true;if(!snap.exists())window.GermanDrillCloudSave();}catch(e){console.warn("Trainer cloud load failed; using local state:",e);cloudReady=true;}revealTrainer();});
 </script>

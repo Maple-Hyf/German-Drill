@@ -478,6 +478,23 @@
       border-color:#d6a463;
       color:#8c640b;
     }
+    .familiar-btn{
+      width:40px;
+      min-width:40px;
+      height:40px;
+      padding:0;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      border:1px solid var(--border);
+      border-radius:11px;
+      background:var(--soft);
+      color:#777;
+      box-shadow:none;
+    }
+    .familiar-btn svg{width:21px;height:21px;display:block}
+    .familiar-btn:hover{border-color:#8faf98;color:#557a60;background:#f2f8f3}
+    .familiar-btn.familiar{background:#e5f2e8;border-color:#8fb99a;color:#477353}
     .mode-title{
       margin-top:22px;
       margin-bottom:10px;
@@ -838,6 +855,9 @@
       border-color:#9b762d;
       color:#f0ce80;
     }
+    html[data-theme="dark"] .familiar-btn{background:#30302d;border-color:#45453f;color:#aaa9a2}
+    html[data-theme="dark"] .familiar-btn:hover{background:#26332a;border-color:#5f8068;color:#a8d4b2}
+    html[data-theme="dark"] .familiar-btn.familiar{background:#26372b;border-color:#62886d;color:#b7dfc0}
     html[data-theme="dark"] input{background:#1d1d1b;color:var(--text)}
     html[data-theme="dark"] input:focus{
       border-color:#74746d;box-shadow:0 0 0 3px rgba(255,255,255,.06)
@@ -935,10 +955,18 @@
           </div>
           <div class="star-total" id="mistakeTotalText">0 mistakes total</div>
         </div>
+        <div class="focus-block">
+          <div class="filter-chips">
+            <button type="button" class="filter-chip" id="familiarFilterBtn">✓ Familiar</button>
+            <button type="button" class="clear-stars-btn" id="clearFamiliarBtn" disabled>Clear all</button>
+          </div>
+          <div class="star-total" id="familiarTotalText">0 familiar total</div>
+        </div>
       </div>
 
       <div class="filter-actions">
         <button type="button" class="apply-filter" id="applyFilterBtn">Apply filter</button>
+        <button type="button" class="reset-filter" id="noneFilterBtn">None</button>
         <button type="button" class="reset-filter" id="resetFilterBtn">All 100</button>
         <span class="filter-status" id="filterStatus"></span>
       </div>
@@ -973,6 +1001,7 @@
         <div class="star-action">
           <span class="star-feedback" id="starFeedback" aria-live="polite"></span>
           <button type="button" class="star-btn hidden" id="starBtn" aria-label="Star this verb" title="Star this verb">☆</button>
+          <button type="button" class="familiar-btn hidden" id="familiarBtn" aria-label="Mark this verb as familiar" title="Mark as Familiar"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="m8.4 12.1 2.2 2.3 5-5.1" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
         </div>
       </div>
       <div class="mistake-feedback" id="mistakeFeedback" aria-live="polite"></div>
@@ -1005,7 +1034,7 @@
     </div>
   </div>
 
-  <div class="footer">100 A1 verbs · filterable by priority + conjugation type + starred + mistakes focus · random endless repeat · ä ö ü ß helper</div>
+  <div class="footer">100 A1 verbs · filterable by priority + conjugation type + starred + mistakes + familiar focus · random endless repeat · ä ö ü ß helper</div>
 </div>
 
 <div class="modal-backdrop hidden" id="clearStarsModal" role="dialog" aria-modal="true" aria-labelledby="clearStarsTitle">
@@ -1026,6 +1055,17 @@
     <div class="confirm-actions">
       <button type="button" class="modal-cancel" id="cancelClearMistakesBtn">Cancel</button>
       <button type="button" class="modal-clear" id="confirmClearMistakesBtn" disabled>Clear in 5s</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop hidden" id="clearFamiliarModal" role="dialog" aria-modal="true" aria-labelledby="clearFamiliarTitle">
+  <div class="confirm-modal">
+    <h2 id="clearFamiliarTitle">Clear all familiar verbs?</h2>
+    <p id="clearFamiliarMessage"></p>
+    <div class="confirm-actions">
+      <button type="button" class="modal-cancel" id="cancelClearFamiliarBtn">Cancel</button>
+      <button type="button" class="modal-clear" id="confirmClearFamiliarBtn" disabled>Clear in 5s</button>
     </div>
   </div>
 </div>
@@ -1139,6 +1179,7 @@ const pronouns = ["ich","du","er / sie / es","wir","ihr","sie / Sie"];
 const FILTER_STORAGE_KEY = "german-drill-a1-filter-v1";
 const STAR_STORAGE_KEY = "german-drill-a1-starred-v1";
 const MISTAKE_STORAGE_KEY = "german-drill-a1-mistakes-v1";
+const FAMILIAR_STORAGE_KEY = "german-drill-a1-familiar-v1";
 const SESSION_RESET_BACKUP_KEY = "german-drill-a1-session-reset-backup-v1";
 const GRAMMAR_TAG_DELAY_MS = 5000;
 const CLEAR_STARS_DELAY_SECONDS = 5;
@@ -1186,8 +1227,11 @@ let selectedStarredFocus = false;
 let draftStarredFocus = false;
 let selectedMistakesFocus = false;
 let draftMistakesFocus = false;
+let selectedFamiliarFocus = false;
+let draftFamiliarFocus = false;
 let starredVerbs = new Set();
 let mistakeVerbs = new Set();
+let familiarVerbs = new Set();
 
 let order = [];
 let pos = 0;
@@ -1202,6 +1246,8 @@ let clearStarsCountdownTimer = null;
 let clearStarsCountdownValue = CLEAR_STARS_DELAY_SECONDS;
 let clearMistakesCountdownTimer = null;
 let clearMistakesCountdownValue = CLEAR_MISTAKES_DELAY_SECONDS;
+let clearFamiliarCountdownTimer = null;
+let clearFamiliarCountdownValue = CLEAR_MISTAKES_DELAY_SECONDS;
 let undoSkipState = null;
 
 const $ = id => document.getElementById(id);
@@ -1238,6 +1284,21 @@ function saveMistakeVerbs(){
   localStorage.setItem(MISTAKE_STORAGE_KEY, JSON.stringify([...mistakeVerbs]));
 }
 
+function loadFamiliarVerbs(){
+  try{
+    const saved = JSON.parse(localStorage.getItem(FAMILIAR_STORAGE_KEY) || "[]");
+    const validNames = new Set(verbs.map(item=>item.v));
+    familiarVerbs = new Set(Array.isArray(saved) ? saved.filter(v=>validNames.has(v)) : []);
+    for(const v of mistakeVerbs) familiarVerbs.delete(v);
+    saveFamiliarVerbs();
+  }catch{
+    familiarVerbs = new Set();
+  }
+}
+function saveFamiliarVerbs(){
+  localStorage.setItem(FAMILIAR_STORAGE_KEY, JSON.stringify([...familiarVerbs]));
+}
+
 function isStarred(item = current()){
   return !!item && starredVerbs.has(item.v);
 }
@@ -1252,6 +1313,14 @@ function renderStarButton(){
   btn.title = starred ? "Remove star" : "Star this verb";
 }
 
+function isFamiliar(item = current()){ return !!item && familiarVerbs.has(item.v); }
+function renderFamiliarButton(){
+  const btn=$("familiarBtn"); if(!btn) return; const on=isFamiliar();
+  btn.classList.toggle("familiar",on);
+  btn.setAttribute("aria-label",on?"Remove Familiar from this verb":"Mark this verb as familiar");
+  btn.title=on?"Remove Familiar":"Mark as Familiar";
+}
+
 function renderStarManagement(){
   const count = starredVerbs.size;
   $("starTotalText").textContent = `${count} starred total`;
@@ -1262,6 +1331,12 @@ function renderMistakeManagement(){
   const count = mistakeVerbs.size;
   $("mistakeTotalText").textContent = `${count} mistakes total`;
   $("clearMistakesBtn").disabled = count === 0;
+}
+
+function renderFamiliarManagement(){
+  const count=familiarVerbs.size;
+  $("familiarTotalText").textContent=`${count} familiar total`;
+  $("clearFamiliarBtn").disabled=count===0;
 }
 
 function setMistakeFeedback(message = ""){
@@ -1286,25 +1361,17 @@ function showStarFeedback(message){
   }, 1800);
 }
 
-function hasActiveFilterSelection(priorities, types, starredFocus, mistakesFocus){
-  return priorities.size > 0
-    || types.size > 0
-    || starredFocus
-    || mistakesFocus;
+function hasActiveFilterSelection(priorities, types, starredFocus, mistakesFocus, familiarFocus){
+  return priorities.size > 0 || types.size > 0 || starredFocus || mistakesFocus || familiarFocus;
 }
 
-function eligibleIndices(priorities = selectedPriorities, types = selectedTypes, mistakesFocus = selectedMistakesFocus){
-  const limitPriority = priorities.size > 0;
-  const limitType = types.size > 0;
-
-  return verbs
-    .map((item,i)=>({item,i}))
-    .filter(({item}) =>
-      (!limitPriority || priorities.has(item.level)) &&
-      (!limitType || types.has(typeKeyFor(item))) &&
-      (!mistakesFocus || mistakeVerbs.has(item.v))
-    )
-    .map(({i})=>i);
+function eligibleIndices(priorities=selectedPriorities,types=selectedTypes,mistakesFocus=selectedMistakesFocus,familiarFocus=selectedFamiliarFocus){
+  const limitPriority=priorities.size>0, limitType=types.size>0;
+  return verbs.map((item,i)=>({item,i})).filter(({item})=>{
+    const familiar=familiarVerbs.has(item.v);
+    return (!limitPriority||priorities.has(item.level)) && (!limitType||types.has(typeKeyFor(item))) &&
+      (!mistakesFocus||mistakeVerbs.has(item.v)) && (familiarFocus?familiar:!familiar);
+  }).map(({i})=>i);
 }
 
 function loadFilterSettings(){
@@ -1322,6 +1389,8 @@ function loadFilterSettings(){
       if(Array.isArray(saved.types)) selectedTypes = new Set(types);
       selectedStarredFocus = !!saved.starredFocus;
       selectedMistakesFocus = !!saved.mistakesFocus;
+      selectedFamiliarFocus = !!saved.familiarFocus;
+      if(selectedFamiliarFocus) selectedMistakesFocus = false;
     }
   }catch{}
 
@@ -1329,6 +1398,7 @@ function loadFilterSettings(){
   draftTypes = new Set(selectedTypes);
   draftStarredFocus = selectedStarredFocus;
   draftMistakesFocus = selectedMistakesFocus;
+  draftFamiliarFocus = selectedFamiliarFocus;
 }
 
 function saveFilterSettings(){
@@ -1336,7 +1406,8 @@ function saveFilterSettings(){
     priorities:[...selectedPriorities],
     types:[...selectedTypes],
     starredFocus:selectedStarredFocus,
-    mistakesFocus:selectedMistakesFocus
+    mistakesFocus:selectedMistakesFocus,
+    familiarFocus:selectedFamiliarFocus
   }));
 }
 
@@ -1360,6 +1431,7 @@ function filterSummaryText(){
   const focusParts = [];
   if(selectedStarredFocus) focusParts.push("★ Starred first");
   if(selectedMistakesFocus) focusParts.push("✕ Mistakes only");
+  if(selectedFamiliarFocus) focusParts.push("✓ Familiar only");
   const focusText = focusParts.length ? ` · ${focusParts.join(" · ")}` : "";
   return `${priorityText} · ${typeText}${focusText} · ${count} verb${count===1?"":"s"}`;
 }
@@ -1375,8 +1447,9 @@ function renderFilterUI(){
 
   $("starredFilterBtn").classList.toggle("active", draftStarredFocus);
   $("mistakesFilterBtn").classList.toggle("active", draftMistakesFocus);
+  $("familiarFilterBtn").classList.toggle("active", draftFamiliarFocus);
 
-  const draftEligible = eligibleIndices(draftPriorities,draftTypes,draftMistakesFocus);
+  const draftEligible = eligibleIndices(draftPriorities,draftTypes,draftMistakesFocus,draftFamiliarFocus);
   const draftCount = draftEligible.length;
   const draftStarCount = draftEligible.filter(i=>starredVerbs.has(verbs[i].v)).length;
   const status = $("filterStatus");
@@ -1384,7 +1457,7 @@ function renderFilterUI(){
   // Priority, conjugation type and Focus are independent filter groups.
   // Any one selected option is enough to enable Apply; Clear all controls do not count.
   const hasAnyFilter = hasActiveFilterSelection(
-    draftPriorities, draftTypes, draftStarredFocus, draftMistakesFocus
+    draftPriorities, draftTypes, draftStarredFocus, draftMistakesFocus, draftFamiliarFocus
   );
 
   if(!hasAnyFilter){
@@ -1392,9 +1465,7 @@ function renderFilterUI(){
     status.className = "filter-status error";
     $("applyFilterBtn").disabled = true;
   } else if(!draftCount){
-    status.textContent = draftMistakesFocus
-      ? "0 mistakes match this filter."
-      : "0 verbs match this combination.";
+    status.textContent = draftMistakesFocus ? "0 mistakes match this filter." : draftFamiliarFocus ? "0 familiar verbs match this filter." : "0 verbs match this combination.";
     status.className = "filter-status error";
     $("applyFilterBtn").disabled = true;
   } else {
@@ -1402,11 +1473,13 @@ function renderFilterUI(){
       status.textContent = `${draftCount} mistake verb${draftCount===1?"":"s"} · ${draftStarCount} starred first`;
     }else if(draftMistakesFocus){
       status.textContent = `${draftCount} mistake verb${draftCount===1?"":"s"} in this filter`;
+    }else if(draftFamiliarFocus && draftStarredFocus){
+      status.textContent = `${draftCount} familiar verb${draftCount===1?"":"s"} · ${draftStarCount} starred first`;
+    }else if(draftFamiliarFocus){
+      status.textContent = `${draftCount} familiar verb${draftCount===1?"":"s"} in this filter`;
     }else if(draftStarredFocus){
       status.textContent = `${draftCount} verb${draftCount===1?"":"s"} · ${draftStarCount} starred first`;
-    }else{
-      status.textContent = `${draftCount} verb${draftCount===1?"":"s"} in this filter`;
-    }
+    }else{ status.textContent = `${draftCount} verb${draftCount===1?"":"s"} in this filter`; }
     status.className = "filter-status";
     $("applyFilterBtn").disabled = false;
   }
@@ -1414,6 +1487,7 @@ function renderFilterUI(){
   $("filterSummary").textContent = filterSummaryText();
   renderStarManagement();
   renderMistakeManagement();
+  renderFamiliarManagement();
 }
 
 function shuffleArray(arr){
@@ -1474,6 +1548,7 @@ function captureSessionState(){
     selectedTypes:[...selectedTypes],
     selectedStarredFocus,
     selectedMistakesFocus,
+    selectedFamiliarFocus,
     order:[...order],
     pos,
     round,
@@ -1519,6 +1594,7 @@ function normalizeSessionState(raw){
     selectedTypes:types,
     selectedStarredFocus:!!raw.selectedStarredFocus,
     selectedMistakesFocus:!!raw.selectedMistakesFocus,
+    selectedFamiliarFocus:!!raw.selectedFamiliarFocus,
     order:[...raw.order],
     pos:safePos,
     round:safeRound,
@@ -1540,10 +1616,13 @@ function restoreCloudSessionState(raw){
   selectedTypes = new Set(saved.selectedTypes);
   selectedStarredFocus = saved.selectedStarredFocus && starredVerbs.size > 0;
   selectedMistakesFocus = saved.selectedMistakesFocus && mistakeVerbs.size > 0;
+  selectedFamiliarFocus = saved.selectedFamiliarFocus && familiarVerbs.size > 0;
+  if(selectedFamiliarFocus) selectedMistakesFocus = false;
   draftPriorities = new Set(selectedPriorities);
   draftTypes = new Set(selectedTypes);
   draftStarredFocus = selectedStarredFocus;
   draftMistakesFocus = selectedMistakesFocus;
+  draftFamiliarFocus = selectedFamiliarFocus;
   saveFilterSettings();
 
   order = [...saved.order];
@@ -1586,24 +1665,24 @@ window.GermanDrillFocusData = {
   getLocal(){
     return {
       starredVerbs:[...starredVerbs],
-      mistakeVerbs:[...mistakeVerbs]
+      mistakeVerbs:[...mistakeVerbs],
+      familiarVerbs:[...familiarVerbs]
     };
   },
   applyCloud(raw){
     const validNames = new Set(verbs.map(item=>item.v));
     const cloudStars = Array.isArray(raw?.starredVerbs) ? raw.starredVerbs.filter(v=>validNames.has(v)) : [];
     const cloudMistakes = Array.isArray(raw?.mistakeVerbs) ? raw.mistakeVerbs.filter(v=>validNames.has(v)) : [];
-    starredVerbs = new Set(cloudStars);
-    mistakeVerbs = new Set(cloudMistakes);
-    saveStarredVerbs();
-    saveMistakeVerbs();
+    const mistakeSet = new Set(cloudMistakes);
+    const cloudFamiliar = Array.isArray(raw?.familiarVerbs) ? raw.familiarVerbs.filter(v=>validNames.has(v) && !mistakeSet.has(v)) : [];
+    starredVerbs = new Set(cloudStars); mistakeVerbs = mistakeSet; familiarVerbs = new Set(cloudFamiliar);
+    saveStarredVerbs(); saveMistakeVerbs(); saveFamiliarVerbs();
     if(selectedStarredFocus && !starredVerbs.size) selectedStarredFocus = false;
     if(selectedMistakesFocus && !mistakeVerbs.size) selectedMistakesFocus = false;
-    draftStarredFocus = selectedStarredFocus;
-    draftMistakesFocus = selectedMistakesFocus;
-    saveFilterSettings();
-    renderStarButton();
-    renderFilterUI();
+    if(selectedFamiliarFocus && !familiarVerbs.size) selectedFamiliarFocus = false;
+    if(selectedFamiliarFocus) selectedMistakesFocus = false;
+    draftStarredFocus = selectedStarredFocus; draftMistakesFocus = selectedMistakesFocus; draftFamiliarFocus = selectedFamiliarFocus;
+    saveFilterSettings(); renderStarButton(); renderFamiliarButton(); renderFilterUI();
   }
 };
 
@@ -1783,6 +1862,20 @@ function clearAllMistakeVerbs(){
   setMistakeFeedback("");
 }
 
+function stopClearFamiliarCountdown(){ if(clearFamiliarCountdownTimer){clearInterval(clearFamiliarCountdownTimer);clearFamiliarCountdownTimer=null;} }
+function closeClearFamiliarModal(){ stopClearFamiliarCountdown(); $("clearFamiliarModal").classList.add("hidden"); }
+function openClearFamiliarModal(){
+  const count=familiarVerbs.size; if(!count)return; stopClearFamiliarCountdown(); clearFamiliarCountdownValue=CLEAR_MISTAKES_DELAY_SECONDS;
+  $("clearFamiliarTitle").textContent=`Clear all ${count} familiar verbs?`;
+  $("clearFamiliarMessage").textContent=`This will return ${count} verb${count===1?"":"s"} to normal practice.`;
+  $("confirmClearFamiliarBtn").disabled=true; $("confirmClearFamiliarBtn").textContent=`Clear in ${clearFamiliarCountdownValue}s`; $("clearFamiliarModal").classList.remove("hidden");
+  clearFamiliarCountdownTimer=setInterval(()=>{clearFamiliarCountdownValue--;if(clearFamiliarCountdownValue<=0){stopClearFamiliarCountdown();$("confirmClearFamiliarBtn").disabled=false;$("confirmClearFamiliarBtn").textContent="Clear";}else $("confirmClearFamiliarBtn").textContent=`Clear in ${clearFamiliarCountdownValue}s`;},1000);
+}
+function clearAllFamiliarVerbs(){
+  if($("confirmClearFamiliarBtn").disabled)return; familiarVerbs.clear(); saveFamiliarVerbs(); window.GermanDrillFocusCloudClear?.("familiarVerbs");
+  selectedFamiliarFocus=false; draftFamiliarFocus=false; saveFilterSettings(); closeClearFamiliarModal(); renderFamiliarButton(); renderFilterUI();
+}
+
 function renderStudy(){
   const item = current();
   setMistakeFeedback("");
@@ -1853,6 +1946,7 @@ function renderStudy(){
   $("nextBtn").classList.add("hidden");
   $("skipBtn").classList.remove("hidden");
   $("starBtn").classList.add("hidden");
+  $("familiarBtn").classList.add("hidden");
   $("checkBtn").disabled = true;
   $("hint").innerHTML =
     `First look at the six forms. When you are ready, start the test. ` +
@@ -1876,6 +1970,7 @@ function startTest(){
   $("nextBtn").classList.add("hidden");
   $("skipBtn").classList.remove("hidden");
   $("starBtn").classList.add("hidden");
+  $("familiarBtn").classList.add("hidden");
   $("hint").textContent = "Fill in all six forms before checking your answers.";
   mode = "test";
 
@@ -1906,6 +2001,7 @@ function checkAnswers(){
   const item = current();
   const inputs = [...$("testTable").querySelectorAll("input")];
   const wasMistake = mistakeVerbs.has(item.v);
+  const wasFamiliar = familiarVerbs.has(item.v);
   let allCorrect = true;
 
   inputs.forEach((input,i)=>{
@@ -1942,22 +2038,20 @@ function checkAnswers(){
       setMistakeFeedback("");
     }
   }else{
-    if(!wasMistake){
-      mistakeVerbs.add(item.v);
-      saveMistakeVerbs();
-      window.GermanDrillFocusCloudMutate?.("mistakeVerbs", item.v, true);
-    }
+    if(wasFamiliar){ familiarVerbs.delete(item.v); saveFamiliarVerbs(); window.GermanDrillFocusCloudMutate?.("familiarVerbs",item.v,false);
+      if(familiarVerbs.size===0&&selectedFamiliarFocus){selectedFamiliarFocus=false;draftFamiliarFocus=false;saveFilterSettings();} }
+    if(!wasMistake){ mistakeVerbs.add(item.v); saveMistakeVerbs(); window.GermanDrillFocusCloudMutate?.("mistakeVerbs", item.v, true); }
     setMistakeFeedback(`✕ Added to Mistakes · ${mistakeVerbs.size} total`);
   }
-  renderFilterUI();
+  renderFamiliarButton(); renderFilterUI();
 
   $("checkBtn").classList.add("hidden");
   $("nextBtn").classList.remove("hidden");
   $("hint").textContent = "Check the answers, then continue. The next verb will start in Study mode again.";
   mode = "checked";
   revealGrammarTag();
-  renderStarButton();
-  $("starBtn").classList.remove("hidden");
+  renderStarButton(); renderFamiliarButton();
+  $("starBtn").classList.remove("hidden"); $("familiarBtn").classList.remove("hidden");
   window.GermanDrillCloudSave?.();
 }
 
@@ -1987,10 +2081,13 @@ function reloadLastSession(){
   // Focus data is long-term data and is intentionally NOT rolled back.
   selectedStarredFocus = saved.selectedStarredFocus && starredVerbs.size > 0;
   selectedMistakesFocus = saved.selectedMistakesFocus && mistakeVerbs.size > 0;
+  selectedFamiliarFocus = saved.selectedFamiliarFocus && familiarVerbs.size > 0;
+  if(selectedFamiliarFocus) selectedMistakesFocus = false;
   draftPriorities = new Set(selectedPriorities);
   draftTypes = new Set(selectedTypes);
   draftStarredFocus = selectedStarredFocus;
   draftMistakesFocus = selectedMistakesFocus;
+  draftFamiliarFocus = selectedFamiliarFocus;
   saveFilterSettings();
 
   order = [...saved.order];
@@ -2121,6 +2218,7 @@ $("filterToggle").addEventListener("click", ()=>{
     draftTypes = new Set(selectedTypes);
     draftStarredFocus = selectedStarredFocus;
     draftMistakesFocus = selectedMistakesFocus;
+    draftFamiliarFocus = selectedFamiliarFocus;
     renderFilterUI();
     panel.classList.remove("hidden");
     $("filterToggle").textContent = "Close";
@@ -2150,13 +2248,11 @@ document.querySelectorAll("[data-type]").forEach(btn=>{
 
 $("applyFilterBtn").addEventListener("click", ()=>{
   clearUndoSkipState();
-  const next = eligibleIndices(draftPriorities,draftTypes,draftMistakesFocus);
+  const next = eligibleIndices(draftPriorities,draftTypes,draftMistakesFocus,draftFamiliarFocus);
   if(!next.length) return;
 
-  selectedPriorities = new Set(draftPriorities);
-  selectedTypes = new Set(draftTypes);
-  selectedStarredFocus = draftStarredFocus;
-  selectedMistakesFocus = draftMistakesFocus;
+  selectedPriorities = new Set(draftPriorities); selectedTypes = new Set(draftTypes);
+  selectedStarredFocus = draftStarredFocus; selectedMistakesFocus = draftMistakesFocus; selectedFamiliarFocus = draftFamiliarFocus;
   saveFilterSettings();
 
   order = shuffledIndices();
@@ -2169,23 +2265,16 @@ $("applyFilterBtn").addEventListener("click", ()=>{
   window.GermanDrillCloudSave?.();
 });
 
-$("resetFilterBtn").addEventListener("click", ()=>{
-  draftPriorities = new Set(ALL_PRIORITIES);
-  draftTypes = new Set(ALL_TYPES);
-  draftStarredFocus = false;
-  draftMistakesFocus = false;
-  renderFilterUI();
-});
+$("noneFilterBtn").addEventListener("click", ()=>{draftPriorities=new Set();draftTypes=new Set();draftStarredFocus=false;draftMistakesFocus=false;draftFamiliarFocus=false;renderFilterUI();});
+$("resetFilterBtn").addEventListener("click", ()=>{draftPriorities=new Set(ALL_PRIORITIES);draftTypes=new Set(ALL_TYPES);renderFilterUI();});
 
 $("starredFilterBtn").addEventListener("click", ()=>{
   draftStarredFocus = !draftStarredFocus;
   renderFilterUI();
 });
 
-$("mistakesFilterBtn").addEventListener("click", ()=>{
-  draftMistakesFocus = !draftMistakesFocus;
-  renderFilterUI();
-});
+$("mistakesFilterBtn").addEventListener("click", ()=>{draftMistakesFocus=!draftMistakesFocus;if(draftMistakesFocus)draftFamiliarFocus=false;renderFilterUI();});
+$("familiarFilterBtn").addEventListener("click", ()=>{draftFamiliarFocus=!draftFamiliarFocus;if(draftFamiliarFocus)draftMistakesFocus=false;renderFilterUI();});
 
 $("meaning").addEventListener("click", ()=>{
   if(mode !== "study") return;
@@ -2220,6 +2309,14 @@ $("starBtn").addEventListener("click", ()=>{
   showStarFeedback(message);
 });
 
+$("familiarBtn").addEventListener("click", ()=>{
+  if(mode!=="checked")return; const verb=current().v; let message;
+  if(familiarVerbs.has(verb)){familiarVerbs.delete(verb);saveFamiliarVerbs();window.GermanDrillFocusCloudMutate?.("familiarVerbs",verb,false);message=`○ Familiar removed · ${familiarVerbs.size} total`;}
+  else{if(mistakeVerbs.has(verb)){mistakeVerbs.delete(verb);saveMistakeVerbs();window.GermanDrillFocusCloudMutate?.("mistakeVerbs",verb,false);if(mistakeVerbs.size===0&&selectedMistakesFocus){selectedMistakesFocus=false;draftMistakesFocus=false;}}
+    familiarVerbs.add(verb);saveFamiliarVerbs();window.GermanDrillFocusCloudMutate?.("familiarVerbs",verb,true);message=`✓ Familiar · ${familiarVerbs.size} total`;}
+  saveFilterSettings();renderFamiliarButton();renderFilterUI();showStarFeedback(message);
+});
+
 $("clearStarsBtn").addEventListener("click", openClearStarsModal);
 $("cancelClearStarsBtn").addEventListener("click", closeClearStarsModal);
 $("confirmClearStarsBtn").addEventListener("click", clearAllStarredVerbs);
@@ -2233,6 +2330,11 @@ $("confirmClearMistakesBtn").addEventListener("click", clearAllMistakeVerbs);
 $("clearMistakesModal").addEventListener("click", e=>{
   if(e.target === $("clearMistakesModal")) closeClearMistakesModal();
 });
+
+$("clearFamiliarBtn").addEventListener("click",openClearFamiliarModal);
+$("cancelClearFamiliarBtn").addEventListener("click",closeClearFamiliarModal);
+$("confirmClearFamiliarBtn").addEventListener("click",clearAllFamiliarVerbs);
+$("clearFamiliarModal").addEventListener("click",e=>{if(e.target===$("clearFamiliarModal"))closeClearFamiliarModal();});
 
 $("reloadSessionBtn").addEventListener("click", reloadLastSession);
 $("resetSessionBtn").addEventListener("click", resetSession);
@@ -2283,15 +2385,12 @@ document.addEventListener("keydown",(e)=>{
     closeClearStarsModal();
     return;
   }
-  if(e.key === "Escape" && !$("clearMistakesModal").classList.contains("hidden")){
-    closeClearMistakesModal();
-    return;
-  }
-
+  if(e.key === "Escape" && !$("clearMistakesModal").classList.contains("hidden")){closeClearMistakesModal();return;}
+  if(e.key === "Escape" && !$("clearFamiliarModal").classList.contains("hidden")){closeClearFamiliarModal();return;}
   if(e.key !== "Enter") return;
-
   if(!$("clearStarsModal").classList.contains("hidden")) return;
   if(!$("clearMistakesModal").classList.contains("hidden")) return;
+  if(!$("clearFamiliarModal").classList.contains("hidden")) return;
   if(mode === "study"){
     startTest();
   } else if(mode === "test" && !$("checkBtn").disabled){
@@ -2303,6 +2402,7 @@ document.addEventListener("keydown",(e)=>{
 
 loadStarredVerbs();
 loadMistakeVerbs();
+loadFamiliarVerbs();
 loadFilterSettings();
 renderFilterUI();
 order = shuffledIndices();
@@ -2351,7 +2451,7 @@ window.GermanDrillCloudSave = function(){
 };
 
 window.GermanDrillFocusCloudMutate = function(field, verb, add){
-  if(!focusCloudReady || !["starredVerbs","mistakeVerbs"].includes(field)) return;
+  if(!focusCloudReady || !["starredVerbs","mistakeVerbs","familiarVerbs"].includes(field)) return;
   const ref = doc(db,"users",ALLOWED_UID,"trainerStates",FOCUS_TRAINER_ID);
   const value = add ? arrayUnion(verb) : arrayRemove(verb);
   focusSaveChain = focusSaveChain.then(
@@ -2361,7 +2461,7 @@ window.GermanDrillFocusCloudMutate = function(field, verb, add){
 };
 
 window.GermanDrillFocusCloudClear = function(field){
-  if(!focusCloudReady || !["starredVerbs","mistakeVerbs"].includes(field)) return;
+  if(!focusCloudReady || !["starredVerbs","mistakeVerbs","familiarVerbs"].includes(field)) return;
   const ref = doc(db,"users",ALLOWED_UID,"trainerStates",FOCUS_TRAINER_ID);
   focusSaveChain = focusSaveChain.then(
     ()=>setDoc(ref,{[field]:[],updatedAt:serverTimestamp()},{merge:true}),
@@ -2372,27 +2472,29 @@ window.GermanDrillFocusCloudClear = function(field){
 async function loadFocusState(){
   const ref = doc(db,"users",ALLOWED_UID,"trainerStates",FOCUS_TRAINER_ID);
   const api = window.GermanDrillFocusData;
-  const local = api?.getLocal?.() || {starredVerbs:[],mistakeVerbs:[]};
+  const local = api?.getLocal?.() || {starredVerbs:[],mistakeVerbs:[],familiarVerbs:[]};
   const snapshot = await getDoc(ref);
   const remote = snapshot.exists() ? snapshot.data() : {};
   let cloudStars = Array.isArray(remote.starredVerbs) ? remote.starredVerbs : [];
   let cloudMistakes = Array.isArray(remote.mistakeVerbs) ? remote.mistakeVerbs : [];
+  let cloudFamiliar = Array.isArray(remote.familiarVerbs) ? remote.familiarVerbs : [];
   const migrated = localStorage.getItem(STAR_MIGRATION_KEY) === "1";
 
-  if(!snapshot.exists()){
-    cloudMistakes = [...new Set(local.mistakeVerbs)];
-  }
+  if(!snapshot.exists()){ cloudMistakes=[...new Set(local.mistakeVerbs)]; cloudFamiliar=[...new Set(local.familiarVerbs)].filter(v=>!cloudMistakes.includes(v)); }
   if(!snapshot.exists() || !migrated){
     cloudStars = [...new Set([...cloudStars,...local.starredVerbs])];
     await setDoc(ref,{
       starredVerbs:cloudStars,
       mistakeVerbs:cloudMistakes,
+      familiarVerbs:cloudFamiliar.filter(v=>!cloudMistakes.includes(v)),
       updatedAt:serverTimestamp()
     },{merge:true});
     localStorage.setItem(STAR_MIGRATION_KEY,"1");
   }
 
-  api?.applyCloud?.({starredVerbs:cloudStars,mistakeVerbs:cloudMistakes});
+  const mistakeSet=new Set(cloudMistakes); const sanitizedFamiliar=[...new Set(cloudFamiliar)].filter(v=>!mistakeSet.has(v));
+  if(sanitizedFamiliar.length!==cloudFamiliar.length) await setDoc(ref,{familiarVerbs:sanitizedFamiliar,updatedAt:serverTimestamp()},{merge:true});
+  api?.applyCloud?.({starredVerbs:cloudStars,mistakeVerbs:cloudMistakes,familiarVerbs:sanitizedFamiliar});
   focusCloudReady = true;
 }
 
