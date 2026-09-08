@@ -144,6 +144,7 @@
       text-align:right;
       line-height:1.55;
     }
+    .verb-progress-mini{font-size:11px;color:#8a8a84;font-weight:650}
     .header-side{
       display:flex;
       flex-direction:column;
@@ -784,6 +785,7 @@
     html[data-theme="dark"] .filter-panel,
     html[data-theme="dark"] .badge{background:#292927}
     html[data-theme="dark"] .filter-label{color:#c3c2bb}
+    html[data-theme="dark"] .verb-progress-mini{color:#aaa9a2}
     html[data-theme="dark"] .filter-chip{background:#232321;color:#c8c7c0}
     html[data-theme="dark"] .filter-chip.active,
     html[data-theme="dark"] .apply-filter,
@@ -882,7 +884,7 @@
       </div>
       <div class="meta">
         <div id="roundText"></div>
-        <div id="progressText"></div>
+        <div id="progressText" class="verb-progress-mini"></div>
       </div>
     </div>
   </div>
@@ -1284,12 +1286,22 @@ function showStarFeedback(message){
   }, 1800);
 }
 
+function hasActiveFilterSelection(priorities, types, starredFocus, mistakesFocus){
+  return priorities.size > 0
+    || types.size > 0
+    || starredFocus
+    || mistakesFocus;
+}
+
 function eligibleIndices(priorities = selectedPriorities, types = selectedTypes, mistakesFocus = selectedMistakesFocus){
+  const limitPriority = priorities.size > 0;
+  const limitType = types.size > 0;
+
   return verbs
     .map((item,i)=>({item,i}))
     .filter(({item}) =>
-      priorities.has(item.level) &&
-      types.has(typeKeyFor(item)) &&
+      (!limitPriority || priorities.has(item.level)) &&
+      (!limitType || types.has(typeKeyFor(item))) &&
       (!mistakesFocus || mistakeVerbs.has(item.v))
     )
     .map(({i})=>i);
@@ -1306,8 +1318,8 @@ function loadFilterSettings(){
         ? saved.types.filter(x => ALL_TYPES.includes(x))
         : [];
 
-      if(priorities.length) selectedPriorities = new Set(priorities);
-      if(types.length) selectedTypes = new Set(types);
+      if(Array.isArray(saved.priorities)) selectedPriorities = new Set(priorities);
+      if(Array.isArray(saved.types)) selectedTypes = new Set(types);
       selectedStarredFocus = !!saved.starredFocus;
       selectedMistakesFocus = !!saved.mistakesFocus;
     }
@@ -1332,11 +1344,12 @@ function filterSummaryText(){
   const count = eligibleIndices().length;
 
   let priorityText;
-  if(selectedPriorities.size === 2) priorityText = "Core + Extended";
-  else priorityText = [...selectedPriorities][0] || "No priority";
+  if(selectedPriorities.size === 0) priorityText = "All priorities";
+  else if(selectedPriorities.size === 2) priorityText = "Core + Extended";
+  else priorityText = [...selectedPriorities][0];
 
   let typeText;
-  if(selectedTypes.size === ALL_TYPES.length){
+  if(selectedTypes.size === 0 || selectedTypes.size === ALL_TYPES.length){
     typeText = "All types";
   } else if(selectedTypes.size <= 2){
     typeText = [...selectedTypes].map(k=>filterTypes[k].label).join(" + ");
@@ -1368,12 +1381,14 @@ function renderFilterUI(){
   const draftStarCount = draftEligible.filter(i=>starredVerbs.has(verbs[i].v)).length;
   const status = $("filterStatus");
 
-  if(!draftPriorities.size){
-    status.textContent = "Select at least one priority.";
-    status.className = "filter-status error";
-    $("applyFilterBtn").disabled = true;
-  } else if(!draftTypes.size){
-    status.textContent = "Select at least one conjugation type.";
+  // Priority, conjugation type and Focus are independent filter groups.
+  // Any one selected option is enough to enable Apply; Clear all controls do not count.
+  const hasAnyFilter = hasActiveFilterSelection(
+    draftPriorities, draftTypes, draftStarredFocus, draftMistakesFocus
+  );
+
+  if(!hasAnyFilter){
+    status.textContent = "Select at least one filter.";
     status.className = "filter-status error";
     $("applyFilterBtn").disabled = true;
   } else if(!draftCount){
@@ -1486,7 +1501,7 @@ function normalizeSessionState(raw){
     && new Set(raw.order).size === raw.order.length
     && raw.order.every(i=>Number.isInteger(i) && i>=0 && i<verbs.length);
 
-  if(!priorities.length || !types.length || !validOrder) return null;
+  if(!validOrder) return null;
 
   const safePos = Number.isInteger(raw.pos) && raw.pos>=0 && raw.pos<raw.order.length
     ? raw.pos : 0;
@@ -1788,8 +1803,8 @@ function renderStudy(){
   $("level").textContent = item.level;
   $("level").title = "Study priority used by this trainer; not an official Goethe category.";
 
-  $("roundText").textContent = `Round / Runde ${round}`;
-  $("progressText").textContent = `${pos+1} / ${order.length}`;
+  $("roundText").textContent = `Round / Runde · ${round}`;
+  $("progressText").textContent = `Verb / Verb · ${pos+1} / ${order.length}`;
   $("barFill").style.width = `${((pos+1)/order.length)*100}%`;
 
   $("studyTable").innerHTML = "";
@@ -2105,6 +2120,7 @@ $("filterToggle").addEventListener("click", ()=>{
     draftPriorities = new Set(selectedPriorities);
     draftTypes = new Set(selectedTypes);
     draftStarredFocus = selectedStarredFocus;
+    draftMistakesFocus = selectedMistakesFocus;
     renderFilterUI();
     panel.classList.remove("hidden");
     $("filterToggle").textContent = "Close";
