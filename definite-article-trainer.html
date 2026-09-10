@@ -476,16 +476,14 @@
 
       <div class="reveal-grid">
         <button class="reveal-card" id="genderHintBtn">
-          <span class="reveal-title">Gender/Number hint</span>
-          <span class="reveal-state" id="genderHintState">Tap to reveal</span>
+          <span class="reveal-title">Hinweis zu Genus / Numerus</span>
           <span class="reveal-content hidden" id="genderHintContent">
             <span class="reveal-noun" id="genderHintNoun"></span>
             <span class="reveal-grammar" id="genderHintGrammar"></span>
           </span>
         </button>
         <button class="reveal-card" id="englishBtn">
-          <span class="reveal-title">English translation</span>
-          <span class="reveal-state" id="englishState">Tap to reveal</span>
+          <span class="reveal-title">Englische Übersetzung</span>
           <span class="reveal-content hidden" id="englishContent">
             <span class="reveal-translation" id="englishTranslationText"></span>
           </span>
@@ -535,7 +533,7 @@
       </div>
     </div>
 
-    <div class="footer">256 curated sentence prompts · checked only after a correct answer · local cycle progress</div>
+    <div class="footer">256 curated sentence prompts · checked only after a correct answer without hints · local cycle progress</div>
   </section>
 </div>
 
@@ -920,7 +918,7 @@ function createRound(){
   for(const combo of order) items[combo]=chooseSentence(combo);
   fillState.activeRound={
     order,items,pos:0,stats:{correct:0,incorrect:0,skipped:0},
-    qState:{selected:null,checked:false,ok:null},
+    qState:{selected:null,checked:false,ok:null,assistanceUsed:false},
     complete:false
   };
   saveFill();
@@ -980,8 +978,6 @@ function renderReveal(){
   $("genderHintBtn").classList.toggle("expanded",genderOpen);
   $("englishBtn").classList.toggle("expanded",englishOpen);
 
-  $("genderHintState").textContent=genderOpen?"Tap to hide":"Tap to reveal";
-  $("englishState").textContent=englishOpen?"Tap to hide":"Tap to reveal";
 }
 function renderArticleButtons(){
   const r=fillState.activeRound, item=currentFillItem(), q=r.qState;
@@ -1063,7 +1059,13 @@ function checkFill(){
   markSeen(item.id);
 
   if(q.ok){
-    markChecked(item.id);
+    if(!q.assistanceUsed){
+      markChecked(item.id);
+    }else if(!fillState.checked.includes(item.id)){
+      // Correct with assistance: keep it unresolved for a later independent attempt.
+      // Reuse the unresolved queue without counting this as a Skip.
+      markSkipped(item.id);
+    }
     r.stats.correct++;
   }else{
     markWrong(item.id);
@@ -1077,7 +1079,7 @@ function advanceFill(){
   const r=fillState.activeRound;
   if(r.pos<15){
     r.pos++;
-    r.qState={selected:null,checked:false,ok:null};
+    r.qState={selected:null,checked:false,ok:null,assistanceUsed:false};
     genderOpen=false; englishOpen=false;
   }else{
     r.complete=true;
@@ -1097,7 +1099,7 @@ function skipFill(){
   r.stats.skipped++;
   if(r.pos<15){
     r.pos++;
-    r.qState={selected:null,checked:false,ok:null};
+    r.qState={selected:null,checked:false,ok:null,assistanceUsed:false};
     genderOpen=false; englishOpen=false;
   }else{
     r.complete=true;
@@ -1134,7 +1136,7 @@ function reshuffleFill(){
   }
 
   r.order.splice(start,remaining.length,...mixed);
-  r.qState={selected:null,checked:false,ok:null};
+  r.qState={selected:null,checked:false,ok:null,assistanceUsed:false};
   genderOpen=false;
   englishOpen=false;
   saveFill();
@@ -1275,8 +1277,26 @@ $("reshuffleBtn").addEventListener("click",reshuffleTable);
 $("tableUndoSkipBtn").addEventListener("click",undoTableSkip);
 $("tableSkipBtn").addEventListener("click",skipTable);
 
-$("genderHintBtn").addEventListener("click",()=>{ genderOpen=!genderOpen; renderReveal(); });
-$("englishBtn").addEventListener("click",()=>{ englishOpen=!englishOpen; renderReveal(); });
+$("genderHintBtn").addEventListener("click",()=>{
+  const q=fillState.activeRound?.qState;
+  const opening=!genderOpen;
+  genderOpen=!genderOpen;
+  if(opening && q && !q.checked){
+    q.assistanceUsed=true;
+    saveFill();
+  }
+  renderReveal();
+});
+$("englishBtn").addEventListener("click",()=>{
+  const q=fillState.activeRound?.qState;
+  const opening=!englishOpen;
+  englishOpen=!englishOpen;
+  if(opening && q && !q.checked){
+    q.assistanceUsed=true;
+    saveFill();
+  }
+  renderReveal();
+});
 $("fillCheckBtn").addEventListener("click",checkFill);
 $("fillUndoSkipBtn").addEventListener("click",undoFillSkip);
 $("roundUndoSkipBtn").addEventListener("click",undoFillSkip);
