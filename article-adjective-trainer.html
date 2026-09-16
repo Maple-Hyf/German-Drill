@@ -1,0 +1,1852 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script>document.documentElement.style.visibility = "hidden";</script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#f4f4f1" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="German Drill" />
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
+  <link rel="icon" type="image/png" sizes="64x64" href="./favicon.png" />
+  
+  <script>
+  (() => {
+    const KEY = "german-drill-theme-v1";
+    const MODES = ["system", "dark", "light"];
+    const LABELS = {
+      system: "◐ System",
+      dark: "☾ Dark",
+      light: "☀︎ Light"
+    };
+    const DARK_BG = "#171716";
+    const LIGHT_BG = "#f4f4f1";
+
+    function readMode(){
+      try{
+        const value = localStorage.getItem(KEY);
+        return MODES.includes(value) ? value : "system";
+      }catch(e){
+        return "system";
+      }
+    }
+    function resolvedTheme(mode){
+      if(mode === "system"){
+        return window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches
+          ? "dark" : "light";
+      }
+      return mode;
+    }
+    function updateButton(){
+      const btn = document.getElementById("themeToggle");
+      if(btn) btn.textContent = LABELS[readMode()];
+    }
+    function apply(mode, persist){
+      const resolved = resolvedTheme(mode);
+      document.documentElement.dataset.theme = resolved;
+      document.documentElement.dataset.themeMode = mode;
+      document.documentElement.style.colorScheme = resolved;
+
+      const meta = document.querySelector('meta[name="theme-color"]');
+      if(meta) meta.setAttribute("content", resolved === "dark" ? DARK_BG : LIGHT_BG);
+
+      if(persist){
+        try{ localStorage.setItem(KEY, mode); }catch(e){}
+      }
+      updateButton();
+    }
+    function cycle(){
+      const current = readMode();
+      const next = MODES[(MODES.indexOf(current) + 1) % MODES.length];
+      apply(next, true);
+    }
+
+    const initial = readMode();
+    apply(initial, false);
+
+    if(window.matchMedia){
+      const media = window.matchMedia("(prefers-color-scheme: dark)");
+      const onChange = () => {
+        if(readMode() === "system") apply("system", false);
+      };
+      if(media.addEventListener) media.addEventListener("change", onChange);
+      else if(media.addListener) media.addListener(onChange);
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      updateButton();
+      const btn = document.getElementById("themeToggle");
+      if(btn) btn.addEventListener("click", cycle);
+    });
+
+    window.GermanDrillTheme = { apply, cycle, readMode };
+  })();
+  </script>
+<title>Article + Adjective Trainer</title>
+  <style>
+    :root{
+      --bg:#f4f4f1;
+      --card:#ffffff;
+      --text:#181818;
+      --muted:#6d6d68;
+      --border:#deded8;
+      --soft:#f7f7f4;
+      --ok:#eaf7ed;
+      --ok-border:#b9d9bf;
+      --bad:#fff0f0;
+      --bad-border:#e5b8b8;
+      --mask-bg:#deded8;
+      --mask-border:#d4d4ce;
+      --shadow:0 10px 34px rgba(0,0,0,.07);
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      background:var(--bg);
+      color:var(--text);
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,
+                  "Noto Sans","PingFang SC","Microsoft YaHei",sans-serif;
+    }
+    .back-link{
+      display:inline-block;
+      margin-bottom:14px;
+      color:var(--muted);
+      text-decoration:none;
+      font-size:13px;
+      font-weight:650;
+    }
+    .back-link:hover{text-decoration:underline}
+    .wrap{
+      width:min(780px,calc(100% - 28px));
+      margin:30px auto 60px;
+    }
+    .header{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-end;
+      gap:20px;
+      margin-bottom:16px;
+    }
+    h1{
+      margin:0 0 6px;
+      font-size:28px;
+      letter-spacing:-.4px;
+    }
+    .subtitle,.meta,.hint,.footer{
+      color:var(--muted);
+    }
+    .subtitle{font-size:14px}
+    .meta{
+      font-size:13px;
+      white-space:nowrap;
+      text-align:right;
+      line-height:1.55;
+    }
+    .verb-progress-mini{font-size:11px;color:#8a8a84;font-weight:650}
+    .header-side{
+      display:flex;
+      flex-direction:column;
+      align-items:flex-end;
+      gap:7px;
+    }
+    .session-tools{
+      display:flex;
+      align-items:center;
+      justify-content:flex-end;
+      gap:7px;
+    }
+    .session-tool{
+      min-height:30px;
+      padding:6px 9px;
+      border:1px solid var(--border);
+      border-radius:9px;
+      background:var(--card);
+      color:var(--muted);
+      font:inherit;
+      font-size:11px;
+      font-weight:800;
+      line-height:1;
+      box-shadow:none;
+    }
+    .session-tool:hover:not(:disabled){
+      border-color:#aaa9a2;
+      color:var(--text);
+    }
+    .session-tool.reset{
+      color:#a14c4c;
+      border-color:#e0c0c0;
+      background:#fffafa;
+    }
+    .session-tool.reset:hover:not(:disabled){
+      color:#873636;
+      border-color:#ce9999;
+      background:#fff4f4;
+    }
+    .bar{
+      height:6px;
+      background:#e1e1dc;
+      border-radius:999px;
+      overflow:hidden;
+      margin-bottom:16px;
+    }
+    .bar > div{
+      height:100%;
+      background:#1d1d1d;
+      width:0%;
+      transition:width .2s ease;
+    }
+
+    .filter-shell{
+      margin-bottom:14px;
+    }
+    .filter-summary-row{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+    }
+    .filter-summary{
+      color:var(--muted);
+      font-size:12px;
+      line-height:1.45;
+      min-width:0;
+    }
+    .filter-toggle{
+      flex:0 0 auto;
+      padding:7px 10px;
+      border:1px solid var(--border);
+      border-radius:9px;
+      background:#ecece7;
+      color:#333;
+      font-size:12px;
+      font-weight:800;
+    }
+    .filter-panel{
+      margin-top:10px;
+      padding:14px;
+      border:1px solid var(--border);
+      border-radius:14px;
+      background:#fafaf8;
+    }
+    .filter-group + .filter-group{
+      margin-top:14px;
+    }
+    .filter-label{
+      margin-bottom:7px;
+      color:#555;
+      font-size:11px;
+      font-weight:800;
+      letter-spacing:.02em;
+    }
+    .filter-chips{
+      display:flex;
+      flex-wrap:wrap;
+      gap:7px;
+    }
+    .filter-chip{
+      padding:7px 9px;
+      border:1px solid var(--border);
+      border-radius:999px;
+      background:#fff;
+      color:#555;
+      font-size:11px;
+      font-weight:750;
+    }
+    .filter-chip.active{
+      background:#222;
+      border-color:#222;
+      color:#fff;
+    }
+    .filter-actions{
+      display:flex;
+      align-items:center;
+      gap:9px;
+      flex-wrap:wrap;
+      margin-top:14px;
+    }
+    .apply-filter{
+      padding:9px 12px;
+      border-radius:10px;
+      background:#171717;
+      color:#fff;
+      font-size:12px;
+      font-weight:800;
+    }
+    .reset-filter{
+      padding:9px 12px;
+      border-radius:10px;
+      background:#ecece7;
+      color:#333;
+      font-size:12px;
+      font-weight:800;
+    }
+    .filter-status{
+      color:var(--muted);
+      font-size:11px;
+      line-height:1.4;
+    }
+    .filter-status.error{
+      color:#a33;
+      font-weight:700;
+    }
+    .star-total{
+      margin-top:7px;
+      color:var(--muted);
+      font-size:10.5px;
+      font-weight:700;
+    }
+    .focus-block + .focus-block{
+      margin-top:11px;
+    }
+    .clear-stars-btn{
+      padding:7px 9px;
+      border:1px solid #e0c0c0;
+      border-radius:999px;
+      background:#fffafa;
+      color:#9a4a4a;
+      font-size:11px;
+      font-weight:800;
+    }
+    .clear-stars-btn:hover:not(:disabled){
+      background:#fff3f3;
+      border-color:#ce9999;
+      color:#833737;
+    }
+    .star-action{
+      display:flex;
+      align-items:center;
+      justify-content:flex-end;
+      gap:9px;
+      min-width:40px;
+    }
+    .star-feedback{
+      color:var(--muted);
+      font-size:11px;
+      font-weight:750;
+      white-space:nowrap;
+      opacity:0;
+      transform:translateY(1px);
+      transition:opacity .16s ease,transform .16s ease;
+      pointer-events:none;
+    }
+    .star-feedback.show{
+      opacity:1;
+      transform:translateY(0);
+    }
+    .mistake-feedback{
+      min-height:16px;
+      margin:-2px 0 10px;
+      color:var(--muted);
+      font-size:11px;
+      font-weight:750;
+      line-height:1.4;
+    }
+    .mistake-feedback:empty{
+      min-height:0;
+      margin:0;
+    }
+
+    .card{
+      background:var(--card);
+      border:1px solid var(--border);
+      border-radius:20px;
+      box-shadow:var(--shadow);
+      padding:26px;
+    }
+    .topline{
+      display:flex;
+      justify-content:space-between;
+      gap:16px;
+      align-items:flex-start;
+    }
+    .verb{
+      font-size:36px;
+      line-height:1.1;
+      font-weight:780;
+      letter-spacing:-.7px;
+    }
+    .meaning{
+      margin-top:7px;
+      width:fit-content;
+      max-width:100%;
+      font-size:16px;
+      color:var(--muted);
+      border-radius:7px;
+      transition:background .12s ease,color .12s ease,border-color .12s ease;
+    }
+    .usage-note{
+      display:inline-block;
+      margin-top:8px;
+      max-width:100%;
+      padding:4px 8px;
+      border:1px solid var(--border);
+      border-radius:8px;
+      color:var(--muted);
+      font-size:12px;
+      line-height:1.3;
+      font-weight:650;
+      white-space:normal;
+      overflow-wrap:anywhere;
+    }
+    .meaning.study-toggle{
+      cursor:pointer;
+      user-select:none;
+      -webkit-user-select:none;
+    }
+    .meaning.study-toggle.masked{
+      color:transparent;
+      background:var(--mask-bg);
+      box-shadow:inset 0 0 0 1px var(--mask-border);
+      padding:2px 6px;
+    }
+    .tag-stack{
+      display:flex;
+      flex-direction:column;
+      align-items:flex-end;
+      gap:6px;
+      max-width:58%;
+      flex:0 1 auto;
+    }
+    .badge{
+      border:1px solid var(--border);
+      background:#fafaf8;
+      color:#555;
+      border-radius:14px;
+      padding:6px 10px;
+      font-size:12px;
+      line-height:1.35;
+      text-align:right;
+      white-space:nowrap;
+      max-width:100%;
+    }
+    .level-badge{
+      border:1px solid #e7e7e1;
+      background:#f7f7f4;
+      color:#85857f;
+      border-radius:999px;
+      padding:3px 7px;
+      font-size:10px;
+      font-weight:650;
+      letter-spacing:.02em;
+      white-space:nowrap;
+    }
+    .grammar-delayed{
+      transition:opacity .28s ease, transform .28s ease;
+      transform-origin:right top;
+    }
+    .grammar-delayed.grammar-hidden{
+      opacity:0;
+      visibility:hidden;
+      transform:translateY(-2px);
+      pointer-events:none;
+    }
+    .test-title-row{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      margin-top:22px;
+      margin-bottom:10px;
+    }
+    .test-title-row .mode-title{margin:0}
+    .star-btn{
+      width:40px;
+      min-width:40px;
+      height:40px;
+      padding:0;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      border:1px solid var(--border);
+      border-radius:11px;
+      background:var(--soft);
+      color:#777;
+      font-size:23px;
+      font-weight:800;
+      line-height:1;
+      box-shadow:none;
+    }
+    .star-btn:hover{
+      border-color:#c19b49;
+      color:#9b731e;
+      background:#fff8e5;
+    }
+    .star-btn.starred{
+      background:#fff3cf;
+      border-color:#d6a463;
+      color:#8c640b;
+    }
+    .familiar-btn{
+      width:40px;min-width:40px;height:40px;padding:0;display:inline-flex;align-items:center;justify-content:center;
+      border:1px solid var(--border);border-radius:11px;background:var(--soft);color:#777;box-shadow:none;
+    }
+    .familiar-btn svg{width:21px;height:21px;display:block}
+    .familiar-btn:hover{border-color:#8faf98;color:#557a60;background:#f2f8f3}
+    .familiar-btn.familiar{background:#e5f2e8;border-color:#8fb99a;color:#477353}
+    .mode-title{
+      margin-top:22px;
+      margin-bottom:10px;
+      font-size:14px;
+      font-weight:750;
+    }
+    .table{
+      display:grid;
+      gap:10px;
+    }
+    .row{
+      display:grid;
+      grid-template-columns:112px 1fr;
+      gap:12px;
+      align-items:start;
+    }
+    .pronoun{
+      padding-top:12px;
+      font-weight:700;
+    }
+    .answer{
+      min-height:46px;
+      display:flex;
+      align-items:center;
+      padding:12px 14px;
+      border:1px solid var(--border);
+      border-radius:12px;
+      background:var(--soft);
+      font-size:17px;
+      transition:background .12s ease,color .12s ease,border-color .12s ease;
+    }
+    #studyTable.study-toggle{
+      cursor:pointer;
+      user-select:none;
+      -webkit-user-select:none;
+    }
+    #studyTable.answers-masked .answer{
+      color:transparent;
+      background:var(--mask-bg);
+      border-color:var(--mask-border);
+    }
+    .input-wrap{min-width:0}
+    input{
+      width:100%;
+      min-height:46px;
+      padding:11px 13px;
+      font:inherit;
+      font-size:17px;
+      border:1px solid var(--border);
+      border-radius:12px;
+      background:#fff;
+      outline:none;
+    }
+    input:focus{
+      border-color:#8d8d88;
+      box-shadow:0 0 0 3px rgba(0,0,0,.05);
+    }
+    input.correct{
+      background:var(--ok);
+      border-color:var(--ok-border);
+    }
+    input.wrong{
+      background:var(--bad);
+      border-color:var(--bad-border);
+    }
+    .result{
+      margin-top:5px;
+      font-size:13px;
+      min-height:18px;
+    }
+    .result.ok{color:#2c6f3a}
+    .result.bad{color:#8b3a2f}
+    .correction-label{
+      display:block;
+      margin-bottom:5px;
+      color:#8b5a52;
+      font-size:11px;
+      font-weight:700;
+    }
+    .correction-answer{
+      display:inline-block;
+      padding:5px 9px;
+      border:1px solid #d6a463;
+      border-radius:8px;
+      background:#fff3cf;
+      color:#3d2700;
+      font-size:17px;
+      font-weight:900;
+      letter-spacing:.01em;
+      line-height:1.2;
+    }
+    .controls{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-top:24px;
+    }
+    button{
+      appearance:none;
+      border:none;
+      border-radius:12px;
+      padding:12px 16px;
+      font-size:15px;
+      font-weight:750;
+      cursor:pointer;
+    }
+    .primary{
+      background:#171717;
+      color:#fff;
+    }
+    .secondary{
+      background:#ecece7;
+      color:#222;
+    }
+    .skip{
+      background:#fff3cf;
+      color:#6f4300;
+      border:2px solid #d69a24;
+      font-weight:850;
+      box-shadow:0 0 0 2px rgba(214,154,36,.10);
+    }
+    .skip:hover{
+      background:#ffe9a8;
+    }
+    .skip-pair{
+      display:flex;
+      align-items:stretch;
+      gap:10px;
+    }
+    .undo-skip{
+      width:46px;
+      min-width:46px;
+      padding:0;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      background:#fffaf0;
+      color:#8a6208;
+      border:2px solid #d69a24;
+      box-shadow:0 0 0 2px rgba(214,154,36,.06);
+    }
+    .undo-skip:hover:not(:disabled){
+      background:#fff3cf;
+    }
+    .undo-skip svg{
+      width:20px;
+      height:20px;
+      display:block;
+    }
+    button:disabled{
+      opacity:.38;
+      cursor:not-allowed;
+    }
+    .hint{
+      margin-top:16px;
+      font-size:13px;
+      line-height:1.55;
+    }
+
+    .char-helper{
+      margin-top:16px;
+      padding-top:14px;
+      border-top:1px solid var(--border);
+    }
+    .char-helper-label{
+      color:var(--muted);
+      font-size:12px;
+      font-weight:700;
+      margin-bottom:8px;
+    }
+    .char-buttons{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+    }
+    .char-btn{
+      min-width:46px;
+      min-height:42px;
+      padding:8px 13px;
+      background:#f1f1ed;
+      color:#222;
+      border:1px solid var(--border);
+      font-size:18px;
+      line-height:1;
+    }
+    .char-btn:focus{
+      outline:2px solid #999;
+      outline-offset:2px;
+    }
+    .modal-backdrop{
+      position:fixed;
+      inset:0;
+      z-index:1000;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:20px;
+      background:rgba(0,0,0,.38);
+    }
+    .confirm-modal{
+      width:min(420px,100%);
+      padding:20px;
+      border:1px solid var(--border);
+      border-radius:18px;
+      background:var(--card);
+      box-shadow:0 22px 60px rgba(0,0,0,.22);
+    }
+    .confirm-modal h2{
+      margin:0 0 7px;
+      font-size:20px;
+      letter-spacing:-.2px;
+    }
+    .confirm-modal p{
+      margin:0;
+      color:var(--muted);
+      font-size:13px;
+      line-height:1.55;
+    }
+    .confirm-actions{
+      display:flex;
+      justify-content:flex-end;
+      gap:9px;
+      margin-top:18px;
+    }
+    .modal-cancel{
+      background:#ecece7;
+      color:#333;
+    }
+    .modal-clear{
+      min-width:112px;
+      background:#a53f3f;
+      color:#fff;
+    }
+    .modal-clear:disabled{
+      background:#d9b7b7;
+      color:#fff;
+      opacity:1;
+    }
+    .hidden{display:none!important}
+    .footer{
+      margin-top:17px;
+      text-align:center;
+      font-size:12px;
+    }
+    @media(max-width:620px){
+      .wrap{margin-top:18px}
+      .header{align-items:flex-start;flex-direction:column;gap:8px}
+      .header-side{width:100%;align-items:stretch}
+      .session-tools{justify-content:flex-end}
+      .meta{text-align:left}
+      .card{padding:20px}
+      .row{grid-template-columns:86px 1fr}
+      .verb{font-size:31px}
+      .tag-stack{max-width:52%}
+      .badge{
+        white-space:normal;
+        border-radius:12px;
+      }
+      .badge .tag-part{display:block}
+      .badge .tag-sep{display:none}
+      .filter-summary-row{align-items:flex-start}
+      .filter-panel{padding:12px}
+      .filter-chip{font-size:10.5px}
+    }
+  
+
+    .page-nav{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      margin-bottom:14px;
+    }
+    .page-nav .back-link,.page-nav .back{margin-bottom:0}
+    .theme-toggle{
+      flex:0 0 auto;
+      min-height:34px;
+      padding:7px 10px;
+      border:1px solid var(--border);
+      border-radius:10px;
+      background:var(--card);
+      color:var(--muted);
+      box-shadow:none;
+      font:inherit;
+      font-size:12px;
+      font-weight:800;
+      line-height:1;
+      cursor:pointer;
+      white-space:nowrap;
+    }
+    .theme-toggle:hover{border-color:#9c9c96;color:var(--text)}
+    html[data-theme="dark"] .theme-toggle:hover{border-color:#66665f}
+
+    html[data-theme="dark"]{
+      --bg:#171716;--card:#232321;--text:#f1f0ea;--muted:#aaa9a2;--border:#3b3b37;
+      --soft:#2a2a27;--ok:#183522;--ok-border:#39724a;--bad:#3a2020;--bad-border:#7b4545;
+      --mask-bg:#3a3a36;--mask-border:#41413c;
+      --shadow:0 12px 34px rgba(0,0,0,.28);
+    }
+    html[data-theme="dark"] .bar{background:#32322f}
+    html[data-theme="dark"] .bar > div{background:#d5d4ce}
+    html[data-theme="dark"] .filter-toggle,
+    html[data-theme="dark"] .reset-filter,
+    html[data-theme="dark"] .secondary{background:#30302d;color:#e1e0da}
+    html[data-theme="dark"] .filter-panel,
+    html[data-theme="dark"] .badge{background:#292927}
+    html[data-theme="dark"] .filter-label{color:#c3c2bb}
+    html[data-theme="dark"] .verb-progress-mini{color:#aaa9a2}
+    html[data-theme="dark"] .filter-chip{background:#232321;color:#c8c7c0}
+    html[data-theme="dark"] .filter-chip.active,
+    html[data-theme="dark"] .apply-filter,
+    html[data-theme="dark"] .primary{
+      background:#ecebe5;color:#181818;border-color:#ecebe5
+    }
+    html[data-theme="dark"] .filter-status.error{color:#ef9696}
+    html[data-theme="dark"] .session-tool{
+      background:#292927;color:#aaa9a2;border-color:#45453f
+    }
+    html[data-theme="dark"] .session-tool:hover:not(:disabled){
+      border-color:#66665f;color:#f1f0ea
+    }
+    html[data-theme="dark"] .session-tool.reset{
+      background:#322323;color:#df9696;border-color:#684444
+    }
+    html[data-theme="dark"] .session-tool.reset:hover:not(:disabled){
+      background:#3b2727;color:#efaaaa;border-color:#855555
+    }
+    html[data-theme="dark"] .clear-stars-btn{
+      background:#322323;color:#df9696;border-color:#684444
+    }
+    html[data-theme="dark"] .clear-stars-btn:hover:not(:disabled){
+      background:#3b2727;color:#efaaaa;border-color:#855555
+    }
+    html[data-theme="dark"] .modal-cancel{
+      background:#30302d;color:#e1e0da
+    }
+    html[data-theme="dark"] .modal-clear{
+      background:#8c3b3b;color:#fff
+    }
+    html[data-theme="dark"] .modal-clear:disabled{
+      background:#533535;color:#a99b9b
+    }
+    html[data-theme="dark"] .level-badge{
+      border-color:#3b3b37;background:#292927;color:#96968f
+    }
+    html[data-theme="dark"] .star-btn{
+      background:#30302d;
+      border-color:#45453f;
+      color:#aaa9a2;
+    }
+    html[data-theme="dark"] .star-btn:hover{
+      background:#3a321d;
+      border-color:#8f702e;
+      color:#e8c86f;
+    }
+    html[data-theme="dark"] .star-btn.starred{
+      background:#3b3018;
+      border-color:#9b762d;
+      color:#f0ce80;
+    }
+    html[data-theme="dark"] .familiar-btn{background:#30302d;border-color:#45453f;color:#aaa9a2}
+    html[data-theme="dark"] .familiar-btn:hover{background:#26332a;border-color:#5f8068;color:#a8d4b2}
+    html[data-theme="dark"] .familiar-btn.familiar{background:#26372b;border-color:#62886d;color:#b7dfc0}
+    html[data-theme="dark"] input{background:#1d1d1b;color:var(--text)}
+    html[data-theme="dark"] input:focus{
+      border-color:#74746d;box-shadow:0 0 0 3px rgba(255,255,255,.06)
+    }
+    html[data-theme="dark"] input.correct{background:var(--ok);border-color:var(--ok-border)}
+    html[data-theme="dark"] input.wrong{background:var(--bad);border-color:var(--bad-border)}
+    html[data-theme="dark"] .result.ok{color:#8ed29d}
+    html[data-theme="dark"] .result.bad{color:#ee9b90}
+    html[data-theme="dark"] .correction-label{color:#d79a90}
+    html[data-theme="dark"] .correction-answer{
+      background:#3b3018;border-color:#9b762d;color:#f4d27a
+    }
+    html[data-theme="dark"] .skip{
+      background:#3b3018;color:#f0ce80;border-color:#a8791d;
+      box-shadow:0 0 0 2px rgba(168,121,29,.14)
+    }
+    html[data-theme="dark"] .skip:hover{background:#493a18}
+    html[data-theme="dark"] .undo-skip{
+      background:#2b281d;color:#d8b95f;border-color:#a8791d;box-shadow:none
+    }
+    html[data-theme="dark"] .undo-skip:hover:not(:disabled){background:#3b3018}
+    html[data-theme="dark"] .char-btn{
+      background:#30302d;color:#efeee8;border-color:#45453f
+    }
+    html[data-theme="dark"] .char-btn:focus{outline-color:#8e8e86}
+
+
+    /* A1 Noun Forms Trainer */
+    .noun{font-size:36px;font-weight:850;letter-spacing:-.7px;line-height:1.05}
+    .noun-progress-mini{font-size:11px;color:#8a8a84;font-weight:650}
+    .noun-topline{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:18px}
+    .noun-task{border-top:1px solid var(--border);padding:16px 0}
+    .noun-task:first-of-type{border-top:0;padding-top:4px}
+    .task-label{font-size:12px;color:var(--muted);font-weight:800;margin-bottom:9px}
+    .article-answer-row{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+    .article-options{display:flex;gap:8px;flex-wrap:wrap}
+    .article-btn{min-width:58px;padding:10px 13px;border:1px solid var(--border);border-radius:10px;background:var(--soft);color:var(--text);font:inherit;font-size:15px;font-weight:800;cursor:pointer}
+    .article-btn:hover:not(:disabled){border-color:#aaa9a2;background:#f0f0ec}
+    .article-btn.selected{background:#1d1d1d;color:#fff;border-color:#1d1d1d}
+    .article-btn.correct{background:var(--ok);border-color:var(--ok-border);color:#2f6f3c}
+    .article-btn.wrong{background:var(--bad);border-color:var(--bad-border);color:#a23f3f}
+    .article-btn.answer-correct{box-shadow:inset 0 0 0 2px #89bd94}
+    .noun-inline{font-size:20px;font-weight:800;letter-spacing:-.2px}
+    .genitive-display{display:inline-flex;align-items:center;min-height:44px;padding:10px 13px;border:1px solid var(--border);border-radius:10px;background:var(--soft);font-size:18px;font-weight:800}
+    .plural-row{display:flex;align-items:center;gap:9px;min-width:0}
+    .plural-prefix{font-size:18px;font-weight:800;flex:0 0 auto}
+    .plural-input{min-width:0;flex:1;width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:#fff;color:var(--text);font:inherit;font-size:17px;font-weight:700;outline:none}
+    .plural-input:focus{border-color:#74746d;box-shadow:0 0 0 3px rgba(0,0,0,.06)}
+    .plural-input.correct{background:var(--ok);border-color:var(--ok-border)}
+    .plural-input.wrong{background:var(--bad);border-color:var(--bad-border)}
+    .plural-correction{margin-top:8px;font-size:12px;color:#a23f3f;font-weight:750}
+    .plural-correction strong{display:inline-block;margin-left:5px;padding:3px 7px;border-radius:7px;background:#fff6d9;border:1px solid #ead28a;color:#715715}
+    .hint-line{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-top:10px}
+    .hint-btn{display:inline-flex;align-items:center;gap:5px;padding:7px 10px;border:1px dashed #c5a15d;border-radius:9px;background:#fff9e9;color:#765a1b;font:inherit;font-size:11px;font-weight:800;cursor:pointer;transition:background .15s ease,border-color .15s ease,color .15s ease}
+    .hint-btn svg{width:13px;height:13px;flex:0 0 auto}
+    .hint-btn:hover:not(:disabled){background:#fff4d7;border-color:#ad8740;color:#63490f}
+    .hint-btn.active{background:#f7e9bf;border-color:#a67d35;color:#5d430c}
+    .hint-text{font-size:12px;color:#796019;font-weight:800}
+    .result-panel{margin-top:15px;padding:13px;border:1px solid var(--border);border-radius:12px;background:var(--soft)}
+    .result-forms{display:grid;gap:7px;font-size:13px}
+    .result-form{display:flex;justify-content:space-between;gap:14px;align-items:baseline}
+    .result-form span{color:var(--muted);font-size:11px;font-weight:750}
+    .result-form strong{text-align:right}
+    .type-result{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)}
+    .noun-type-chip{display:inline-flex;align-items:center;padding:5px 8px;border:1px solid #c9c9c3;border-radius:8px;background:#fff;color:#66665f;font-size:10px;font-weight:800;line-height:1.25}
+    .answer-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:2px}
+    .answer-feedback{font-size:12px;font-weight:800;color:var(--muted)}
+    .answer-feedback.ok{color:#317340}.answer-feedback.bad{color:#a64a43}
+    .mistake-feedback{min-height:18px;font-size:11px;font-weight:750;color:#8a6c22;margin:4px 0 0}
+    .char-helper{margin-top:12px}.char-helper-label{font-size:10px;color:var(--muted);font-weight:750;margin-bottom:6px}.char-buttons{display:flex;gap:6px;flex-wrap:wrap}.char-btn{min-width:34px;padding:6px 8px;border:1px solid var(--border);border-radius:8px;background:var(--soft);color:var(--text);font:inherit;font-size:13px;font-weight:800;cursor:pointer}.char-btn:focus{outline:2px solid #8e8e86;outline-offset:1px}
+    @media(max-width:620px){.noun{font-size:31px}.noun-topline{gap:12px}.article-btn{min-width:54px;padding:10px 12px}.result-form{align-items:flex-start}.result-form strong{max-width:58%}}
+    html[data-theme="dark"] .noun-progress-mini{color:#aaa9a2}
+    html[data-theme="dark"] .article-btn{background:#30302d;color:#efeee8;border-color:#45453f}
+    html[data-theme="dark"] .article-btn:hover:not(:disabled){background:#383835;border-color:#66665f}
+    html[data-theme="dark"] .article-btn.selected{background:#e8e7df;color:#1d1d1b;border-color:#e8e7df}
+    html[data-theme="dark"] .article-btn.correct{background:var(--ok);border-color:var(--ok-border);color:#9ed9aa}
+    html[data-theme="dark"] .article-btn.wrong{background:var(--bad);border-color:var(--bad-border);color:#ef9b91}
+    html[data-theme="dark"] .genitive-display,html[data-theme="dark"] .result-panel{background:#262624}
+    html[data-theme="dark"] .plural-input{background:#1d1d1b;color:var(--text)}
+    html[data-theme="dark"] .plural-input:focus{border-color:#74746d;box-shadow:0 0 0 3px rgba(255,255,255,.06)}
+    html[data-theme="dark"] .plural-input.correct{background:var(--ok);border-color:var(--ok-border)}
+    html[data-theme="dark"] .plural-input.wrong{background:var(--bad);border-color:var(--bad-border)}
+    html[data-theme="dark"] .plural-correction{color:#ef9b91}
+    html[data-theme="dark"] .plural-correction strong{background:#3b3018;border-color:#9b762d;color:#f4d27a}
+    html[data-theme="dark"] .hint-btn{background:#332e22;border-color:#74613a;color:#d8c384}
+    html[data-theme="dark"] .hint-btn:hover:not(:disabled){background:#3b3322;border-color:#927943;color:#ead394}
+    html[data-theme="dark"] .hint-btn.active{background:#43391f;border-color:#a88c49;color:#f1d98f}
+    html[data-theme="dark"] .hint-text{color:#d4c184}
+    html[data-theme="dark"] .noun-type-chip{background:#292927;border-color:#45453f;color:#aaa9a2}
+    html[data-theme="dark"] .char-btn{background:#30302d;color:#efeee8;border-color:#45453f}
+
+
+    /* Article + Adjective Trainer */
+    .aa-progress-mini{font-size:11px;color:#8a8a84;font-weight:650}
+    .aa-card{padding:26px}
+    .question-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
+    .prompt-wrap{min-width:0}
+    .prompt-cue{font-size:30px;line-height:1.2;font-weight:850;letter-spacing:-.45px;overflow-wrap:anywhere}
+    .grammar-line{margin-top:9px;color:var(--muted);font-size:12px;font-weight:800;line-height:1.45}
+    .answer-area{margin-top:22px;padding-top:18px;border-top:1px solid var(--border)}
+    .answer-label{margin-bottom:8px;color:var(--muted);font-size:12px;font-weight:800}
+    .phrase-input{width:100%;min-height:50px;padding:12px 14px;border:1px solid var(--border);border-radius:12px;background:#fff;color:var(--text);font:inherit;font-size:18px;font-weight:700;outline:none}
+    .phrase-input:focus{border-color:#74746d;box-shadow:0 0 0 3px rgba(0,0,0,.06)}
+    .phrase-input.correct{background:var(--ok);border-color:var(--ok-border)}
+    .phrase-input.wrong{background:var(--bad);border-color:var(--bad-border)}
+    .aa-status-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+    .result-panel{margin-top:16px;padding:15px;border:1px solid var(--border);border-radius:14px;background:var(--soft)}
+    .correct-answer-label{color:var(--muted);font-size:11px;font-weight:800}
+    .correct-answer{margin-top:5px;font-size:21px;font-weight:900;letter-spacing:-.2px;overflow-wrap:anywhere}
+    .variant-note{margin-top:5px;color:var(--muted);font-size:10.5px;font-weight:750}
+    .feedback-list{display:grid;gap:8px;margin-top:14px;padding-top:13px;border-top:1px solid var(--border)}
+    .feedback-row{display:grid;grid-template-columns:132px minmax(0,1fr);gap:12px;align-items:baseline;font-size:13px}
+    .feedback-label{color:var(--muted);font-size:11px;font-weight:800}
+    .feedback-value{font-weight:800;overflow-wrap:anywhere}
+    .feedback-value.ok{color:#317340}
+    .feedback-value.bad{color:#a64a43}
+    .feedback-arrow{color:var(--muted);font-weight:650}
+    .mistake-feedback.aa-emphasis{min-height:20px;margin:12px 0 0;color:#8a6c22;font-size:13px;font-weight:800;line-height:1.45}
+    .mistake-feedback.aa-emphasis:empty{min-height:0;margin:0}
+    .empty-state{padding:18px 0 4px;color:var(--muted);font-size:13px;line-height:1.55}
+    .task-controls{display:flex;gap:10px;flex-wrap:wrap;margin-top:20px}
+    .task-controls .primary{min-width:108px}
+    .task-controls .skip-pair{margin-left:auto}
+    @media(max-width:620px){
+      .aa-card{padding:20px}
+      .prompt-cue{font-size:25px}
+      .question-head{gap:10px}
+      .feedback-row{grid-template-columns:106px minmax(0,1fr);gap:9px}
+      .task-controls .skip-pair{margin-left:0}
+    }
+    html[data-theme="dark"] .aa-progress-mini{color:#aaa9a2}
+    html[data-theme="dark"] .phrase-input{background:#1d1d1b;color:var(--text)}
+    html[data-theme="dark"] .phrase-input:focus{border-color:#74746d;box-shadow:0 0 0 3px rgba(255,255,255,.06)}
+    html[data-theme="dark"] .phrase-input.correct{background:var(--ok);border-color:var(--ok-border)}
+    html[data-theme="dark"] .phrase-input.wrong{background:var(--bad);border-color:var(--bad-border)}
+    html[data-theme="dark"] .result-panel{background:#262624}
+    html[data-theme="dark"] .feedback-value.ok{color:#8ed29d}
+    html[data-theme="dark"] .feedback-value.bad{color:#ee9b90}
+    html[data-theme="dark"] .mistake-feedback.aa-emphasis{color:#d8bd75}
+
+</style>
+</head>
+
+<body>
+<div class="wrap">
+  <div class="page-nav">
+    <a class="back-link" href="index.html">← Back to Dashboard</a>
+    <button type="button" class="theme-toggle" id="themeToggle">◐ System</button>
+  </div>
+
+  <div class="header">
+    <div>
+      <h1>Article + Adjective Trainer</h1>
+      <div class="subtitle">Build the full noun phrase.</div>
+    </div>
+    <div class="header-side">
+      <div class="session-tools">
+        <button type="button" class="session-tool" id="reloadSessionBtn" disabled>↶ Reload Last</button>
+        <button type="button" class="session-tool reset" id="resetSessionBtn">Reset</button>
+      </div>
+      <div class="meta">
+        <div id="roundText"></div>
+        <div id="progressText" class="aa-progress-mini"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="bar"><div id="barFill"></div></div>
+
+  <div class="filter-shell">
+    <div class="filter-summary-row">
+      <div class="filter-summary" id="filterSummary"></div>
+      <button type="button" class="filter-toggle" id="filterToggle">Close</button>
+    </div>
+
+    <div class="filter-panel" id="filterPanel">
+      <div class="filter-group">
+        <div class="filter-label">Article type</div>
+        <div class="filter-chips" id="articleTypeFilters">
+          <button type="button" class="filter-chip" data-article-type="def">Definite</button>
+          <button type="button" class="filter-chip" data-article-type="ein">Ein-word</button>
+          <button type="button" class="filter-chip" data-article-type="zero">No article</button>
+        </div>
+      </div>
+
+      <div class="filter-group">
+        <div class="filter-label">Case</div>
+        <div class="filter-chips" id="caseFilters">
+          <button type="button" class="filter-chip" data-case="nom">Nominativ</button>
+          <button type="button" class="filter-chip" data-case="acc">Akkusativ</button>
+          <button type="button" class="filter-chip" data-case="dat">Dativ</button>
+          <button type="button" class="filter-chip" data-case="gen">Genitiv</button>
+        </div>
+      </div>
+
+      <div class="filter-group">
+        <div class="filter-label">Gender / Number</div>
+        <div class="filter-chips" id="classFilters">
+          <button type="button" class="filter-chip" data-class="m">Maskulin · Sg.</button>
+          <button type="button" class="filter-chip" data-class="f">Feminin · Sg.</button>
+          <button type="button" class="filter-chip" data-class="n">Neutrum · Sg.</button>
+          <button type="button" class="filter-chip" data-class="pl">Plural</button>
+        </div>
+      </div>
+
+      <div class="filter-group">
+        <div class="filter-label">Focus</div>
+        <div class="focus-block">
+          <div class="filter-chips">
+            <button type="button" class="filter-chip" id="starredFilterBtn">★ Starred</button>
+            <button type="button" class="clear-stars-btn" id="clearStarsBtn" disabled>Clear all</button>
+          </div>
+          <div class="star-total" id="starTotalText">0 starred total</div>
+        </div>
+        <div class="focus-block">
+          <div class="filter-chips">
+            <button type="button" class="filter-chip" id="mistakesFilterBtn">✕ Mistakes</button>
+            <button type="button" class="clear-stars-btn" id="clearMistakesBtn" disabled>Clear all</button>
+          </div>
+          <div class="star-total" id="mistakeTotalText">0 mistakes total</div>
+        </div>
+        <div class="focus-block">
+          <div class="filter-chips">
+            <button type="button" class="filter-chip" id="familiarFilterBtn">✓ Familiar</button>
+            <button type="button" class="clear-stars-btn" id="clearFamiliarBtn" disabled>Clear all</button>
+          </div>
+          <div class="star-total" id="familiarTotalText">0 familiar total</div>
+        </div>
+      </div>
+
+      <div class="filter-actions">
+        <button type="button" class="apply-filter" id="applyFilterBtn">Apply filter</button>
+        <button type="button" class="reset-filter" id="noneFilterBtn">None</button>
+        <button type="button" class="reset-filter" id="allFilterBtn">All 240</button>
+        <span class="filter-status" id="filterStatus"></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card aa-card">
+    <div id="questionContent">
+      <div class="question-head">
+        <div class="prompt-wrap">
+          <div class="prompt-cue" id="promptCue"></div>
+          <div class="grammar-line" id="grammarLine"></div>
+        </div>
+        <div class="aa-status-actions">
+          <span class="star-feedback" id="starFeedback"></span>
+          <button type="button" class="star-btn" id="starBtn" aria-label="Star this item" title="Star this item">☆</button>
+          <button type="button" class="familiar-btn" id="familiarBtn" aria-label="Mark this item as familiar" title="Mark as Familiar"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="m8.4 12.1 2.2 2.3 5-5.1" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        </div>
+      </div>
+
+      <div class="answer-area">
+        <div class="answer-label">Full noun phrase</div>
+        <input class="phrase-input" id="phraseInput" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" inputmode="text" aria-label="Full German noun phrase" />
+
+        <div class="char-helper">
+          <div class="char-helper-label">German characters</div>
+          <div class="char-buttons">
+            <button type="button" class="char-btn" data-char="ä">ä</button>
+            <button type="button" class="char-btn" data-char="ö">ö</button>
+            <button type="button" class="char-btn" data-char="ü">ü</button>
+            <button type="button" class="char-btn" data-char="Ä">Ä</button>
+            <button type="button" class="char-btn" data-char="Ö">Ö</button>
+            <button type="button" class="char-btn" data-char="Ü">Ü</button>
+            <button type="button" class="char-btn" data-char="ß">ß</button>
+          </div>
+        </div>
+
+        <div class="result-panel hidden" id="resultPanel">
+          <div class="correct-answer-label">Correct answer / Richtige Antwort</div>
+          <div class="correct-answer" id="correctAnswer"></div>
+          <div class="variant-note hidden" id="variantNote"></div>
+          <div class="feedback-list" id="feedbackList"></div>
+        </div>
+
+        <div class="mistake-feedback aa-emphasis" id="mistakeFeedback" aria-live="polite"></div>
+
+        <div class="task-controls">
+          <button type="button" class="primary" id="checkBtn" disabled>Check / Prüfen</button>
+          <button type="button" class="primary hidden" id="nextBtn">Next / Weiter</button>
+          <button type="button" class="secondary" id="reshuffleBtn">Reshuffle / Neu mischen</button>
+          <div class="skip-pair">
+            <button type="button" class="undo-skip" id="undoSkipBtn" aria-label="Undo Skip" title="Undo Skip" disabled><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 5v14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M19 6.2 10.8 12 19 17.8V6.2Z" fill="currentColor"/></svg></button>
+            <button type="button" class="skip" id="skipBtn">Skip</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="empty-state hidden" id="emptyState">No items match the active filter. Adjust the filter and apply it to continue.</div>
+  </div>
+
+  <div class="footer">240 fixed noun-phrase items · article + adjective + noun case forms · starred + mistakes + familiar focus</div>
+</div>
+
+<div class="modal-backdrop hidden" id="clearStarsModal" role="dialog" aria-modal="true" aria-labelledby="clearStarsTitle">
+  <div class="confirm-modal">
+    <h2 id="clearStarsTitle">Clear all starred items?</h2>
+    <p id="clearStarsMessage"></p>
+    <div class="confirm-actions">
+      <button type="button" class="modal-cancel" id="cancelClearStarsBtn">Cancel</button>
+      <button type="button" class="modal-clear" id="confirmClearStarsBtn" disabled>Clear in 5s</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop hidden" id="clearMistakesModal" role="dialog" aria-modal="true" aria-labelledby="clearMistakesTitle">
+  <div class="confirm-modal">
+    <h2 id="clearMistakesTitle">Clear all mistake items?</h2>
+    <p id="clearMistakesMessage"></p>
+    <div class="confirm-actions">
+      <button type="button" class="modal-cancel" id="cancelClearMistakesBtn">Cancel</button>
+      <button type="button" class="modal-clear" id="confirmClearMistakesBtn" disabled>Clear in 5s</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop hidden" id="clearFamiliarModal" role="dialog" aria-modal="true" aria-labelledby="clearFamiliarTitle">
+  <div class="confirm-modal">
+    <h2 id="clearFamiliarTitle">Clear all familiar items?</h2>
+    <p id="clearFamiliarMessage"></p>
+    <div class="confirm-actions">
+      <button type="button" class="modal-cancel" id="cancelClearFamiliarBtn">Cancel</button>
+      <button type="button" class="modal-clear" id="confirmClearFamiliarBtn" disabled>Clear in 5s</button>
+    </div>
+  </div>
+</div>
+<script>
+const NOUNS={"mann":{"g":"m","article":"der","sg":{"nom":["Mann"],"acc":["Mann"],"dat":["Mann"],"gen":["Mannes","Manns"]},"pl":{"nom":["Männer"],"acc":["Männer"],"dat":["Männern"],"gen":["Männer"]},"plUsage":"common","sgDisplay":{"gen":"Mann(e)s"}},"tag":{"g":"m","article":"der","sg":{"nom":["Tag"],"acc":["Tag"],"dat":["Tag"],"gen":["Tages","Tags"]},"pl":{"nom":["Tage"],"acc":["Tage"],"dat":["Tagen"],"gen":["Tage"]},"plUsage":"common","sgDisplay":{"gen":"Tag(e)s"}},"freund":{"g":"m","article":"der","sg":{"nom":["Freund"],"acc":["Freund"],"dat":["Freund"],"gen":["Freundes"]},"pl":{"nom":["Freunde"],"acc":["Freunde"],"dat":["Freunden"],"gen":["Freunde"]},"plUsage":"common"},"student":{"g":"m","article":"der","sg":{"nom":["Student"],"acc":["Studenten"],"dat":["Studenten"],"gen":["Studenten"]},"pl":{"nom":["Studenten"],"acc":["Studenten"],"dat":["Studenten"],"gen":["Studenten"]},"plUsage":"common"},"junge":{"g":"m","article":"der","sg":{"nom":["Junge"],"acc":["Jungen"],"dat":["Jungen"],"gen":["Jungen"]},"pl":{"nom":["Jungen"],"acc":["Jungen"],"dat":["Jungen"],"gen":["Jungen"]},"plUsage":"common"},"mensch":{"g":"m","article":"der","sg":{"nom":["Mensch"],"acc":["Menschen"],"dat":["Menschen"],"gen":["Menschen"]},"pl":{"nom":["Menschen"],"acc":["Menschen"],"dat":["Menschen"],"gen":["Menschen"]},"plUsage":"common"},"name":{"g":"m","article":"der","sg":{"nom":["Name"],"acc":["Namen"],"dat":["Namen"],"gen":["Namens"]},"pl":{"nom":["Namen"],"acc":["Namen"],"dat":["Namen"],"gen":["Namen"]},"plUsage":"common"},"preis":{"g":"m","article":"der","sg":{"nom":["Preis"],"acc":["Preis"],"dat":["Preis"],"gen":["Preises"]},"pl":{"nom":["Preise"],"acc":["Preise"],"dat":["Preisen"],"gen":["Preise"]},"plUsage":"common"},"schuh":{"g":"m","article":"der","sg":{"nom":["Schuh"],"acc":["Schuh"],"dat":["Schuh"],"gen":["Schuhs","Schuhes"]},"pl":{"nom":["Schuhe"],"acc":["Schuhe"],"dat":["Schuhen"],"gen":["Schuhe"]},"plUsage":"common"},"wein":{"g":"m","article":"der","sg":{"nom":["Wein"],"acc":["Wein"],"dat":["Wein"],"gen":["Weins","Weines"]},"pl":{"nom":["Weine"],"acc":["Weine"],"dat":["Weinen"],"gen":["Weine"]},"plUsage":"limited","sgDisplay":{"gen":"Wein(e)s"}},"computer":{"g":"m","article":"der","sg":{"nom":["Computer"],"acc":["Computer"],"dat":["Computer"],"gen":["Computers"]},"pl":{"nom":["Computer"],"acc":["Computer"],"dat":["Computern"],"gen":["Computer"]},"plUsage":"common"},"arzt":{"g":"m","article":"der","sg":{"nom":["Arzt"],"acc":["Arzt"],"dat":["Arzt"],"gen":["Arztes"]},"pl":{"nom":["Ärzte"],"acc":["Ärzte"],"dat":["Ärzten"],"gen":["Ärzte"]},"plUsage":"common"},"termin":{"g":"m","article":"der","sg":{"nom":["Termin"],"acc":["Termin"],"dat":["Termin"],"gen":["Termins"]},"pl":{"nom":["Termine"],"acc":["Termine"],"dat":["Terminen"],"gen":["Termine"]},"plUsage":"common"},"kaffee":{"g":"m","article":"der","sg":{"nom":["Kaffee"],"acc":["Kaffee"],"dat":["Kaffee"],"gen":["Kaffees"]},"pl":{"nom":["Kaffees"],"acc":["Kaffees"],"dat":["Kaffees"],"gen":["Kaffees"]},"plUsage":"limited"},"hund":{"g":"m","article":"der","sg":{"nom":["Hund"],"acc":["Hund"],"dat":["Hund"],"gen":["Hundes","Hunds"]},"pl":{"nom":["Hunde"],"acc":["Hunde"],"dat":["Hunden"],"gen":["Hunde"]},"plUsage":"common"},"pass":{"g":"m","article":"der","sg":{"nom":["Pass"],"acc":["Pass"],"dat":["Pass"],"gen":["Passes"]},"pl":{"nom":["Pässe"],"acc":["Pässe"],"dat":["Pässen"],"gen":["Pässe"]},"plUsage":"common"},"frau":{"g":"f","article":"die","sg":{"nom":["Frau"],"acc":["Frau"],"dat":["Frau"],"gen":["Frau"]},"pl":{"nom":["Frauen"],"acc":["Frauen"],"dat":["Frauen"],"gen":["Frauen"]},"plUsage":"common"},"tasche":{"g":"f","article":"die","sg":{"nom":["Tasche"],"acc":["Tasche"],"dat":["Tasche"],"gen":["Tasche"]},"pl":{"nom":["Taschen"],"acc":["Taschen"],"dat":["Taschen"],"gen":["Taschen"]},"plUsage":"common"},"wohnung":{"g":"f","article":"die","sg":{"nom":["Wohnung"],"acc":["Wohnung"],"dat":["Wohnung"],"gen":["Wohnung"]},"pl":{"nom":["Wohnungen"],"acc":["Wohnungen"],"dat":["Wohnungen"],"gen":["Wohnungen"]},"plUsage":"common"},"stadt":{"g":"f","article":"die","sg":{"nom":["Stadt"],"acc":["Stadt"],"dat":["Stadt"],"gen":["Stadt"]},"pl":{"nom":["Städte"],"acc":["Städte"],"dat":["Städten"],"gen":["Städte"]},"plUsage":"common"},"schule":{"g":"f","article":"die","sg":{"nom":["Schule"],"acc":["Schule"],"dat":["Schule"],"gen":["Schule"]},"pl":{"nom":["Schulen"],"acc":["Schulen"],"dat":["Schulen"],"gen":["Schulen"]},"plUsage":"common"},"tür":{"g":"f","article":"die","sg":{"nom":["Tür"],"acc":["Tür"],"dat":["Tür"],"gen":["Tür"]},"pl":{"nom":["Türen"],"acc":["Türen"],"dat":["Türen"],"gen":["Türen"]},"plUsage":"common"},"jacke":{"g":"f","article":"die","sg":{"nom":["Jacke"],"acc":["Jacke"],"dat":["Jacke"],"gen":["Jacke"]},"pl":{"nom":["Jacken"],"acc":["Jacken"],"dat":["Jacken"],"gen":["Jacken"]},"plUsage":"common"},"flasche":{"g":"f","article":"die","sg":{"nom":["Flasche"],"acc":["Flasche"],"dat":["Flasche"],"gen":["Flasche"]},"pl":{"nom":["Flaschen"],"acc":["Flaschen"],"dat":["Flaschen"],"gen":["Flaschen"]},"plUsage":"common"},"straße":{"g":"f","article":"die","sg":{"nom":["Straße"],"acc":["Straße"],"dat":["Straße"],"gen":["Straße"]},"pl":{"nom":["Straßen"],"acc":["Straßen"],"dat":["Straßen"],"gen":["Straßen"]},"plUsage":"common"},"sprache":{"g":"f","article":"die","sg":{"nom":["Sprache"],"acc":["Sprache"],"dat":["Sprache"],"gen":["Sprache"]},"pl":{"nom":["Sprachen"],"acc":["Sprachen"],"dat":["Sprachen"],"gen":["Sprachen"]},"plUsage":"common"},"küche":{"g":"f","article":"die","sg":{"nom":["Küche"],"acc":["Küche"],"dat":["Küche"],"gen":["Küche"]},"pl":{"nom":["Küchen"],"acc":["Küchen"],"dat":["Küchen"],"gen":["Küchen"]},"plUsage":"common"},"frage":{"g":"f","article":"die","sg":{"nom":["Frage"],"acc":["Frage"],"dat":["Frage"],"gen":["Frage"]},"pl":{"nom":["Fragen"],"acc":["Fragen"],"dat":["Fragen"],"gen":["Fragen"]},"plUsage":"common"},"suppe":{"g":"f","article":"die","sg":{"nom":["Suppe"],"acc":["Suppe"],"dat":["Suppe"],"gen":["Suppe"]},"pl":{"nom":["Suppen"],"acc":["Suppen"],"dat":["Suppen"],"gen":["Suppen"]},"plUsage":"common"},"adresse":{"g":"f","article":"die","sg":{"nom":["Adresse"],"acc":["Adresse"],"dat":["Adresse"],"gen":["Adresse"]},"pl":{"nom":["Adressen"],"acc":["Adressen"],"dat":["Adressen"],"gen":["Adressen"]},"plUsage":"common"},"buch":{"g":"n","article":"das","sg":{"nom":["Buch"],"acc":["Buch"],"dat":["Buch"],"gen":["Buches"]},"pl":{"nom":["Bücher"],"acc":["Bücher"],"dat":["Büchern"],"gen":["Bücher"]},"plUsage":"common"},"auto":{"g":"n","article":"das","sg":{"nom":["Auto"],"acc":["Auto"],"dat":["Auto"],"gen":["Autos"]},"pl":{"nom":["Autos"],"acc":["Autos"],"dat":["Autos"],"gen":["Autos"]},"plUsage":"common"},"haus":{"g":"n","article":"das","sg":{"nom":["Haus"],"acc":["Haus"],"dat":["Haus"],"gen":["Hauses"]},"pl":{"nom":["Häuser"],"acc":["Häuser"],"dat":["Häusern"],"gen":["Häuser"]},"plUsage":"common"},"zimmer":{"g":"n","article":"das","sg":{"nom":["Zimmer"],"acc":["Zimmer"],"dat":["Zimmer"],"gen":["Zimmers"]},"pl":{"nom":["Zimmer"],"acc":["Zimmer"],"dat":["Zimmern"],"gen":["Zimmer"]},"plUsage":"common"},"fenster":{"g":"n","article":"das","sg":{"nom":["Fenster"],"acc":["Fenster"],"dat":["Fenster"],"gen":["Fensters"]},"pl":{"nom":["Fenster"],"acc":["Fenster"],"dat":["Fenstern"],"gen":["Fenster"]},"plUsage":"common"},"fahrrad":{"g":"n","article":"das","sg":{"nom":["Fahrrad"],"acc":["Fahrrad"],"dat":["Fahrrad"],"gen":["Fahrrads"]},"pl":{"nom":["Fahrräder"],"acc":["Fahrräder"],"dat":["Fahrrädern"],"gen":["Fahrräder"]},"plUsage":"common"},"kind":{"g":"n","article":"das","sg":{"nom":["Kind"],"acc":["Kind"],"dat":["Kind"],"gen":["Kindes"]},"pl":{"nom":["Kinder"],"acc":["Kinder"],"dat":["Kindern"],"gen":["Kinder"]},"plUsage":"common"},"hotel":{"g":"n","article":"das","sg":{"nom":["Hotel"],"acc":["Hotel"],"dat":["Hotel"],"gen":["Hotels"]},"pl":{"nom":["Hotels"],"acc":["Hotels"],"dat":["Hotels"],"gen":["Hotels"]},"plUsage":"common"},"handy":{"g":"n","article":"das","sg":{"nom":["Handy"],"acc":["Handy"],"dat":["Handy"],"gen":["Handys"]},"pl":{"nom":["Handys"],"acc":["Handys"],"dat":["Handys"],"gen":["Handys"]},"plUsage":"common"},"problem":{"g":"n","article":"das","sg":{"nom":["Problem"],"acc":["Problem"],"dat":["Problem"],"gen":["Problems"]},"pl":{"nom":["Probleme"],"acc":["Probleme"],"dat":["Problemen"],"gen":["Probleme"]},"plUsage":"common"},"bild":{"g":"n","article":"das","sg":{"nom":["Bild"],"acc":["Bild"],"dat":["Bild"],"gen":["Bildes"]},"pl":{"nom":["Bilder"],"acc":["Bilder"],"dat":["Bildern"],"gen":["Bilder"]},"plUsage":"common"},"kleid":{"g":"n","article":"das","sg":{"nom":["Kleid"],"acc":["Kleid"],"dat":["Kleid"],"gen":["Kleides","Kleids"]},"pl":{"nom":["Kleider"],"acc":["Kleider"],"dat":["Kleidern"],"gen":["Kleider"]},"plUsage":"common"},"geschenk":{"g":"n","article":"das","sg":{"nom":["Geschenk"],"acc":["Geschenk"],"dat":["Geschenk"],"gen":["Geschenks","Geschenkes"]},"pl":{"nom":["Geschenke"],"acc":["Geschenke"],"dat":["Geschenken"],"gen":["Geschenke"]},"plUsage":"common"},"brot":{"g":"n","article":"das","sg":{"nom":["Brot"],"acc":["Brot"],"dat":["Brot"],"gen":["Brots","Brotes"]},"pl":{"nom":["Brote"],"acc":["Brote"],"dat":["Broten"],"gen":["Brote"]},"plUsage":"common","sgDisplay":{"gen":"Brot(e)s"}},"wasser":{"g":"n","article":"das","sg":{"nom":["Wasser"],"acc":["Wasser"],"dat":["Wasser"],"gen":["Wassers"]},"pl":{"nom":["Wässer"],"acc":["Wässer"],"dat":["Wässern"],"gen":["Wässer"]},"plUsage":"limited"}};
+const ADJECTIVES={"gut":{"lemma":"gut","stem":"gut"},"schlecht":{"lemma":"schlecht","stem":"schlecht"},"neu":{"lemma":"neu","stem":"neu"},"alt":{"lemma":"alt","stem":"alt"},"groß":{"lemma":"groß","stem":"groß"},"klein":{"lemma":"klein","stem":"klein"},"schön":{"lemma":"schön","stem":"schön"},"jung":{"lemma":"jung","stem":"jung"},"teuer":{"lemma":"teuer","stem":"teur"},"billig":{"lemma":"billig","stem":"billig"},"wichtig":{"lemma":"wichtig","stem":"wichtig"},"interessant":{"lemma":"interessant","stem":"interessant"},"modern":{"lemma":"modern","stem":"modern"},"praktisch":{"lemma":"praktisch","stem":"praktisch"},"lang":{"lemma":"lang","stem":"lang"},"kurz":{"lemma":"kurz","stem":"kurz"},"schwer":{"lemma":"schwer","stem":"schwer"},"leicht":{"lemma":"leicht","stem":"leicht"},"hoch":{"lemma":"hoch","stem":"hoh"},"schnell":{"lemma":"schnell","stem":"schnell"},"langsam":{"lemma":"langsam","stem":"langsam"},"warm":{"lemma":"warm","stem":"warm"},"kalt":{"lemma":"kalt","stem":"kalt"},"frisch":{"lemma":"frisch","stem":"frisch"},"lecker":{"lemma":"lecker","stem":"lecker"},"freundlich":{"lemma":"freundlich","stem":"freundlich"},"nett":{"lemma":"nett","stem":"nett"},"bequem":{"lemma":"bequem","stem":"bequem"},"sauber":{"lemma":"sauber","stem":"sauber"},"dunkel":{"lemma":"dunkel","stem":"dunkl"}};
+const RECIPES=[{"familyId":"fam-def-m-tag","articleType":"def","case":"nom","cls":"m","nounId":"tag","adjective":"lang","id":"aa-def-nom-m-01"},{"familyId":"fam-def-m-student","articleType":"def","case":"nom","cls":"m","nounId":"student","adjective":"jung","id":"aa-def-nom-m-02"},{"articleType":"def","case":"nom","cls":"m","nounId":"preis","adjective":"billig","id":"aa-def-nom-m-03"},{"articleType":"def","case":"nom","cls":"m","nounId":"mann","adjective":"interessant","id":"aa-def-nom-m-04"},{"articleType":"def","case":"nom","cls":"m","nounId":"name","adjective":"alt","id":"aa-def-nom-m-05"},{"familyId":"fam-def-f-wohnung","articleType":"def","case":"nom","cls":"f","nounId":"wohnung","adjective":"neu","id":"aa-def-nom-f-01"},{"familyId":"fam-def-f-suppe","articleType":"def","case":"nom","cls":"f","nounId":"suppe","adjective":"warm","id":"aa-def-nom-f-02"},{"articleType":"def","case":"nom","cls":"f","nounId":"straße","adjective":"schön","id":"aa-def-nom-f-03"},{"articleType":"def","case":"nom","cls":"f","nounId":"sprache","adjective":"leicht","id":"aa-def-nom-f-04"},{"articleType":"def","case":"nom","cls":"f","nounId":"frau","adjective":"nett","id":"aa-def-nom-f-05"},{"familyId":"fam-def-n-auto","articleType":"def","case":"nom","cls":"n","nounId":"auto","adjective":"teuer","id":"aa-def-nom-n-01"},{"familyId":"fam-def-n-zimmer","articleType":"def","case":"nom","cls":"n","nounId":"zimmer","adjective":"dunkel","id":"aa-def-nom-n-02"},{"articleType":"def","case":"nom","cls":"n","nounId":"geschenk","adjective":"praktisch","id":"aa-def-nom-n-03"},{"articleType":"def","case":"nom","cls":"n","nounId":"fenster","adjective":"hoch","id":"aa-def-nom-n-04"},{"articleType":"def","case":"nom","cls":"n","nounId":"fahrrad","adjective":"schwer","id":"aa-def-nom-n-05"},{"familyId":"fam-def-pl-buch","articleType":"def","case":"nom","cls":"pl","nounId":"buch","adjective":"neu","id":"aa-def-nom-pl-01"},{"articleType":"def","case":"nom","cls":"pl","nounId":"computer","adjective":"schnell","id":"aa-def-nom-pl-02"},{"articleType":"def","case":"nom","cls":"pl","nounId":"hund","adjective":"freundlich","id":"aa-def-nom-pl-03"},{"articleType":"def","case":"nom","cls":"pl","nounId":"frage","adjective":"kurz","id":"aa-def-nom-pl-04"},{"articleType":"def","case":"nom","cls":"pl","nounId":"hotel","adjective":"gut","id":"aa-def-nom-pl-05"},{"familyId":"fam-def-m-tag","articleType":"def","case":"acc","cls":"m","nounId":"tag","adjective":"lang","id":"aa-def-acc-m-01"},{"familyId":"fam-def-m-student","articleType":"def","case":"acc","cls":"m","nounId":"student","adjective":"jung","id":"aa-def-acc-m-02"},{"articleType":"def","case":"acc","cls":"m","nounId":"wein","adjective":"schlecht","id":"aa-def-acc-m-03"},{"articleType":"def","case":"acc","cls":"m","nounId":"wein","adjective":"lecker","id":"aa-def-acc-m-04"},{"articleType":"def","case":"acc","cls":"m","nounId":"computer","adjective":"langsam","id":"aa-def-acc-m-05"},{"familyId":"fam-def-f-wohnung","articleType":"def","case":"acc","cls":"f","nounId":"wohnung","adjective":"neu","id":"aa-def-acc-f-01"},{"familyId":"fam-def-f-suppe","articleType":"def","case":"acc","cls":"f","nounId":"suppe","adjective":"warm","id":"aa-def-acc-f-02"},{"articleType":"def","case":"acc","cls":"f","nounId":"schule","adjective":"interessant","id":"aa-def-acc-f-03"},{"articleType":"def","case":"acc","cls":"f","nounId":"adresse","adjective":"kurz","id":"aa-def-acc-f-04"},{"articleType":"def","case":"acc","cls":"f","nounId":"tasche","adjective":"leicht","id":"aa-def-acc-f-05"},{"familyId":"fam-def-n-auto","articleType":"def","case":"acc","cls":"n","nounId":"auto","adjective":"teuer","id":"aa-def-acc-n-01"},{"familyId":"fam-def-n-zimmer","articleType":"def","case":"acc","cls":"n","nounId":"zimmer","adjective":"dunkel","id":"aa-def-acc-n-02"},{"articleType":"def","case":"acc","cls":"n","nounId":"wasser","adjective":"kalt","id":"aa-def-acc-n-03"},{"articleType":"def","case":"acc","cls":"n","nounId":"kleid","adjective":"billig","id":"aa-def-acc-n-04"},{"articleType":"def","case":"acc","cls":"n","nounId":"bild","adjective":"schön","id":"aa-def-acc-n-05"},{"familyId":"fam-def-pl-buch","articleType":"def","case":"acc","cls":"pl","nounId":"buch","adjective":"neu","id":"aa-def-acc-pl-01"},{"articleType":"def","case":"acc","cls":"pl","nounId":"haus","adjective":"alt","id":"aa-def-acc-pl-02"},{"articleType":"def","case":"acc","cls":"pl","nounId":"junge","adjective":"freundlich","id":"aa-def-acc-pl-03"},{"articleType":"def","case":"acc","cls":"pl","nounId":"mensch","adjective":"nett","id":"aa-def-acc-pl-04"},{"articleType":"def","case":"acc","cls":"pl","nounId":"sprache","adjective":"schwer","id":"aa-def-acc-pl-05"},{"familyId":"fam-def-m-tag","articleType":"def","case":"dat","cls":"m","nounId":"tag","adjective":"lang","id":"aa-def-dat-m-01"},{"familyId":"fam-def-m-student","articleType":"def","case":"dat","cls":"m","nounId":"student","adjective":"jung","id":"aa-def-dat-m-02"},{"articleType":"def","case":"dat","cls":"m","nounId":"mann","adjective":"gut","id":"aa-def-dat-m-03"},{"articleType":"def","case":"dat","cls":"m","nounId":"preis","adjective":"hoch","id":"aa-def-dat-m-04"},{"articleType":"def","case":"dat","cls":"m","nounId":"hund","adjective":"schnell","id":"aa-def-dat-m-05"},{"familyId":"fam-def-f-wohnung","articleType":"def","case":"dat","cls":"f","nounId":"wohnung","adjective":"neu","id":"aa-def-dat-f-01"},{"familyId":"fam-def-f-suppe","articleType":"def","case":"dat","cls":"f","nounId":"suppe","adjective":"warm","id":"aa-def-dat-f-02"},{"articleType":"def","case":"dat","cls":"f","nounId":"tasche","adjective":"praktisch","id":"aa-def-dat-f-03"},{"articleType":"def","case":"dat","cls":"f","nounId":"frage","adjective":"schlecht","id":"aa-def-dat-f-04"},{"articleType":"def","case":"dat","cls":"f","nounId":"tür","adjective":"schön","id":"aa-def-dat-f-05"},{"familyId":"fam-def-n-auto","articleType":"def","case":"dat","cls":"n","nounId":"auto","adjective":"teuer","id":"aa-def-dat-n-01"},{"familyId":"fam-def-n-zimmer","articleType":"def","case":"dat","cls":"n","nounId":"zimmer","adjective":"dunkel","id":"aa-def-dat-n-02"},{"articleType":"def","case":"dat","cls":"n","nounId":"fahrrad","adjective":"langsam","id":"aa-def-dat-n-03"},{"articleType":"def","case":"dat","cls":"n","nounId":"brot","adjective":"lecker","id":"aa-def-dat-n-04"},{"articleType":"def","case":"dat","cls":"n","nounId":"zimmer","adjective":"kalt","id":"aa-def-dat-n-05"},{"familyId":"fam-def-pl-buch","articleType":"def","case":"dat","cls":"pl","nounId":"buch","adjective":"neu","id":"aa-def-dat-pl-01"},{"articleType":"def","case":"dat","cls":"pl","nounId":"pass","adjective":"alt","id":"aa-def-dat-pl-02"},{"articleType":"def","case":"dat","cls":"pl","nounId":"flasche","adjective":"leicht","id":"aa-def-dat-pl-03"},{"articleType":"def","case":"dat","cls":"pl","nounId":"geschenk","adjective":"interessant","id":"aa-def-dat-pl-04"},{"articleType":"def","case":"dat","cls":"pl","nounId":"haus","adjective":"hoch","id":"aa-def-dat-pl-05"},{"familyId":"fam-def-m-tag","articleType":"def","case":"gen","cls":"m","nounId":"tag","adjective":"lang","id":"aa-def-gen-m-01"},{"familyId":"fam-def-m-student","articleType":"def","case":"gen","cls":"m","nounId":"student","adjective":"jung","id":"aa-def-gen-m-02"},{"articleType":"def","case":"gen","cls":"m","nounId":"mensch","adjective":"freundlich","id":"aa-def-gen-m-03"},{"articleType":"def","case":"gen","cls":"m","nounId":"junge","adjective":"nett","id":"aa-def-gen-m-04"},{"articleType":"def","case":"gen","cls":"m","nounId":"name","adjective":"kurz","id":"aa-def-gen-m-05"},{"familyId":"fam-def-f-wohnung","articleType":"def","case":"gen","cls":"f","nounId":"wohnung","adjective":"neu","id":"aa-def-gen-f-01"},{"familyId":"fam-def-f-suppe","articleType":"def","case":"gen","cls":"f","nounId":"suppe","adjective":"warm","id":"aa-def-gen-f-02"},{"articleType":"def","case":"gen","cls":"f","nounId":"frau","adjective":"gut","id":"aa-def-gen-f-03"},{"articleType":"def","case":"gen","cls":"f","nounId":"tasche","adjective":"schwer","id":"aa-def-gen-f-04"},{"articleType":"def","case":"gen","cls":"f","nounId":"wohnung","adjective":"billig","id":"aa-def-gen-f-05"},{"familyId":"fam-def-n-auto","articleType":"def","case":"gen","cls":"n","nounId":"auto","adjective":"teuer","id":"aa-def-gen-n-01"},{"familyId":"fam-def-n-zimmer","articleType":"def","case":"gen","cls":"n","nounId":"zimmer","adjective":"dunkel","id":"aa-def-gen-n-02"},{"articleType":"def","case":"gen","cls":"n","nounId":"hotel","adjective":"schlecht","id":"aa-def-gen-n-03"},{"articleType":"def","case":"gen","cls":"n","nounId":"handy","adjective":"praktisch","id":"aa-def-gen-n-04"},{"articleType":"def","case":"gen","cls":"n","nounId":"fahrrad","adjective":"schnell","id":"aa-def-gen-n-05"},{"familyId":"fam-def-pl-buch","articleType":"def","case":"gen","cls":"pl","nounId":"buch","adjective":"neu","id":"aa-def-gen-pl-01"},{"articleType":"def","case":"gen","cls":"pl","nounId":"wohnung","adjective":"kalt","id":"aa-def-gen-pl-02"},{"articleType":"def","case":"gen","cls":"pl","nounId":"suppe","adjective":"lecker","id":"aa-def-gen-pl-03"},{"articleType":"def","case":"gen","cls":"pl","nounId":"schule","adjective":"alt","id":"aa-def-gen-pl-04"},{"articleType":"def","case":"gen","cls":"pl","nounId":"fenster","adjective":"schön","id":"aa-def-gen-pl-05"},{"familyId":"fam-ein-m-freund","articleType":"ein","case":"nom","cls":"m","nounId":"freund","adjective":"neu","articleCue":"euer","id":"aa-ein-nom-m-01"},{"familyId":"fam-ein-m-termin","articleType":"ein","case":"nom","cls":"m","nounId":"termin","adjective":"wichtig","articleCue":"Ihr","id":"aa-ein-nom-m-02"},{"articleType":"ein","case":"nom","cls":"m","nounId":"hund","adjective":"jung","articleCue":"mein","id":"aa-ein-nom-m-03"},{"articleType":"ein","case":"nom","cls":"m","nounId":"mann","adjective":"freundlich","articleCue":"ein","id":"aa-ein-nom-m-04"},{"articleType":"ein","case":"nom","cls":"m","nounId":"preis","adjective":"hoch","articleCue":"sein","id":"aa-ein-nom-m-05"},{"familyId":"fam-ein-f-jacke","articleType":"ein","case":"nom","cls":"f","nounId":"jacke","adjective":"warm","articleCue":"dein","id":"aa-ein-nom-f-01"},{"articleType":"ein","case":"nom","cls":"f","nounId":"straße","adjective":"kurz","articleCue":"sein","id":"aa-ein-nom-f-02"},{"articleType":"ein","case":"nom","cls":"f","nounId":"frage","adjective":"leicht","articleCue":"ein","id":"aa-ein-nom-f-03"},{"articleType":"ein","case":"nom","cls":"f","nounId":"frage","adjective":"schwer","articleCue":"kein","id":"aa-ein-nom-f-04"},{"articleType":"ein","case":"nom","cls":"f","nounId":"jacke","adjective":"billig","articleCue":"dein","id":"aa-ein-nom-f-05"},{"familyId":"fam-ein-n-handy","articleType":"ein","case":"nom","cls":"n","nounId":"handy","adjective":"neu","articleCue":"mein","id":"aa-ein-nom-n-01"},{"familyId":"fam-ein-n-problem","articleType":"ein","case":"nom","cls":"n","nounId":"problem","adjective":"klein","articleCue":"kein","id":"aa-ein-nom-n-02"},{"articleType":"ein","case":"nom","cls":"n","nounId":"wasser","adjective":"gut","articleCue":"ein","id":"aa-ein-nom-n-03"},{"articleType":"ein","case":"nom","cls":"n","nounId":"haus","adjective":"groß","articleCue":"ihr","id":"aa-ein-nom-n-04"},{"articleType":"ein","case":"nom","cls":"n","nounId":"auto","adjective":"langsam","articleCue":"mein","id":"aa-ein-nom-n-05"},{"familyId":"fam-ein-pl-arzt","articleType":"ein","case":"nom","cls":"pl","nounId":"arzt","adjective":"jung","articleCue":"unser","id":"aa-ein-nom-pl-01"},{"familyId":"fam-ein-pl-schuh","articleType":"ein","case":"nom","cls":"pl","nounId":"schuh","adjective":"bequem","articleCue":"kein","id":"aa-ein-nom-pl-02"},{"articleType":"ein","case":"nom","cls":"pl","nounId":"computer","adjective":"schlecht","articleCue":"euer","id":"aa-ein-nom-pl-03"},{"articleType":"ein","case":"nom","cls":"pl","nounId":"hund","adjective":"nett","articleCue":"ihr","id":"aa-ein-nom-pl-04"},{"articleType":"ein","case":"nom","cls":"pl","nounId":"computer","adjective":"praktisch","articleCue":"sein","id":"aa-ein-nom-pl-05"},{"familyId":"fam-ein-m-freund","articleType":"ein","case":"acc","cls":"m","nounId":"freund","adjective":"neu","articleCue":"euer","id":"aa-ein-acc-m-01"},{"familyId":"fam-ein-m-termin","articleType":"ein","case":"acc","cls":"m","nounId":"termin","adjective":"wichtig","articleCue":"Ihr","id":"aa-ein-acc-m-02"},{"articleType":"ein","case":"acc","cls":"m","nounId":"wein","adjective":"kalt","articleCue":"mein","id":"aa-ein-acc-m-03"},{"articleType":"ein","case":"acc","cls":"m","nounId":"kaffee","adjective":"lecker","articleCue":"euer","id":"aa-ein-acc-m-04"},{"articleType":"ein","case":"acc","cls":"m","nounId":"pass","adjective":"teuer","articleCue":"ein","id":"aa-ein-acc-m-05"},{"familyId":"fam-ein-f-jacke","articleType":"ein","case":"acc","cls":"f","nounId":"jacke","adjective":"warm","articleCue":"dein","id":"aa-ein-acc-f-01"},{"articleType":"ein","case":"acc","cls":"f","nounId":"tür","adjective":"klein","articleCue":"ein","id":"aa-ein-acc-f-02"},{"articleType":"ein","case":"acc","cls":"f","nounId":"adresse","adjective":"lang","articleCue":"sein","id":"aa-ein-acc-f-03"},{"articleType":"ein","case":"acc","cls":"f","nounId":"flasche","adjective":"sauber","articleCue":"ein","id":"aa-ein-acc-f-04"},{"articleType":"ein","case":"acc","cls":"f","nounId":"tür","adjective":"dunkel","articleCue":"ihr","id":"aa-ein-acc-f-05"},{"familyId":"fam-ein-n-handy","articleType":"ein","case":"acc","cls":"n","nounId":"handy","adjective":"neu","articleCue":"mein","id":"aa-ein-acc-n-01"},{"familyId":"fam-ein-n-problem","articleType":"ein","case":"acc","cls":"n","nounId":"problem","adjective":"klein","articleCue":"kein","id":"aa-ein-acc-n-02"},{"articleType":"ein","case":"acc","cls":"n","nounId":"hotel","adjective":"modern","articleCue":"Ihr","id":"aa-ein-acc-n-03"},{"articleType":"ein","case":"acc","cls":"n","nounId":"kleid","adjective":"alt","articleCue":"ihr","id":"aa-ein-acc-n-04"},{"articleType":"ein","case":"acc","cls":"n","nounId":"bild","adjective":"interessant","articleCue":"ein","id":"aa-ein-acc-n-05"},{"familyId":"fam-ein-pl-arzt","articleType":"ein","case":"acc","cls":"pl","nounId":"arzt","adjective":"jung","articleCue":"unser","id":"aa-ein-acc-pl-01"},{"familyId":"fam-ein-pl-schuh","articleType":"ein","case":"acc","cls":"pl","nounId":"schuh","adjective":"bequem","articleCue":"kein","id":"aa-ein-acc-pl-02"},{"articleType":"ein","case":"acc","cls":"pl","nounId":"schule","adjective":"groß","articleCue":"kein","id":"aa-ein-acc-pl-03"},{"articleType":"ein","case":"acc","cls":"pl","nounId":"adresse","adjective":"wichtig","articleCue":"sein","id":"aa-ein-acc-pl-04"},{"articleType":"ein","case":"acc","cls":"pl","nounId":"tasche","adjective":"neu","articleCue":"mein","id":"aa-ein-acc-pl-05"},{"familyId":"fam-ein-m-freund","articleType":"ein","case":"dat","cls":"m","nounId":"freund","adjective":"neu","articleCue":"euer","id":"aa-ein-dat-m-01"},{"familyId":"fam-ein-m-termin","articleType":"ein","case":"dat","cls":"m","nounId":"termin","adjective":"wichtig","articleCue":"Ihr","id":"aa-ein-dat-m-02"},{"articleType":"ein","case":"dat","cls":"m","nounId":"freund","adjective":"gut","articleCue":"sein","id":"aa-ein-dat-m-03"},{"articleType":"ein","case":"dat","cls":"m","nounId":"mensch","adjective":"gut","articleCue":"unser","id":"aa-ein-dat-m-04"},{"articleType":"ein","case":"dat","cls":"m","nounId":"wein","adjective":"billig","articleCue":"ein","id":"aa-ein-dat-m-05"},{"familyId":"fam-ein-f-jacke","articleType":"ein","case":"dat","cls":"f","nounId":"jacke","adjective":"warm","articleCue":"dein","id":"aa-ein-dat-f-01"},{"articleType":"ein","case":"dat","cls":"f","nounId":"adresse","adjective":"neu","articleCue":"Ihr","id":"aa-ein-dat-f-02"},{"articleType":"ein","case":"dat","cls":"f","nounId":"suppe","adjective":"kalt","articleCue":"dein","id":"aa-ein-dat-f-03"},{"articleType":"ein","case":"dat","cls":"f","nounId":"jacke","adjective":"bequem","articleCue":"ein","id":"aa-ein-dat-f-04"},{"articleType":"ein","case":"dat","cls":"f","nounId":"wohnung","adjective":"modern","articleCue":"sein","id":"aa-ein-dat-f-05"},{"familyId":"fam-ein-n-handy","articleType":"ein","case":"dat","cls":"n","nounId":"handy","adjective":"neu","articleCue":"mein","id":"aa-ein-dat-n-01"},{"familyId":"fam-ein-n-problem","articleType":"ein","case":"dat","cls":"n","nounId":"problem","adjective":"klein","articleCue":"kein","id":"aa-ein-dat-n-02"},{"articleType":"ein","case":"dat","cls":"n","nounId":"kleid","adjective":"kurz","articleCue":"ihr","id":"aa-ein-dat-n-03"},{"articleType":"ein","case":"dat","cls":"n","nounId":"problem","adjective":"schwer","articleCue":"ein","id":"aa-ein-dat-n-04"},{"articleType":"ein","case":"dat","cls":"n","nounId":"handy","adjective":"praktisch","articleCue":"mein","id":"aa-ein-dat-n-05"},{"familyId":"fam-ein-pl-arzt","articleType":"ein","case":"dat","cls":"pl","nounId":"arzt","adjective":"jung","articleCue":"unser","id":"aa-ein-dat-pl-01"},{"familyId":"fam-ein-pl-schuh","articleType":"ein","case":"dat","cls":"pl","nounId":"schuh","adjective":"bequem","articleCue":"kein","id":"aa-ein-dat-pl-02"},{"articleType":"ein","case":"dat","cls":"pl","nounId":"mann","adjective":"nett","articleCue":"euer","id":"aa-ein-dat-pl-03"},{"articleType":"ein","case":"dat","cls":"pl","nounId":"fahrrad","adjective":"neu","articleCue":"kein","id":"aa-ein-dat-pl-04"},{"articleType":"ein","case":"dat","cls":"pl","nounId":"tag","adjective":"schlecht","articleCue":"unser","id":"aa-ein-dat-pl-05"},{"familyId":"fam-ein-m-freund","articleType":"ein","case":"gen","cls":"m","nounId":"freund","adjective":"neu","articleCue":"euer","id":"aa-ein-gen-m-01"},{"familyId":"fam-ein-m-termin","articleType":"ein","case":"gen","cls":"m","nounId":"termin","adjective":"wichtig","articleCue":"Ihr","id":"aa-ein-gen-m-02"},{"articleType":"ein","case":"gen","cls":"m","nounId":"pass","adjective":"wichtig","articleCue":"ein","id":"aa-ein-gen-m-03"},{"articleType":"ein","case":"gen","cls":"m","nounId":"hund","adjective":"alt","articleCue":"ein","id":"aa-ein-gen-m-04"},{"articleType":"ein","case":"gen","cls":"m","nounId":"junge","adjective":"klein","articleCue":"sein","id":"aa-ein-gen-m-05"},{"familyId":"fam-ein-f-jacke","articleType":"ein","case":"gen","cls":"f","nounId":"jacke","adjective":"warm","articleCue":"dein","id":"aa-ein-gen-f-01"},{"articleType":"ein","case":"gen","cls":"f","nounId":"sprache","adjective":"interessant","articleCue":"ihr","id":"aa-ein-gen-f-02"},{"articleType":"ein","case":"gen","cls":"f","nounId":"flasche","adjective":"groß","articleCue":"euer","id":"aa-ein-gen-f-03"},{"articleType":"ein","case":"gen","cls":"f","nounId":"sprache","adjective":"schön","articleCue":"kein","id":"aa-ein-gen-f-04"},{"articleType":"ein","case":"gen","cls":"f","nounId":"schule","adjective":"modern","articleCue":"ein","id":"aa-ein-gen-f-05"},{"familyId":"fam-ein-n-handy","articleType":"ein","case":"gen","cls":"n","nounId":"handy","adjective":"neu","articleCue":"mein","id":"aa-ein-gen-n-01"},{"familyId":"fam-ein-n-problem","articleType":"ein","case":"gen","cls":"n","nounId":"problem","adjective":"klein","articleCue":"kein","id":"aa-ein-gen-n-02"},{"articleType":"ein","case":"gen","cls":"n","nounId":"bild","adjective":"dunkel","articleCue":"ein","id":"aa-ein-gen-n-03"},{"articleType":"ein","case":"gen","cls":"n","nounId":"geschenk","adjective":"gut","articleCue":"ihr","id":"aa-ein-gen-n-04"},{"articleType":"ein","case":"gen","cls":"n","nounId":"haus","adjective":"teuer","articleCue":"dein","id":"aa-ein-gen-n-05"},{"familyId":"fam-ein-pl-arzt","articleType":"ein","case":"gen","cls":"pl","nounId":"arzt","adjective":"jung","articleCue":"unser","id":"aa-ein-gen-pl-01"},{"familyId":"fam-ein-pl-schuh","articleType":"ein","case":"gen","cls":"pl","nounId":"schuh","adjective":"bequem","articleCue":"kein","id":"aa-ein-gen-pl-02"},{"articleType":"ein","case":"gen","cls":"pl","nounId":"buch","adjective":"interessant","articleCue":"mein","id":"aa-ein-gen-pl-03"},{"articleType":"ein","case":"gen","cls":"pl","nounId":"kleid","adjective":"schön","articleCue":"ihr","id":"aa-ein-gen-pl-04"},{"articleType":"ein","case":"gen","cls":"pl","nounId":"geschenk","adjective":"billig","articleCue":"dein","id":"aa-ein-gen-pl-05"},{"familyId":"fam-zero-m-kaffee","articleType":"zero","case":"nom","cls":"m","nounId":"kaffee","adjective":"frisch","id":"aa-zero-nom-m-01"},{"articleType":"zero","case":"nom","cls":"m","nounId":"freund","adjective":"nett","id":"aa-zero-nom-m-02"},{"articleType":"zero","case":"nom","cls":"m","nounId":"student","adjective":"freundlich","id":"aa-zero-nom-m-03"},{"articleType":"zero","case":"nom","cls":"m","nounId":"termin","adjective":"kurz","id":"aa-zero-nom-m-04"},{"articleType":"zero","case":"nom","cls":"m","nounId":"tag","adjective":"kalt","id":"aa-zero-nom-m-05"},{"familyId":"fam-zero-f-stadt","articleType":"zero","case":"nom","cls":"f","nounId":"stadt","adjective":"groß","id":"aa-zero-nom-f-01"},{"familyId":"fam-zero-f-küche","articleType":"zero","case":"nom","cls":"f","nounId":"küche","adjective":"sauber","id":"aa-zero-nom-f-02"},{"articleType":"zero","case":"nom","cls":"f","nounId":"tasche","adjective":"schwer","id":"aa-zero-nom-f-03"},{"articleType":"zero","case":"nom","cls":"f","nounId":"jacke","adjective":"leicht","id":"aa-zero-nom-f-04"},{"articleType":"zero","case":"nom","cls":"f","nounId":"straße","adjective":"lang","id":"aa-zero-nom-f-05"},{"familyId":"fam-zero-n-brot","articleType":"zero","case":"nom","cls":"n","nounId":"brot","adjective":"frisch","id":"aa-zero-nom-n-01"},{"articleType":"zero","case":"nom","cls":"n","nounId":"auto","adjective":"schnell","id":"aa-zero-nom-n-02"},{"articleType":"zero","case":"nom","cls":"n","nounId":"problem","adjective":"schlecht","id":"aa-zero-nom-n-03"},{"articleType":"zero","case":"nom","cls":"n","nounId":"fenster","adjective":"dunkel","id":"aa-zero-nom-n-04"},{"articleType":"zero","case":"nom","cls":"n","nounId":"wasser","adjective":"sauber","id":"aa-zero-nom-n-05"},{"familyId":"fam-zero-pl-kind","articleType":"zero","case":"nom","cls":"pl","nounId":"kind","adjective":"jung","id":"aa-zero-nom-pl-01"},{"familyId":"fam-zero-pl-auto","articleType":"zero","case":"nom","cls":"pl","nounId":"auto","adjective":"modern","id":"aa-zero-nom-pl-02"},{"articleType":"zero","case":"nom","cls":"pl","nounId":"flasche","adjective":"alt","id":"aa-zero-nom-pl-03"},{"articleType":"zero","case":"nom","cls":"pl","nounId":"mensch","adjective":"interessant","id":"aa-zero-nom-pl-04"},{"articleType":"zero","case":"nom","cls":"pl","nounId":"stadt","adjective":"schön","id":"aa-zero-nom-pl-05"},{"familyId":"fam-zero-m-kaffee","articleType":"zero","case":"acc","cls":"m","nounId":"kaffee","adjective":"frisch","id":"aa-zero-acc-m-01"},{"articleType":"zero","case":"acc","cls":"m","nounId":"schuh","adjective":"billig","id":"aa-zero-acc-m-02"},{"articleType":"zero","case":"acc","cls":"m","nounId":"computer","adjective":"gut","id":"aa-zero-acc-m-03"},{"articleType":"zero","case":"acc","cls":"m","nounId":"hund","adjective":"klein","id":"aa-zero-acc-m-04"},{"articleType":"zero","case":"acc","cls":"m","nounId":"arzt","adjective":"freundlich","id":"aa-zero-acc-m-05"},{"familyId":"fam-zero-f-stadt","articleType":"zero","case":"acc","cls":"f","nounId":"stadt","adjective":"groß","id":"aa-zero-acc-f-01"},{"familyId":"fam-zero-f-küche","articleType":"zero","case":"acc","cls":"f","nounId":"küche","adjective":"sauber","id":"aa-zero-acc-f-02"},{"articleType":"zero","case":"acc","cls":"f","nounId":"tür","adjective":"groß","id":"aa-zero-acc-f-03"},{"articleType":"zero","case":"acc","cls":"f","nounId":"küche","adjective":"modern","id":"aa-zero-acc-f-04"},{"articleType":"zero","case":"acc","cls":"f","nounId":"frage","adjective":"wichtig","id":"aa-zero-acc-f-05"},{"familyId":"fam-zero-n-brot","articleType":"zero","case":"acc","cls":"n","nounId":"brot","adjective":"frisch","id":"aa-zero-acc-n-01"},{"articleType":"zero","case":"acc","cls":"n","nounId":"haus","adjective":"schön","id":"aa-zero-acc-n-02"},{"articleType":"zero","case":"acc","cls":"n","nounId":"buch","adjective":"schwer","id":"aa-zero-acc-n-03"},{"articleType":"zero","case":"acc","cls":"n","nounId":"kind","adjective":"nett","id":"aa-zero-acc-n-04"},{"articleType":"zero","case":"acc","cls":"n","nounId":"buch","adjective":"kurz","id":"aa-zero-acc-n-05"},{"familyId":"fam-zero-pl-kind","articleType":"zero","case":"acc","cls":"pl","nounId":"kind","adjective":"jung","id":"aa-zero-acc-pl-01"},{"familyId":"fam-zero-pl-auto","articleType":"zero","case":"acc","cls":"pl","nounId":"auto","adjective":"modern","id":"aa-zero-acc-pl-02"},{"articleType":"zero","case":"acc","cls":"pl","nounId":"buch","adjective":"leicht","id":"aa-zero-acc-pl-03"},{"articleType":"zero","case":"acc","cls":"pl","nounId":"auto","adjective":"praktisch","id":"aa-zero-acc-pl-04"},{"articleType":"zero","case":"acc","cls":"pl","nounId":"fenster","adjective":"groß","id":"aa-zero-acc-pl-05"},{"familyId":"fam-zero-m-kaffee","articleType":"zero","case":"dat","cls":"m","nounId":"kaffee","adjective":"frisch","id":"aa-zero-dat-m-01"},{"articleType":"zero","case":"dat","cls":"m","nounId":"kaffee","adjective":"kalt","id":"aa-zero-dat-m-02"},{"articleType":"zero","case":"dat","cls":"m","nounId":"mann","adjective":"klein","id":"aa-zero-dat-m-03"},{"articleType":"zero","case":"dat","cls":"m","nounId":"wein","adjective":"teuer","id":"aa-zero-dat-m-04"},{"articleType":"zero","case":"dat","cls":"m","nounId":"name","adjective":"interessant","id":"aa-zero-dat-m-05"},{"familyId":"fam-zero-f-stadt","articleType":"zero","case":"dat","cls":"f","nounId":"stadt","adjective":"groß","id":"aa-zero-dat-f-01"},{"familyId":"fam-zero-f-küche","articleType":"zero","case":"dat","cls":"f","nounId":"küche","adjective":"sauber","id":"aa-zero-dat-f-02"},{"articleType":"zero","case":"dat","cls":"f","nounId":"frau","adjective":"alt","id":"aa-zero-dat-f-03"},{"articleType":"zero","case":"dat","cls":"f","nounId":"stadt","adjective":"schön","id":"aa-zero-dat-f-04"},{"articleType":"zero","case":"dat","cls":"f","nounId":"sprache","adjective":"modern","id":"aa-zero-dat-f-05"},{"familyId":"fam-zero-n-brot","articleType":"zero","case":"dat","cls":"n","nounId":"brot","adjective":"frisch","id":"aa-zero-dat-n-01"},{"articleType":"zero","case":"dat","cls":"n","nounId":"haus","adjective":"dunkel","id":"aa-zero-dat-n-02"},{"articleType":"zero","case":"dat","cls":"n","nounId":"kleid","adjective":"lang","id":"aa-zero-dat-n-03"},{"articleType":"zero","case":"dat","cls":"n","nounId":"hotel","adjective":"billig","id":"aa-zero-dat-n-04"},{"articleType":"zero","case":"dat","cls":"n","nounId":"fenster","adjective":"sauber","id":"aa-zero-dat-n-05"},{"familyId":"fam-zero-pl-kind","articleType":"zero","case":"dat","cls":"pl","nounId":"kind","adjective":"jung","id":"aa-zero-dat-pl-01"},{"familyId":"fam-zero-pl-auto","articleType":"zero","case":"dat","cls":"pl","nounId":"auto","adjective":"modern","id":"aa-zero-dat-pl-02"},{"articleType":"zero","case":"dat","cls":"pl","nounId":"preis","adjective":"gut","id":"aa-zero-dat-pl-03"},{"articleType":"zero","case":"dat","cls":"pl","nounId":"kind","adjective":"freundlich","id":"aa-zero-dat-pl-04"},{"articleType":"zero","case":"dat","cls":"pl","nounId":"arzt","adjective":"nett","id":"aa-zero-dat-pl-05"},{"familyId":"fam-zero-m-kaffee","articleType":"zero","case":"gen","cls":"m","nounId":"kaffee","adjective":"frisch","id":"aa-zero-gen-m-01"},{"articleType":"zero","case":"gen","cls":"m","nounId":"tag","adjective":"kurz","id":"aa-zero-gen-m-02"},{"articleType":"zero","case":"gen","cls":"m","nounId":"mensch","adjective":"alt","id":"aa-zero-gen-m-03"},{"articleType":"zero","case":"gen","cls":"m","nounId":"wein","adjective":"gut","id":"aa-zero-gen-m-04"},{"articleType":"zero","case":"gen","cls":"m","nounId":"hund","adjective":"groß","id":"aa-zero-gen-m-05"},{"familyId":"fam-zero-f-stadt","articleType":"zero","case":"gen","cls":"f","nounId":"stadt","adjective":"groß","id":"aa-zero-gen-f-01"},{"familyId":"fam-zero-f-küche","articleType":"zero","case":"gen","cls":"f","nounId":"küche","adjective":"sauber","id":"aa-zero-gen-f-02"},{"articleType":"zero","case":"gen","cls":"f","nounId":"sprache","adjective":"wichtig","id":"aa-zero-gen-f-03"},{"articleType":"zero","case":"gen","cls":"f","nounId":"schule","adjective":"klein","id":"aa-zero-gen-f-04"},{"articleType":"zero","case":"gen","cls":"f","nounId":"tasche","adjective":"teuer","id":"aa-zero-gen-f-05"},{"familyId":"fam-zero-n-brot","articleType":"zero","case":"gen","cls":"n","nounId":"brot","adjective":"frisch","id":"aa-zero-gen-n-01"},{"articleType":"zero","case":"gen","cls":"n","nounId":"problem","adjective":"leicht","id":"aa-zero-gen-n-02"},{"articleType":"zero","case":"gen","cls":"n","nounId":"wasser","adjective":"warm","id":"aa-zero-gen-n-03"},{"articleType":"zero","case":"gen","cls":"n","nounId":"geschenk","adjective":"schön","id":"aa-zero-gen-n-04"},{"articleType":"zero","case":"gen","cls":"n","nounId":"haus","adjective":"alt","id":"aa-zero-gen-n-05"},{"familyId":"fam-zero-pl-kind","articleType":"zero","case":"gen","cls":"pl","nounId":"kind","adjective":"jung","id":"aa-zero-gen-pl-01"},{"familyId":"fam-zero-pl-auto","articleType":"zero","case":"gen","cls":"pl","nounId":"auto","adjective":"modern","id":"aa-zero-gen-pl-02"},{"articleType":"zero","case":"gen","cls":"pl","nounId":"buch","adjective":"interessant","id":"aa-zero-gen-pl-03"},{"articleType":"zero","case":"gen","cls":"pl","nounId":"zimmer","adjective":"sauber","id":"aa-zero-gen-pl-04"},{"articleType":"zero","case":"gen","cls":"pl","nounId":"auto","adjective":"billig","id":"aa-zero-gen-pl-05"}];
+
+const DATASET_VERSION=1;
+const ALL_ARTICLE_TYPES=["def","ein","zero"];
+const ALL_CASES=["nom","acc","dat","gen"];
+const ALL_CLASSES=["m","f","n","pl"];
+const ARTICLE_TYPE_LABELS={def:"Definite",ein:"Ein-word",zero:"No article"};
+const CASE_LABELS={nom:"Nominativ",acc:"Akkusativ",dat:"Dativ",gen:"Genitiv"};
+const CLASS_LABELS={m:"Maskulin · Singular",f:"Feminin · Singular",n:"Neutrum · Singular",pl:"Plural"};
+const CLASS_FILTER_LABELS={m:"Maskulin · Sg.",f:"Feminin · Sg.",n:"Neutrum · Sg.",pl:"Plural"};
+const BASE_DEF={m:"der",f:"die",n:"das",pl:"die"};
+const DEF_ART={
+  nom:{m:"der",f:"die",n:"das",pl:"die"},
+  acc:{m:"den",f:"die",n:"das",pl:"die"},
+  dat:{m:"dem",f:"der",n:"dem",pl:"den"},
+  gen:{m:"des",f:"der",n:"des",pl:"der"}
+};
+const EIN_END={
+  nom:{m:"",f:"e",n:"",pl:"e"},
+  acc:{m:"en",f:"e",n:"",pl:"e"},
+  dat:{m:"em",f:"er",n:"em",pl:"en"},
+  gen:{m:"es",f:"er",n:"es",pl:"er"}
+};
+const ADJ_END={
+  def:{
+    nom:{m:"e",f:"e",n:"e",pl:"en"},
+    acc:{m:"en",f:"e",n:"e",pl:"en"},
+    dat:{m:"en",f:"en",n:"en",pl:"en"},
+    gen:{m:"en",f:"en",n:"en",pl:"en"}
+  },
+  ein:{
+    nom:{m:"er",f:"e",n:"es",pl:"en"},
+    acc:{m:"en",f:"e",n:"es",pl:"en"},
+    dat:{m:"en",f:"en",n:"en",pl:"en"},
+    gen:{m:"en",f:"en",n:"en",pl:"en"}
+  },
+  zero:{
+    nom:{m:"er",f:"e",n:"es",pl:"e"},
+    acc:{m:"en",f:"e",n:"es",pl:"e"},
+    dat:{m:"em",f:"er",n:"em",pl:"en"},
+    gen:{m:"en",f:"er",n:"en",pl:"er"}
+  }
+};
+
+const FILTER_STORAGE_KEY="german-drill-article-adjective-filter-v1";
+const STAR_STORAGE_KEY="german-drill-article-adjective-starred-v1";
+const MISTAKE_STORAGE_KEY="german-drill-article-adjective-mistakes-v1";
+const FAMILIAR_STORAGE_KEY="german-drill-article-adjective-familiar-v1";
+const SESSION_RESET_BACKUP_KEY="german-drill-article-adjective-reset-backup-v1";
+const CLEAR_DELAY_SECONDS=5;
+const RECIPE_MAP=new Map(RECIPES.map(x=>[x.id,x]));
+
+let selectedArticleTypes=new Set(ALL_ARTICLE_TYPES),draftArticleTypes=new Set(ALL_ARTICLE_TYPES);
+let selectedCases=new Set(ALL_CASES),draftCases=new Set(ALL_CASES);
+let selectedClasses=new Set(ALL_CLASSES),draftClasses=new Set(ALL_CLASSES);
+let selectedStarredFocus=false,draftStarredFocus=false;
+let selectedMistakesFocus=false,draftMistakesFocus=false;
+let selectedFamiliarFocus=false,draftFamiliarFocus=false;
+let starredItems=new Set(),mistakeItems=new Set(),familiarItems=new Set();
+
+let order=[],pos=0,round=1,mode="answering",lastResult=null,undoSkipState=null;
+let starFeedbackTimer=null;
+let clearStarsTimer=null,clearMistakesTimer=null,clearFamiliarTimer=null;
+let clearStarsValue=CLEAR_DELAY_SECONDS,clearMistakesValue=CLEAR_DELAY_SECONDS,clearFamiliarValue=CLEAR_DELAY_SECONDS;
+
+const $=id=>document.getElementById(id);
+function current(){return RECIPE_MAP.get(order[pos])||null;}
+function normalizeWhitespace(s){return String(s??"").trim().replace(/\s+/g," ");}
+function currentInput(){return $("phraseInput").value;}
+function saveSet(key,set){try{localStorage.setItem(key,JSON.stringify([...set]));}catch{}}
+function loadSet(key){
+  try{
+    const valid=new Set(RECIPES.map(x=>x.id));
+    const raw=JSON.parse(localStorage.getItem(key)||"[]");
+    return new Set(Array.isArray(raw)?raw.filter(x=>valid.has(x)):[]);
+  }catch{return new Set();}
+}
+function loadFocus(){
+  starredItems=loadSet(STAR_STORAGE_KEY);
+  mistakeItems=loadSet(MISTAKE_STORAGE_KEY);
+  familiarItems=loadSet(FAMILIAR_STORAGE_KEY);
+  for(const id of mistakeItems)familiarItems.delete(id);
+  saveSet(FAMILIAR_STORAGE_KEY,familiarItems);
+}
+function saveStars(){saveSet(STAR_STORAGE_KEY,starredItems)}
+function saveMistakes(){saveSet(MISTAKE_STORAGE_KEY,mistakeItems)}
+function saveFamiliar(){saveSet(FAMILIAR_STORAGE_KEY,familiarItems)}
+
+function articleForm(r){
+  if(r.articleType==="zero")return null;
+  if(r.articleType==="def")return DEF_ART[r.case][r.cls];
+  const ending=EIN_END[r.case][r.cls],cue=r.articleCue;
+  if(cue==="euer")return ending===""?"euer":"eur"+ending;
+  return cue+ending;
+}
+function adjectiveForm(r){return ADJECTIVES[r.adjective].stem+ADJ_END[r.articleType][r.case][r.cls]}
+function nounForms(r){const n=NOUNS[r.nounId];return r.cls==="pl"?n.pl[r.case]:n.sg[r.case]}
+function nounDisplay(r){
+  const n=NOUNS[r.nounId],custom=r.cls==="pl"?n.plDisplay?.[r.case]:n.sgDisplay?.[r.case];
+  return custom||nounForms(r)[0];
+}
+function hasDisplayedVariant(r){const n=NOUNS[r.nounId];return !!(r.cls==="pl"?n.plDisplay?.[r.case]:n.sgDisplay?.[r.case])}
+function promptArticle(r){
+  if(r.articleType==="zero")return "∅";
+  if(r.articleType==="def")return BASE_DEF[r.cls];
+  return r.articleCue==="Ihr"?"Ihr (formell)":r.articleCue;
+}
+function nounCue(r){
+  const n=NOUNS[r.nounId];
+  if(r.cls==="pl")return `die ${n.pl.nom[0]}`;
+  return `${n.article} ${n.sg.nom[0]}`;
+}
+function displayAnswer(r){
+  const bits=[];
+  const a=articleForm(r);if(a)bits.push(a);
+  bits.push(adjectiveForm(r),nounDisplay(r));
+  return bits.join(" ");
+}
+function expectedSlots(r){
+  const slots=[];
+  const a=articleForm(r);
+  if(a)slots.push({key:"article",label:"Article / Artikel",accepted:[a],display:a});
+  const adj=adjectiveForm(r);
+  slots.push({key:"adjective",label:"Adjective / Adjektiv",accepted:[adj],display:adj});
+  const nf=nounForms(r);
+  slots.push({key:"noun",label:"Noun / Nomen",accepted:nf,display:nounDisplay(r)});
+  return slots;
+}
+function promptText(r){return `${promptArticle(r)} + ${ADJECTIVES[r.adjective].lemma} + ${nounCue(r)}`}
+
+function isStarred(r=current()){return !!r&&starredItems.has(r.id)}
+function isFamiliar(r=current()){return !!r&&familiarItems.has(r.id)}
+function renderStarButton(){
+  const b=$("starBtn"),on=isStarred();
+  b.textContent=on?"★":"☆";b.classList.toggle("starred",on);
+  b.setAttribute("aria-label",on?"Remove star from this item":"Star this item");
+  b.title=on?"Remove star":"Star this item";
+}
+function renderFamiliarButton(){
+  const b=$("familiarBtn"),on=isFamiliar();
+  b.classList.toggle("familiar",on);
+  b.setAttribute("aria-label",on?"Remove Familiar from this item":"Mark this item as familiar");
+  b.title=on?"Remove Familiar":"Mark as Familiar";
+}
+function showStarFeedback(message){
+  const el=$("starFeedback");
+  if(starFeedbackTimer)clearTimeout(starFeedbackTimer);
+  el.textContent=message;el.classList.add("show");
+  starFeedbackTimer=setTimeout(()=>{el.classList.remove("show");starFeedbackTimer=null},1800);
+}
+function renderFocusManagement(){
+  $("starTotalText").textContent=`${starredItems.size} starred total`;
+  $("mistakeTotalText").textContent=`${mistakeItems.size} mistakes total`;
+  $("familiarTotalText").textContent=`${familiarItems.size} familiar total`;
+  $("clearStarsBtn").disabled=starredItems.size===0;
+  $("clearMistakesBtn").disabled=mistakeItems.size===0;
+  $("clearFamiliarBtn").disabled=familiarItems.size===0;
+}
+
+function hasAnySelection(articleTypes,cases,classes,starred,mistakes,familiar){
+  return articleTypes.size>0||cases.size>0||classes.size>0||starred||mistakes||familiar;
+}
+function eligibleIds(articleTypes=selectedArticleTypes,cases=selectedCases,classes=selectedClasses,mistakes=selectedMistakesFocus,familiar=selectedFamiliarFocus){
+  const la=articleTypes.size>0,lc=cases.size>0,lg=classes.size>0;
+  return RECIPES.filter(r=>{
+    const fam=familiarItems.has(r.id);
+    return (!la||articleTypes.has(r.articleType))
+      &&(!lc||cases.has(r.case))
+      &&(!lg||classes.has(r.cls))
+      &&(!mistakes||mistakeItems.has(r.id))
+      &&(familiar?fam:!fam);
+  }).map(r=>r.id);
+}
+function shuffleArray(arr){
+  const out=[...arr];
+  for(let i=out.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[out[i],out[j]]=[out[j],out[i]]}
+  return out;
+}
+function shuffledIds(previousLast=null){
+  const eligible=eligibleIds();let arr;
+  if(selectedStarredFocus){
+    const stars=eligible.filter(id=>starredItems.has(id)),regular=eligible.filter(id=>!starredItems.has(id));
+    arr=[...shuffleArray(stars),...shuffleArray(regular)];
+  }else arr=shuffleArray(eligible);
+  if(previousLast&&arr.length>1&&arr[0]===previousLast){
+    let swap=1;
+    if(selectedStarredFocus&&starredItems.has(arr[0])){
+      const found=arr.findIndex((id,i)=>i>0&&starredItems.has(id));if(found>0)swap=found;
+    }
+    [arr[0],arr[swap]]=[arr[swap],arr[0]];
+  }
+  return arr;
+}
+function loadFilterSettings(){
+  try{
+    const s=JSON.parse(localStorage.getItem(FILTER_STORAGE_KEY)||"null");
+    if(s){
+      if(Array.isArray(s.articleTypes))selectedArticleTypes=new Set(s.articleTypes.filter(x=>ALL_ARTICLE_TYPES.includes(x)));
+      if(Array.isArray(s.cases))selectedCases=new Set(s.cases.filter(x=>ALL_CASES.includes(x)));
+      if(Array.isArray(s.classes))selectedClasses=new Set(s.classes.filter(x=>ALL_CLASSES.includes(x)));
+      selectedStarredFocus=!!s.starredFocus;
+      selectedMistakesFocus=!!s.mistakesFocus;
+      selectedFamiliarFocus=!!s.familiarFocus;
+      if(selectedFamiliarFocus)selectedMistakesFocus=false;
+    }
+  }catch{}
+  draftArticleTypes=new Set(selectedArticleTypes);draftCases=new Set(selectedCases);draftClasses=new Set(selectedClasses);
+  draftStarredFocus=selectedStarredFocus;draftMistakesFocus=selectedMistakesFocus;draftFamiliarFocus=selectedFamiliarFocus;
+}
+function saveFilterSettings(){
+  try{localStorage.setItem(FILTER_STORAGE_KEY,JSON.stringify({
+    articleTypes:[...selectedArticleTypes],cases:[...selectedCases],classes:[...selectedClasses],
+    starredFocus:selectedStarredFocus,mistakesFocus:selectedMistakesFocus,familiarFocus:selectedFamiliarFocus
+  }))}catch{}
+}
+function compactSet(set,all,labels,allText){
+  if(set.size===0||set.size===all.length)return allText;
+  if(set.size<=2)return [...set].map(x=>labels[x]).join(" + ");
+  return `${set.size} selected`;
+}
+function filterSummaryText(){
+  const count=eligibleIds().length;
+  const a=compactSet(selectedArticleTypes,ALL_ARTICLE_TYPES,ARTICLE_TYPE_LABELS,"All article types");
+  const c=compactSet(selectedCases,ALL_CASES,CASE_LABELS,"All cases");
+  const g=compactSet(selectedClasses,ALL_CLASSES,CLASS_FILTER_LABELS,"All classes");
+  const f=[];if(selectedStarredFocus)f.push("★ Starred first");if(selectedMistakesFocus)f.push("✕ Mistakes only");if(selectedFamiliarFocus)f.push("✓ Familiar only");
+  return `${a} · ${c} · ${g}${f.length?` · ${f.join(" · ")}`:""} · ${count} item${count===1?"":"s"}`;
+}
+function renderFilterUI(){
+  document.querySelectorAll("[data-article-type]").forEach(b=>b.classList.toggle("active",draftArticleTypes.has(b.dataset.articleType)));
+  document.querySelectorAll("[data-case]").forEach(b=>b.classList.toggle("active",draftCases.has(b.dataset.case)));
+  document.querySelectorAll("[data-class]").forEach(b=>b.classList.toggle("active",draftClasses.has(b.dataset.class)));
+  $("starredFilterBtn").classList.toggle("active",draftStarredFocus);
+  $("mistakesFilterBtn").classList.toggle("active",draftMistakesFocus);
+  $("familiarFilterBtn").classList.toggle("active",draftFamiliarFocus);
+  const ids=eligibleIds(draftArticleTypes,draftCases,draftClasses,draftMistakesFocus,draftFamiliarFocus),count=ids.length;
+  const starCount=ids.filter(id=>starredItems.has(id)).length;
+  const status=$("filterStatus"),hasAny=hasAnySelection(draftArticleTypes,draftCases,draftClasses,draftStarredFocus,draftMistakesFocus,draftFamiliarFocus);
+  if(!hasAny){
+    status.textContent="Select at least one filter.";status.className="filter-status error";$("applyFilterBtn").disabled=true;
+  }else if(!count){
+    status.textContent=draftMistakesFocus?"0 mistakes match this filter.":draftFamiliarFocus?"0 familiar items match this filter.":"0 items match this combination.";
+    status.className="filter-status error";$("applyFilterBtn").disabled=true;
+  }else{
+    if(draftMistakesFocus&&draftStarredFocus)status.textContent=`${count} mistake item${count===1?"":"s"} · ${starCount} starred first`;
+    else if(draftMistakesFocus)status.textContent=`${count} mistake item${count===1?"":"s"} in this filter`;
+    else if(draftFamiliarFocus&&draftStarredFocus)status.textContent=`${count} familiar item${count===1?"":"s"} · ${starCount} starred first`;
+    else if(draftFamiliarFocus)status.textContent=`${count} familiar item${count===1?"":"s"} in this filter`;
+    else if(draftStarredFocus)status.textContent=`${count} item${count===1?"":"s"} · ${starCount} starred first`;
+    else status.textContent=`${count} item${count===1?"":"s"} in this filter`;
+    status.className="filter-status";$("applyFilterBtn").disabled=false;
+  }
+  $("filterSummary").textContent=filterSummaryText();renderFocusManagement();
+}
+
+function alignTokens(tokens,slots){
+  const n=slots.length,m=tokens.length,dp=Array.from({length:n+1},()=>Array(m+1).fill(null));
+  dp[0][0]={cost:0,ops:[]};
+  function offer(i,j,cost,ops,priority){
+    const cur=dp[i][j];
+    if(!cur||cost<cur.cost-1e-9||(Math.abs(cost-cur.cost)<1e-9&&priority<cur.priority)){
+      dp[i][j]={cost,ops,priority};
+    }
+  }
+  for(let i=0;i<=n;i++){
+    for(let j=0;j<=m;j++){
+      const cell=dp[i][j];if(!cell)continue;
+      if(i<n&&j<m){
+        const exact=slots[i].accepted.includes(tokens[j]);
+        offer(i+1,j+1,cell.cost+(exact?0:1.2),[...cell.ops,{type:exact?"match":"sub",slotIndex:i,token:tokens[j]}],exact?0:3);
+      }
+      if(i<n)offer(i+1,j,cell.cost+1,[...cell.ops,{type:"missing",slotIndex:i,token:""}],1);
+      if(j<m)offer(i,j+1,cell.cost+1,[...cell.ops,{type:"extra",slotIndex:i,token:tokens[j]}],2);
+    }
+  }
+  return dp[n][m].ops;
+}
+function buildResult(r,rawInput){
+  const normalized=normalizeWhitespace(rawInput),tokens=normalized?normalized.split(" "):[],slots=expectedSlots(r),ops=alignTokens(tokens,slots);
+  const correct=ops.every(op=>op.type==="match");
+  return {normalized,tokens,slots,ops,correct,displayAnswer:displayAnswer(r),variant:hasDisplayedVariant(r)};
+}
+function feedbackRowsHTML(r,result){
+  const rows=[];
+  let leadingZeroHandled=false;
+  if(r.articleType==="zero"){
+    const leadIndex=result.ops.findIndex(op=>op.type==="extra"&&op.slotIndex===0);
+    if(leadIndex>=0){
+      const op=result.ops[leadIndex];rows.push(`<div class="feedback-row"><div class="feedback-label">∅</div><div class="feedback-value bad">${escapeHTML(op.token)} ✕ <span class="feedback-arrow">→ ∅</span></div></div>`);
+      op._usedZero=true;leadingZeroHandled=true;
+    }
+    if(!leadingZeroHandled)rows.push(`<div class="feedback-row"><div class="feedback-label">∅</div><div class="feedback-value ok">∅ ✓</div></div>`);
+  }
+  for(const op of result.ops){
+    if(op._usedZero)continue;
+    if(op.type==="extra"){
+      rows.push(`<div class="feedback-row"><div class="feedback-label">Extra word</div><div class="feedback-value bad">${escapeHTML(op.token)} ✕</div></div>`);
+      continue;
+    }
+    const slot=result.slots[op.slotIndex];
+    if(op.type==="match"){
+      rows.push(`<div class="feedback-row"><div class="feedback-label">${slot.label}</div><div class="feedback-value ok">${escapeHTML(op.token)} ✓</div></div>`);
+    }else if(op.type==="missing"){
+      rows.push(`<div class="feedback-row"><div class="feedback-label">${slot.label}</div><div class="feedback-value bad">∅ ✕ <span class="feedback-arrow">→ ${escapeHTML(slot.display)}</span></div></div>`);
+    }else{
+      rows.push(`<div class="feedback-row"><div class="feedback-label">${slot.label}</div><div class="feedback-value bad">${escapeHTML(op.token)} ✕ <span class="feedback-arrow">→ ${escapeHTML(slot.display)}</span></div></div>`);
+    }
+  }
+  return rows.join("");
+}
+function escapeHTML(s){return String(s).replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]))}
+
+function clearAnswerState(){
+  mode="answering";lastResult=null;
+  $("phraseInput").value="";
+}
+function updateCheckState(){
+  $("checkBtn").disabled=mode!=="answering"||normalizeWhitespace($("phraseInput").value)==="";
+  window.GermanDrillCloudSave?.();
+}
+function renderProgress(){
+  $("roundText").textContent=`Round / Runde · ${round}`;
+  $("progressText").textContent=`Question / Frage · ${order.length?pos+1:0} / ${order.length}`;
+  $("barFill").style.width=order.length?`${Math.min(100,((pos+1)/order.length)*100)}%`:"0%";
+}
+function renderResult(){
+  const r=current();
+  if(mode!=="checked"||!r||!lastResult){
+    $("resultPanel").classList.add("hidden");$("mistakeFeedback").textContent="";return;
+  }
+  $("resultPanel").classList.remove("hidden");
+  $("correctAnswer").textContent=lastResult.displayAnswer;
+  if(lastResult.variant){
+    $("variantNote").textContent=`${nounDisplay(r)} · beide Formen möglich`;
+    $("variantNote").classList.remove("hidden");
+  }else $("variantNote").classList.add("hidden");
+  $("feedbackList").innerHTML=feedbackRowsHTML(r,lastResult);
+  $("mistakeFeedback").textContent=lastResult.mistakeMessage||"";
+}
+function renderCurrent(){
+  const r=current(),has=!!r;
+  $("questionContent").classList.toggle("hidden",!has);
+  $("emptyState").classList.toggle("hidden",has);
+  renderProgress();
+  if(!has){$("mistakeFeedback").textContent="";return}
+  $("promptCue").textContent=promptText(r);
+  $("grammarLine").textContent=`${CASE_LABELS[r.case]} · ${CLASS_LABELS[r.cls]}`;
+  renderStarButton();renderFamiliarButton();
+  const input=$("phraseInput");
+  input.disabled=mode==="checked";
+  input.classList.remove("correct","wrong");
+  if(mode==="checked"&&lastResult)input.classList.add(lastResult.correct?"correct":"wrong");
+  $("checkBtn").classList.toggle("hidden",mode!=="answering");
+  $("nextBtn").classList.toggle("hidden",mode!=="checked");
+  $("skipBtn").disabled=mode!=="answering";
+  $("undoSkipBtn").disabled=!undoSkipState||mode!=="answering";
+  document.querySelectorAll(".char-btn").forEach(b=>b.disabled=mode!=="answering");
+  renderResult();updateCheckState();
+}
+function captureSnapshot(){
+  return {
+    version:1,datasetVersion:DATASET_VERSION,
+    selectedArticleTypes:[...selectedArticleTypes],selectedCases:[...selectedCases],selectedClasses:[...selectedClasses],
+    selectedStarredFocus,selectedMistakesFocus,selectedFamiliarFocus,
+    order:[...order],pos,round,mode,input:$("phraseInput").value,lastResult:lastResult?JSON.parse(JSON.stringify(lastResult)):null
+  };
+}
+function normalizeSnapshot(raw){
+  if(!raw||raw.version!==1||raw.datasetVersion!==DATASET_VERSION)return null;
+  const ids=Array.isArray(raw.order)?raw.order.filter(id=>RECIPE_MAP.has(id)):[];
+  if(ids.length!==new Set(ids).size)return null;
+  const p=Math.max(0,Math.min(Number.isInteger(raw.pos)?raw.pos:0,Math.max(0,ids.length-1)));
+  return {
+    version:1,datasetVersion:DATASET_VERSION,
+    selectedArticleTypes:new Set(Array.isArray(raw.selectedArticleTypes)?raw.selectedArticleTypes.filter(x=>ALL_ARTICLE_TYPES.includes(x)):[]),
+    selectedCases:new Set(Array.isArray(raw.selectedCases)?raw.selectedCases.filter(x=>ALL_CASES.includes(x)):[]),
+    selectedClasses:new Set(Array.isArray(raw.selectedClasses)?raw.selectedClasses.filter(x=>ALL_CLASSES.includes(x)):[]),
+    selectedStarredFocus:!!raw.selectedStarredFocus,
+    selectedMistakesFocus:!!raw.selectedMistakesFocus,
+    selectedFamiliarFocus:!!raw.selectedFamiliarFocus,
+    order:ids,pos:p,round:Number.isInteger(raw.round)&&raw.round>0?raw.round:1,
+    mode:raw.mode==="checked"?"checked":"answering",
+    input:String(raw.input??""),lastResult:raw.lastResult||null
+  };
+}
+function restoreSnapshot(raw,{save=false}={}){
+  const s=normalizeSnapshot(raw);if(!s)return false;
+  selectedArticleTypes=s.selectedArticleTypes;selectedCases=s.selectedCases;selectedClasses=s.selectedClasses;
+  selectedStarredFocus=s.selectedStarredFocus;selectedMistakesFocus=s.selectedMistakesFocus;selectedFamiliarFocus=s.selectedFamiliarFocus;
+  if(selectedFamiliarFocus)selectedMistakesFocus=false;
+  draftArticleTypes=new Set(selectedArticleTypes);draftCases=new Set(selectedCases);draftClasses=new Set(selectedClasses);
+  draftStarredFocus=selectedStarredFocus;draftMistakesFocus=selectedMistakesFocus;draftFamiliarFocus=selectedFamiliarFocus;
+  order=s.order;pos=s.pos;round=s.round;mode=s.mode;lastResult=s.lastResult;
+  $("phraseInput").value=s.input;
+  clearUndo();saveFilterSettings();renderFilterUI();renderCurrent();
+  if(save)window.GermanDrillCloudSave?.();
+  return true;
+}
+function clearUndo(){undoSkipState=null;$("undoSkipBtn").disabled=true}
+function setUndo(snapshot){undoSkipState=snapshot;$("undoSkipBtn").disabled=!snapshot}
+function updateReload(){
+  let ok=false;try{ok=!!normalizeSnapshot(JSON.parse(localStorage.getItem(SESSION_RESET_BACKUP_KEY)||"null"))}catch{}
+  $("reloadSessionBtn").disabled=!ok;
+}
+function resetSession(){
+  try{localStorage.setItem(SESSION_RESET_BACKUP_KEY,JSON.stringify(captureSnapshot()))}catch{}
+  updateReload();clearUndo();order=shuffledIds(current()?.id||null);pos=0;round=1;clearAnswerState();renderCurrent();window.GermanDrillCloudSave?.();
+}
+function reloadLast(){
+  let raw=null;try{raw=JSON.parse(localStorage.getItem(SESSION_RESET_BACKUP_KEY)||"null")}catch{}
+  if(restoreSnapshot(raw,{save:true})){try{localStorage.removeItem(SESSION_RESET_BACKUP_KEY)}catch{};updateReload()}
+}
+function reshuffle(){
+  clearUndo();order=shuffledIds(current()?.id||null);pos=0;round=1;clearAnswerState();renderCurrent();window.GermanDrillCloudSave?.();
+}
+function advance(){
+  const prev=current()?.id||null;
+  if(pos<order.length-1){pos++}
+  else{round++;order=shuffledIds(prev);pos=0}
+  clearAnswerState();renderCurrent();window.GermanDrillCloudSave?.();
+}
+function skipCurrent(){
+  if(mode!=="answering"||!current())return;
+  setUndo(captureSnapshot());advance();$("undoSkipBtn").disabled=false;
+}
+function undoSkip(){
+  if(!undoSkipState)return;
+  const snap=undoSkipState;undoSkipState=null;restoreSnapshot(snap,{save:true});
+}
+function checkAnswers(){
+  const r=current();if(mode!=="answering"||!r||normalizeWhitespace($("phraseInput").value)==="")return;
+  clearUndo();
+  const result=buildResult(r,$("phraseInput").value);
+  const id=r.id;
+  let mistakeMessage="";
+  if(result.correct){
+    if(mistakeItems.has(id)){
+      mistakeItems.delete(id);saveMistakes();window.GermanDrillFocusCloudMutate?.("mistakeItems",id,false);
+      mistakeMessage=`✓ Cleared from Mistakes · ${mistakeItems.size} remaining`;
+      if(mistakeItems.size===0&&selectedMistakesFocus){selectedMistakesFocus=false;draftMistakesFocus=false;saveFilterSettings()}
+    }
+  }else{
+    if(familiarItems.has(id)){
+      familiarItems.delete(id);saveFamiliar();window.GermanDrillFocusCloudMutate?.("familiarItems",id,false);
+      if(familiarItems.size===0&&selectedFamiliarFocus){selectedFamiliarFocus=false;draftFamiliarFocus=false;saveFilterSettings()}
+    }
+    if(!mistakeItems.has(id)){mistakeItems.add(id);saveMistakes();window.GermanDrillFocusCloudMutate?.("mistakeItems",id,true)}
+    mistakeMessage=`✕ Added to Mistakes · ${mistakeItems.size} total`;
+  }
+  mode="checked";lastResult={...result,mistakeMessage};
+  renderFilterUI();renderCurrent();window.GermanDrillCloudSave?.();
+}
+function nextItem(focusInput=false){if(mode!=="checked")return;advance();if(focusInput&&current())setTimeout(()=>$("phraseInput").focus(),0)}
+
+function toggleStar(){
+  const r=current();if(!r)return;const id=r.id;let message;
+  if(starredItems.has(id)){starredItems.delete(id);message=`☆ Removed · ${starredItems.size} total`}
+  else{starredItems.add(id);message=`★ Starred · ${starredItems.size} total`}
+  saveStars();window.GermanDrillFocusCloudMutate?.("starredItems",id,starredItems.has(id));
+  renderStarButton();renderFilterUI();showStarFeedback(message);window.GermanDrillCloudSave?.();
+}
+function toggleFamiliar(){
+  const r=current();if(!r)return;const id=r.id;let message;
+  if(familiarItems.has(id)){
+    familiarItems.delete(id);saveFamiliar();window.GermanDrillFocusCloudMutate?.("familiarItems",id,false);
+    if(familiarItems.size===0&&selectedFamiliarFocus){selectedFamiliarFocus=false;draftFamiliarFocus=false}
+    message=`○ Familiar removed · ${familiarItems.size} total`;
+  }else{
+    if(mistakeItems.has(id)){
+      mistakeItems.delete(id);saveMistakes();window.GermanDrillFocusCloudMutate?.("mistakeItems",id,false);
+      if(mistakeItems.size===0&&selectedMistakesFocus){selectedMistakesFocus=false;draftMistakesFocus=false}
+    }
+    familiarItems.add(id);saveFamiliar();window.GermanDrillFocusCloudMutate?.("familiarItems",id,true);
+    message=`✓ Familiar · ${familiarItems.size} total`;
+  }
+  saveFilterSettings();renderFamiliarButton();renderFilterUI();showStarFeedback(message);window.GermanDrillCloudSave?.();
+}
+
+function openClear(kind){
+  const map={
+    stars:["clearStarsModal","clearStarsMessage","confirmClearStarsBtn",starredItems.size,"starred items"],
+    mistakes:["clearMistakesModal","clearMistakesMessage","confirmClearMistakesBtn",mistakeItems.size,"mistake items"],
+    familiar:["clearFamiliarModal","clearFamiliarMessage","confirmClearFamiliarBtn",familiarItems.size,"familiar items"]
+  };
+  const [modal,msg,btn,count,label]=map[kind];
+  $(msg).textContent=`This will clear ${count} ${label}. This cannot be undone.`;
+  $(modal).classList.remove("hidden");
+  startClearCountdown(kind,btn);
+}
+function closeClear(kind){
+  const map={stars:["clearStarsModal","confirmClearStarsBtn"],mistakes:["clearMistakesModal","confirmClearMistakesBtn"],familiar:["clearFamiliarModal","confirmClearFamiliarBtn"]};
+  const [modal,btn]=map[kind];$(modal).classList.add("hidden");stopClearCountdown(kind);$(btn).disabled=true;$(btn).textContent="Clear in 5s";
+}
+function startClearCountdown(kind,btnId){
+  stopClearCountdown(kind);
+  let value=CLEAR_DELAY_SECONDS;
+  const btn=$(btnId);btn.disabled=true;btn.textContent=`Clear in ${value}s`;
+  const tick=()=>{value--;if(value<=0){btn.disabled=false;btn.textContent="Clear all";stopClearCountdown(kind)}else btn.textContent=`Clear in ${value}s`};
+  const timer=setInterval(tick,1000);
+  if(kind==="stars")clearStarsTimer=timer;else if(kind==="mistakes")clearMistakesTimer=timer;else clearFamiliarTimer=timer;
+}
+function stopClearCountdown(kind){
+  const timer=kind==="stars"?clearStarsTimer:kind==="mistakes"?clearMistakesTimer:clearFamiliarTimer;
+  if(timer)clearInterval(timer);
+  if(kind==="stars")clearStarsTimer=null;else if(kind==="mistakes")clearMistakesTimer=null;else clearFamiliarTimer=null;
+}
+function clearAll(kind){
+  if(kind==="stars"){
+    starredItems.clear();saveStars();window.GermanDrillFocusCloudClear?.("starredItems");
+  }else if(kind==="mistakes"){
+    mistakeItems.clear();saveMistakes();window.GermanDrillFocusCloudClear?.("mistakeItems");
+    selectedMistakesFocus=false;draftMistakesFocus=false;
+  }else{
+    familiarItems.clear();saveFamiliar();window.GermanDrillFocusCloudClear?.("familiarItems");
+    selectedFamiliarFocus=false;draftFamiliarFocus=false;
+  }
+  saveFilterSettings();closeClear(kind);renderFilterUI();renderStarButton();renderFamiliarButton();window.GermanDrillCloudSave?.();
+}
+
+window.GermanDrillFocusData={
+  getLocal:()=>({starredItems:[...starredItems],mistakeItems:[...mistakeItems],familiarItems:[...familiarItems]}),
+  applyCloud:data=>{
+    const valid=new Set(RECIPES.map(x=>x.id));
+    starredItems=new Set((Array.isArray(data?.starredItems)?data.starredItems:[]).filter(id=>valid.has(id)));
+    mistakeItems=new Set((Array.isArray(data?.mistakeItems)?data.mistakeItems:[]).filter(id=>valid.has(id)));
+    familiarItems=new Set((Array.isArray(data?.familiarItems)?data.familiarItems:[]).filter(id=>valid.has(id)&&!mistakeItems.has(id)));
+    saveStars();saveMistakes();saveFamiliar();renderFilterUI();renderStarButton();renderFamiliarButton();
+  }
+};
+window.GermanDrillTrainerCloud={
+  capture:()=>captureSnapshot(),
+  restore:state=>{
+    if(!restoreSnapshot(state))return false;
+    clearUndo();
+    return true;
+  }
+};
+
+$("filterToggle").addEventListener("click",()=>{
+  const panel=$("filterPanel"),hidden=panel.classList.toggle("hidden");
+  $("filterToggle").textContent=hidden?"Filter":"Close";
+});
+document.querySelectorAll("[data-article-type]").forEach(b=>b.addEventListener("click",()=>{const v=b.dataset.articleType;draftArticleTypes.has(v)?draftArticleTypes.delete(v):draftArticleTypes.add(v);renderFilterUI()}));
+document.querySelectorAll("[data-case]").forEach(b=>b.addEventListener("click",()=>{const v=b.dataset.case;draftCases.has(v)?draftCases.delete(v):draftCases.add(v);renderFilterUI()}));
+document.querySelectorAll("[data-class]").forEach(b=>b.addEventListener("click",()=>{const v=b.dataset.class;draftClasses.has(v)?draftClasses.delete(v):draftClasses.add(v);renderFilterUI()}));
+$("starredFilterBtn").addEventListener("click",()=>{draftStarredFocus=!draftStarredFocus;renderFilterUI()});
+$("mistakesFilterBtn").addEventListener("click",()=>{draftMistakesFocus=!draftMistakesFocus;if(draftMistakesFocus)draftFamiliarFocus=false;renderFilterUI()});
+$("familiarFilterBtn").addEventListener("click",()=>{draftFamiliarFocus=!draftFamiliarFocus;if(draftFamiliarFocus)draftMistakesFocus=false;renderFilterUI()});
+$("applyFilterBtn").addEventListener("click",()=>{
+  if($("applyFilterBtn").disabled)return;
+  selectedArticleTypes=new Set(draftArticleTypes);selectedCases=new Set(draftCases);selectedClasses=new Set(draftClasses);
+  selectedStarredFocus=draftStarredFocus;selectedMistakesFocus=draftMistakesFocus;selectedFamiliarFocus=draftFamiliarFocus;
+  saveFilterSettings();clearUndo();order=shuffledIds();pos=0;round=1;clearAnswerState();renderFilterUI();renderCurrent();window.GermanDrillCloudSave?.();
+});
+$("noneFilterBtn").addEventListener("click",()=>{
+  draftArticleTypes=new Set();draftCases=new Set();draftClasses=new Set();draftStarredFocus=false;draftMistakesFocus=false;draftFamiliarFocus=false;renderFilterUI();
+});
+$("allFilterBtn").addEventListener("click",()=>{
+  draftArticleTypes=new Set(ALL_ARTICLE_TYPES);draftCases=new Set(ALL_CASES);draftClasses=new Set(ALL_CLASSES);renderFilterUI();
+});
+
+$("phraseInput").addEventListener("input",updateCheckState);
+$("checkBtn").addEventListener("click",checkAnswers);
+$("nextBtn").addEventListener("click",nextItem);
+$("skipBtn").addEventListener("click",skipCurrent);
+$("undoSkipBtn").addEventListener("click",undoSkip);
+$("reshuffleBtn").addEventListener("click",reshuffle);
+$("resetSessionBtn").addEventListener("click",resetSession);
+$("reloadSessionBtn").addEventListener("click",reloadLast);
+$("starBtn").addEventListener("click",toggleStar);
+$("familiarBtn").addEventListener("click",toggleFamiliar);
+
+document.querySelectorAll(".char-btn").forEach(b=>{
+  b.addEventListener("mousedown",e=>e.preventDefault());
+  b.addEventListener("click",()=>{
+    if(mode!=="answering")return;
+    const target=$("phraseInput"),ch=b.dataset.char,start=typeof target.selectionStart==="number"?target.selectionStart:target.value.length,end=typeof target.selectionEnd==="number"?target.selectionEnd:target.value.length;
+    target.value=target.value.slice(0,start)+ch+target.value.slice(end);
+    const caret=start+ch.length;target.focus();target.setSelectionRange(caret,caret);target.dispatchEvent(new Event("input",{bubbles:true}));
+  });
+});
+
+$("clearStarsBtn").addEventListener("click",()=>openClear("stars"));
+$("cancelClearStarsBtn").addEventListener("click",()=>closeClear("stars"));
+$("confirmClearStarsBtn").addEventListener("click",()=>clearAll("stars"));
+$("clearStarsModal").addEventListener("click",e=>{if(e.target===$("clearStarsModal"))closeClear("stars")});
+$("clearMistakesBtn").addEventListener("click",()=>openClear("mistakes"));
+$("cancelClearMistakesBtn").addEventListener("click",()=>closeClear("mistakes"));
+$("confirmClearMistakesBtn").addEventListener("click",()=>clearAll("mistakes"));
+$("clearMistakesModal").addEventListener("click",e=>{if(e.target===$("clearMistakesModal"))closeClear("mistakes")});
+$("clearFamiliarBtn").addEventListener("click",()=>openClear("familiar"));
+$("cancelClearFamiliarBtn").addEventListener("click",()=>closeClear("familiar"));
+$("confirmClearFamiliarBtn").addEventListener("click",()=>clearAll("familiar"));
+$("clearFamiliarModal").addEventListener("click",e=>{if(e.target===$("clearFamiliarModal"))closeClear("familiar")});
+
+document.addEventListener("keydown",e=>{
+  if(e.key==="Escape"){
+    if(!$("clearStarsModal").classList.contains("hidden")){closeClear("stars");return}
+    if(!$("clearMistakesModal").classList.contains("hidden")){closeClear("mistakes");return}
+    if(!$("clearFamiliarModal").classList.contains("hidden")){closeClear("familiar");return}
+  }
+  if(e.key!=="Enter")return;
+  if(!$("clearStarsModal").classList.contains("hidden")||!$("clearMistakesModal").classList.contains("hidden")||!$("clearFamiliarModal").classList.contains("hidden"))return;
+  const active=document.activeElement;
+  if(active&&active!==$("phraseInput")&&["BUTTON","A"].includes(active.tagName))return;
+  if(mode==="answering"&&!$("checkBtn").disabled){e.preventDefault();checkAnswers()}
+  else if(mode==="checked"){e.preventDefault();nextItem(true)}
+});
+
+loadFocus();loadFilterSettings();renderFilterUI();order=shuffledIds();renderCurrent();updateReload();
+</script>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-app.js";
+import { getAuth, onAuthStateChanged, signOut, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-auth.js";
+import { getFirestore, doc, getDoc, setDoc, serverTimestamp, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore.js";
+const firebaseConfig={apiKey:"AIzaSyD72gOohLLXe4wmqiXXK3dX-3uRBCL2DhU",authDomain:"german-drill.firebaseapp.com",projectId:"german-drill",storageBucket:"german-drill.firebasestorage.app",messagingSenderId:"251965473675",appId:"1:251965473675:web:f1313534036a0cf157658e"};
+const ALLOWED_UID="elW0hqe8hoXcePYOd9ySthjv3d23";
+const TRAINER_ID="article-adjective",FOCUS_TRAINER_ID="article-adjective-focus";
+const app=initializeApp(firebaseConfig),auth=getAuth(app),db=getFirestore(app);
+let cloudReady=false,focusCloudReady=false,saveChain=Promise.resolve(),focusChain=Promise.resolve();
+function revealTrainer(){document.documentElement.style.visibility=""}
+async function pushTrainerState(){
+  if(!cloudReady||!auth.currentUser||auth.currentUser.uid!==ALLOWED_UID)return;
+  const state=window.GermanDrillTrainerCloud?.capture?.();if(!state)return;
+  try{await setDoc(doc(db,"users",ALLOWED_UID,"trainerStates",TRAINER_ID),{state,updatedAt:serverTimestamp()},{merge:true})}
+  catch(e){console.warn("Trainer cloud save failed:",e)}
+}
+window.GermanDrillCloudSave=()=>{if(cloudReady)saveChain=saveChain.then(pushTrainerState,pushTrainerState)};
+window.GermanDrillFocusCloudMutate=(field,id,add)=>{
+  if(!focusCloudReady||!["starredItems","mistakeItems","familiarItems"].includes(field))return;
+  const ref=doc(db,"users",ALLOWED_UID,"trainerStates",FOCUS_TRAINER_ID),value=add?arrayUnion(id):arrayRemove(id);
+  focusChain=focusChain.then(()=>setDoc(ref,{[field]:value,updatedAt:serverTimestamp()},{merge:true}),()=>setDoc(ref,{[field]:value,updatedAt:serverTimestamp()},{merge:true})).catch(e=>console.warn("Focus cloud save failed:",e));
+};
+window.GermanDrillFocusCloudClear=field=>{
+  if(!focusCloudReady||!["starredItems","mistakeItems","familiarItems"].includes(field))return;
+  const ref=doc(db,"users",ALLOWED_UID,"trainerStates",FOCUS_TRAINER_ID);
+  focusChain=focusChain.then(()=>setDoc(ref,{[field]:[],updatedAt:serverTimestamp()},{merge:true}),()=>setDoc(ref,{[field]:[],updatedAt:serverTimestamp()},{merge:true})).catch(e=>console.warn("Focus cloud clear failed:",e));
+};
+async function loadFocusState(){
+  const ref=doc(db,"users",ALLOWED_UID,"trainerStates",FOCUS_TRAINER_ID),api=window.GermanDrillFocusData,local=api?.getLocal?.()||{starredItems:[],mistakeItems:[],familiarItems:[]},snap=await getDoc(ref);
+  let remote=snap.exists()?snap.data():{};
+  if(!snap.exists()){
+    const mistakes=[...new Set(local.mistakeItems)];
+    remote={starredItems:[...new Set(local.starredItems)],mistakeItems:mistakes,familiarItems:[...new Set(local.familiarItems)].filter(id=>!mistakes.includes(id))};
+    await setDoc(ref,{...remote,updatedAt:serverTimestamp()},{merge:true});
+  }
+  const mistakes=new Set(Array.isArray(remote.mistakeItems)?remote.mistakeItems:[]),familiar=(Array.isArray(remote.familiarItems)?remote.familiarItems:[]).filter(id=>!mistakes.has(id));
+  if(familiar.length!==(Array.isArray(remote.familiarItems)?remote.familiarItems.length:0))await setDoc(ref,{familiarItems:familiar,updatedAt:serverTimestamp()},{merge:true});
+  api?.applyCloud?.({...remote,familiarItems:familiar});focusCloudReady=true;
+}
+setPersistence(auth,browserLocalPersistence).catch(()=>{});
+onAuthStateChanged(auth,async user=>{
+  if(!user||user.uid!==ALLOWED_UID){if(user)await signOut(auth).catch(()=>{});location.replace("./index.html");return}
+  const ref=doc(db,"users",ALLOWED_UID,"trainerStates",TRAINER_ID);
+  try{await loadFocusState()}catch(e){console.warn("Focus cloud load failed; using local focus data:",e);focusCloudReady=true}
+  try{
+    const snap=await getDoc(ref);
+    if(snap.exists())window.GermanDrillTrainerCloud?.restore?.(snap.data().state);
+    cloudReady=true;if(!snap.exists())window.GermanDrillCloudSave();
+  }catch(e){console.warn("Trainer cloud load failed; using local state:",e);cloudReady=true}
+  revealTrainer();
+});
+</script>
+
+<script>
+if("serviceWorker" in navigator){window.addEventListener("load",()=>{navigator.serviceWorker.register("./service-worker.js",{scope:"./"}).then(r=>r.update()).catch(e=>console.warn("Service worker registration failed:",e))})}
+</script>
+</body>
+</html>

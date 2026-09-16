@@ -1,10 +1,11 @@
-const CACHE_NAME = "german-drill-pwa-v7-filter-open-fix";
+const CACHE_NAME = "german-drill-pwa-v8-article-adjective";
 const PRECACHE = [
   "./",
   "./index.html",
   "./a1-present.html",
   "./a1-noun-forms.html",
   "./definite-article-trainer.html",
+  "./article-adjective-trainer.html",
   "./sentence-builder.html",
   "./manifest.webmanifest",
   "./favicon.png",
