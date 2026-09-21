@@ -791,10 +791,21 @@ function undoTableSkip(){
 function reshuffleTable(){
   if(tableChecked) return;
   clearTableUndoSkip();
-  const currentIndex=tableOrder[tablePos];
-  tableOrder=shuffledTableIndices();
-  if(tableOrder.length>1 && tableOrder[0]===currentIndex) [tableOrder[0],tableOrder[1]]=[tableOrder[1],tableOrder[0]];
-  tablePos=0; tableRound=1;
+
+  const start=tablePos;
+  const remaining=tableOrder.slice(start);
+  if(remaining.length<=1) return;
+
+  let mixed=shuffle(remaining);
+  for(let tries=0;tries<20 && sameArray(mixed,remaining);tries++) mixed=shuffle(remaining);
+
+  // Keep completed questions and progress untouched; only reshuffle the
+  // current question together with the still-unseen remainder.
+  if(mixed.length>1 && mixed[0]===remaining[0]){
+    [mixed[0],mixed[1]]=[mixed[1],mixed[0]];
+  }
+
+  tableOrder.splice(start,remaining.length,...mixed);
   resetTableQuestion();
 }
 
@@ -1152,7 +1163,7 @@ function resetTableProgress(){
 
   tableOrder=shuffledTableIndices();
   tablePos=0;
-  tableRound=1;
+  // Reset restarts progress inside the current round; the round counter is cumulative.
   tableChecked=false;
   tableSelected=null;
   saveTable();
