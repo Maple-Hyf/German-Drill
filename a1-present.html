@@ -2192,14 +2192,34 @@ function undoLastSkip(){
 
 function reshuffleNow(){
   clearUndoSkipState();
+  if(!order.length) return;
+
   const currentIndex = order[pos];
-  order = shuffledIndices();
-  // If possible, keep the current verb from immediately reappearing after manual reshuffle.
-  if(order[0] === currentIndex && order.length > 1){
-    [order[0],order[1]] = [order[1],order[0]];
+  const completed = order.slice(0,pos);
+  const remaining = order.slice(pos);
+  let shuffledRemaining;
+
+  if(selectedStarredFocus){
+    const starred = remaining.filter(i=>starredVerbs.has(verbs[i].v));
+    const regular = remaining.filter(i=>!starredVerbs.has(verbs[i].v));
+    shuffledRemaining = [...shuffleArray(starred), ...shuffleArray(regular)];
+  }else{
+    shuffledRemaining = shuffleArray(remaining);
   }
-  pos = 0;
-  round = 1;
+
+  // Keep progress and Round unchanged. If possible, show a different current verb.
+  if(shuffledRemaining.length > 1 && shuffledRemaining[0] === currentIndex){
+    let swapIndex = 1;
+    if(selectedStarredFocus && starredVerbs.has(verbs[currentIndex].v)){
+      const found = shuffledRemaining.findIndex((idx,i)=>i>0 && starredVerbs.has(verbs[idx].v));
+      swapIndex = found > 0 ? found : -1;
+    }
+    if(swapIndex > 0){
+      [shuffledRemaining[0],shuffledRemaining[swapIndex]] = [shuffledRemaining[swapIndex],shuffledRemaining[0]];
+    }
+  }
+
+  order = [...completed, ...shuffledRemaining];
   renderStudy();
   window.GermanDrillCloudSave?.();
 }

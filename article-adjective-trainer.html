@@ -1610,7 +1610,20 @@ function reloadLast(){
   if(restoreSnapshot(raw,{save:true})){try{localStorage.removeItem(SESSION_RESET_BACKUP_KEY)}catch{};updateReload()}
 }
 function reshuffle(){
-  clearUndo();order=shuffledIds(current()?.id||null);pos=0;round=1;clearAnswerState();renderCurrent();window.GermanDrillCloudSave?.();
+  clearUndo();if(!order.length)return;
+  const currentId=current()?.id||null,completed=order.slice(0,pos),remaining=order.slice(pos);let shuffledRemaining;
+  if(selectedStarredFocus){
+    const stars=remaining.filter(id=>starredItems.has(id)),regular=remaining.filter(id=>!starredItems.has(id));
+    shuffledRemaining=[...shuffleArray(stars),...shuffleArray(regular)];
+  }else shuffledRemaining=shuffleArray(remaining);
+  if(currentId&&shuffledRemaining.length>1&&shuffledRemaining[0]===currentId){
+    let swap=1;
+    if(selectedStarredFocus&&starredItems.has(currentId)){
+      const found=shuffledRemaining.findIndex((id,i)=>i>0&&starredItems.has(id));swap=found>0?found:-1;
+    }
+    if(swap>0)[shuffledRemaining[0],shuffledRemaining[swap]]=[shuffledRemaining[swap],shuffledRemaining[0]];
+  }
+  order=[...completed,...shuffledRemaining];clearAnswerState();renderCurrent();window.GermanDrillCloudSave?.();
 }
 function advance(){
   const prev=current()?.id||null;

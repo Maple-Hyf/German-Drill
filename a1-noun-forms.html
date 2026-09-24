@@ -1408,7 +1408,22 @@ function skipCurrent(){
   renderCurrent();setUndo(snap);window.GermanDrillCloudSave?.();
 }
 function undoSkip(){if(!undoSkipState)return;const s=normalizeSession(undoSkipState.session);undoSkipState=null;if(s){applySession(s);window.GermanDrillCloudSave?.();}else clearUndo();}
-function reshuffle(){clearUndo();order=shuffledIndices(order[pos]??null);pos=0;round=1;renderCurrent();window.GermanDrillCloudSave?.();}
+function reshuffle(){
+  clearUndo();if(!order.length)return;
+  const currentIndex=order[pos],completed=order.slice(0,pos),remaining=order.slice(pos);let shuffledRemaining;
+  if(selectedStarredFocus){
+    const stars=remaining.filter(i=>starredNouns.has(nouns[i].id)),regular=remaining.filter(i=>!starredNouns.has(nouns[i].id));
+    shuffledRemaining=[...shuffleArray(stars),...shuffleArray(regular)];
+  }else shuffledRemaining=shuffleArray(remaining);
+  if(shuffledRemaining.length>1&&shuffledRemaining[0]===currentIndex){
+    let swap=1;
+    if(selectedStarredFocus&&starredNouns.has(nouns[currentIndex].id)){
+      const found=shuffledRemaining.findIndex((idx,i)=>i>0&&starredNouns.has(nouns[idx].id));swap=found>0?found:-1;
+    }
+    if(swap>0)[shuffledRemaining[0],shuffledRemaining[swap]]=[shuffledRemaining[swap],shuffledRemaining[0]];
+  }
+  order=[...completed,...shuffledRemaining];renderCurrent();window.GermanDrillCloudSave?.();
+}
 function resetSession(){clearUndo();saveBackup();order=shuffledIndices();pos=0;round=1;renderCurrent();window.GermanDrillCloudSave?.();}
 function reloadLast(){clearUndo();const s=loadBackup();if(!s)return;applySession(s);window.GermanDrillCloudSave?.();}
 
