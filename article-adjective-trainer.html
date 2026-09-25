@@ -1603,7 +1603,7 @@ function updateReload(){
 }
 function resetSession(){
   try{localStorage.setItem(SESSION_RESET_BACKUP_KEY,JSON.stringify(captureSnapshot()))}catch{}
-  updateReload();clearUndo();order=shuffledIds(current()?.id||null);pos=0;round=1;clearAnswerState();renderCurrent();window.GermanDrillCloudSave?.();
+  updateReload();clearUndo();order=shuffledIds(current()?.id||null);pos=0;clearAnswerState();renderCurrent();window.GermanDrillCloudSave?.();
 }
 function reloadLast(){
   let raw=null;try{raw=JSON.parse(localStorage.getItem(SESSION_RESET_BACKUP_KEY)||"null")}catch{}

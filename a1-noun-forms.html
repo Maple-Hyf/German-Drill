@@ -1424,7 +1424,7 @@ function reshuffle(){
   }
   order=[...completed,...shuffledRemaining];renderCurrent();window.GermanDrillCloudSave?.();
 }
-function resetSession(){clearUndo();saveBackup();order=shuffledIndices();pos=0;round=1;renderCurrent();window.GermanDrillCloudSave?.();}
+function resetSession(){clearUndo();saveBackup();order=shuffledIndices();pos=0;renderCurrent();window.GermanDrillCloudSave?.();}
 function reloadLast(){clearUndo();const s=loadBackup();if(!s)return;applySession(s);window.GermanDrillCloudSave?.();}
 
 function stopTimer(which){if(which==="stars"&&clearStarsTimer){clearInterval(clearStarsTimer);clearStarsTimer=null;}if(which==="mistakes"&&clearMistakesTimer){clearInterval(clearMistakesTimer);clearMistakesTimer=null;}if(which==="familiar"&&clearFamiliarTimer){clearInterval(clearFamiliarTimer);clearFamiliarTimer=null;}}

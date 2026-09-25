@@ -2058,10 +2058,9 @@ function resetSession(){
   clearUndoSkipState();
   saveSessionResetBackup();
 
-  // Preserve the applied filter and all long-term starred/mistake data.
+  // Preserve the applied filter, current round, and all long-term starred/mistake data.
   order = shuffledIndices();
   pos = 0;
-  round = 1;
 
   renderStudy();
   window.GermanDrillCloudSave?.();
