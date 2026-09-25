@@ -727,7 +727,7 @@ function renderTable(){
   $("caseEnText").textContent=item.caseEn;
   $("genderDeText").textContent=item.genderDe;
   $("genderEnText").textContent=item.genderEn;
-  $("headerMeta").innerHTML=`<div>Round / Runde ${tableRound}</div><div>${tablePos+1} / ${tableOrder.length}</div>`;
+  $("headerMeta").innerHTML=`<div>Round / Runde · ${tableRound}</div><div>Question / Frage · ${tablePos+1} / ${tableOrder.length}</div>`;
   $("barFill").style.width=`${((tablePos+1)/tableOrder.length)*100}%`;
   renderTableArticleButtons();
 
@@ -1192,10 +1192,11 @@ function resetFillProgress(){
     localStorage.setItem(RESET_BACKUP_KEY, JSON.stringify(fillState));
   }catch(e){}
 
-  fillState=defaultFillState();
+  // Reset only the current 16-question round. Keep Cycle progress and Round number.
+  fillState.activeRound=null;
   genderOpen=false;
   englishOpen=false;
-  createRound(); // keeps checked at 0 and starts a fresh 16-question round
+  createRound();
   saveFill();
   updateReloadButton();
   renderFill();
